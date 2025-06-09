@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://cfii8rrppxgqq"]
+[gd_scene load_steps=20 format=3 uid="uid://cfii8rrppxgqq"]
 
 [ext_resource type="Script" uid="uid://c4qakorwmu6dc" path="res://scenes/main.gd" id="1_ggytm"]
 [ext_resource type="Script" uid="uid://dma5vy0j68ilt" path="res://scenes/Editor.gd" id="3_6wt7m"]
@@ -11,18 +11,13 @@
 [ext_resource type="Script" uid="uid://d3hndajig4v8p" path="res://scenes/comp_highlight.gd" id="6_u56tr"]
 [ext_resource type="Script" uid="uid://k4uuqhqbsjgr" path="res://scenes/lang_zd.gd" id="7_8jmkd"]
 [ext_resource type="Script" uid="uid://wd4hwnnoj64x" path="res://scenes/CPU_vm.gd" id="7_p2205"]
+[ext_resource type="Script" uid="uid://djj6hechvxiw0" path="res://scenes/comp_asm_zd.gd" id="8_dp3eg"]
 [ext_resource type="Script" uid="uid://4ggag6vgubb8" path="res://scenes/comp_build.gd" id="8_jurei"]
 [ext_resource type="PackedScene" uid="uid://dg8o8urks7l22" path="res://debug_panel.tscn" id="10_cypyl"]
 [ext_resource type="Script" uid="uid://bfx1a8gunkipm" path="res://scenes/RAM_64k.gd" id="11_1g7n4"]
 [ext_resource type="Script" uid="uid://0em7edt5tnsg" path="res://scenes/Bus.gd" id="11_37vc5"]
 [ext_resource type="Texture2D" uid="uid://j2f1v3ps3264" path="res://res/icons/Bug-silk.png" id="11_nykja"]
 [ext_resource type="Script" uid="uid://b74jfmkseejoc" path="res://scenes/todo.gd" id="19_a20q3"]
-
-[sub_resource type="Resource" id="Resource_muem4"]
-metadata/__load_path__ = "res://res/tex/d45b53c08165420d3a1a00bed085e299aaec6bc6.png"
-
-[sub_resource type="Resource" id="Resource_dp3eg"]
-metadata/__load_path__ = "res://scenes/comp_asm_zd.gd"
 
 [sub_resource type="SystemFont" id="SystemFont_30trl"]
 font_names = PackedStringArray("Courier New")
@@ -69,7 +64,6 @@ grow_vertical = 2
 [node name="TextureRect" type="TextureRect" parent="Panel/TabContainer/Screen/V"]
 custom_minimum_size = Vector2(512, 512)
 layout_mode = 2
-texture = SubResource("Resource_muem4")
 
 [node name="Control" type="Control" parent="Panel/TabContainer/Screen/V"]
 layout_mode = 2
@@ -154,6 +148,7 @@ layout_mode = 2
 [node name="File" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
 item_count = 4
 item_0/text = "New"
+item_0/id = 0
 item_1/text = "Save"
 item_1/id = 1
 item_2/text = "Save as..."
@@ -168,6 +163,7 @@ item_3/id = 3
 [node name="Build" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
 item_count = 1
 item_0/text = "compile"
+item_0/id = 0
 
 [node name="EFiles" type="TabContainer" parent="Panel/TabContainer/Editor/V"]
 layout_mode = 2
@@ -211,7 +207,7 @@ script = ExtResource("7_8jmkd")
 script = ExtResource("8_jurei")
 
 [node name="comp_asm_zd" type="Node" parent="Panel/TabContainer/Editor/comp_build"]
-script = SubResource("Resource_dp3eg")
+script = ExtResource("8_dp3eg")
 
 [node name="window_debug" type="Window" parent="Panel/TabContainer/Editor"]
 title = "Debug"
@@ -271,7 +267,6 @@ script = ExtResource("19_a20q3")
 [connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_build" method="_on_comp_file_cur_efile_changed"]
 [connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_save" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_save_file_selected"]
 [connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_load" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_load_file_selected"]
-[connection signal="highlight_error" from="Panel/TabContainer/Editor/comp_build/comp_asm_zd" to="Panel/TabContainer/Editor/comp_build" method="_on_comp_asm_zd_highlight_error"]
 [connection signal="close_requested" from="Panel/TabContainer/Editor/window_debug" to="Panel/TabContainer/Editor/window_debug" method="hide"]
 [connection signal="set_highlight" from="Panel/TabContainer/Editor/window_debug/debug_panel" to="Panel/TabContainer/Editor/comp_build" method="_on_debug_panel_set_highlight"]
 [connection signal="pressed" from="Panel/btn_debugger" to="Panel/TabContainer/Editor/window_debug" method="show"]

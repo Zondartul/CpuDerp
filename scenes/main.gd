@@ -35,9 +35,9 @@ func _process(_delta):
 	update_cpu_error_led();
 
 func update_cpu_status_led():
-	if (n_CPU.regs[n_CPU.REG_CTRL] & n_CPU.BIT_PWR):
+	if (n_CPU.regs[n_CPU.ISA.REG_CTRL] & n_CPU.ISA.BIT_PWR):
 		n_led_status.color = Color.GREEN;
-	elif (n_CPU.regs[n_CPU.REG_CTRL] & n_CPU.BIT_STEP):
+	elif (n_CPU.regs[n_CPU.ISA.REG_CTRL] & n_CPU.ISA.BIT_STEP):
 		n_led_status.color = Color.YELLOW;
 	else:
 		n_led_status.color = Color.BLACK;

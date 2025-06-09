@@ -8,71 +8,8 @@ var debug_vm = false;
 var freq = 1000;
 var errcode = 0;
 signal cpu_step_done(cpu);
-# ----------------- instruction set -----------------
-var regnames = [
-	"NONE",
-	"EAX", "EBX", "ECX", "EDX",
-	"IP", 
-	"ESP", "ESZ", "ESS", "EBP",
-	"IVT", "IVS", "IRQ", 
-	"CTRL"
-];
-
-var ctrl_flags = [
-	"PWR",  #cpu is on
-	"STEP", #cpu should stop after 1 step
-	"IRS",  #interrupt is being serviced now
-	"CMP_L", #compare-less
-	"CMP_G", #compare-greater
-	"CMP_Z", #compare-zero
-	"IE", #interrupts enabled
-	#"JUMPED" #just performed a jmp/call/ret/int/intret instruction - do not increment IP
-];
-
-const BIT_PWR = (0b1 << 0);
-const BIT_STEP = (0b1 << 1);
-const BIT_IRS = (0b1 << 2);
-const BIT_CMP_L = (0b1 << 3);
-const BIT_CMP_G = (0b1 << 4);
-const BIT_CMP_Z = (0b1 << 5);
-const BIT_IE = (0b1 << 6);
-# option flags
-#     ---- adr mode ---
-# 0 - |  00 reg-reg, 001 reg-*reg, 10 *reg-reg, 11 *reg-*reg 
-# 1 - |   + immediate mode is added to src OR dest (before *)
-# 2 - 0: src += im; 1: dest += im;
-# 3 - 0: 8-bit data, 1: 32-bit data
-#     -----command-specific ---
-#      ---jmp------|-------shift---------|
-# 2 - | if-less    |-| 00 - zero-shift   |
-# 3 - | if-zero    |-| 01 - barrel-shift |
-# 4 - | if-greater |-| 10 - carry-shift  |
-#     -------------
-# 5 - | 
-# 6 - | 
-# 7 - |
-const BIT_DEREF1 = (0b1 << 0);
-const BIT_DEREF2 = (0b1 << 1);
-const BIT_IMDEST = (0b1 << 2);
-const BIT_SPEC_IFLESS = (0b1 << 0);
-const BIT_SPEC_IFZERO = (0b1 << 1);
-const BIT_SPEC_IFGREATER = (0b1 << 2);
-
-const REG_NONE = 0
-const REG_EAX = 1;
-const REG_EBX = 2;
-const REG_ECX = 3;
-const REG_EDX = 4;
-const REG_IP = 5;
-const REG_ESP = 6;
-const REG_ESZ = 7;
-const REG_ESS = 8;
-const REG_EBP = 9;
-const REG_IVT = 10;
-const REG_IVS = 11;
-const REG_IRQ = 12;
-const REG_CTRL = 13;
-const N_REGS = REG_CTRL;
+# for instruction set, preload the language
+const ISA = preload("res://lang_zvm.gd")
 
 # error codes
 const ERR_NONE = 0;
@@ -92,52 +29,6 @@ var regs:PackedInt32Array;
 # idea: use pad as checksum. if checksum doesn't match, it's data.
 const cmd_size = 8;
 
-var opcodes = {
-	#---- general ---
-	0: "HALT",
-	1: "RESET",
-	#---- control ---
-	2: "JMP", #[op][cond][arg]
-	3: "CALL",
-	4: "RET",
-	5: "CMP",
-	#---- interrupt ---
-	6: "INT",
-	7: "INTRET",
-	#---- memory ----
-	8: "MOV",
-	9: "PUSH",
-	10: "POP",
-	#---- ALU arithmetic ---
-	11: "ADD",
-	12: "SUB",
-	13: "MUL",
-	14: "DIV",
-	15: "MOD",
-	16: "ABS",
-	17: "NEG",
-	18: "INC",
-	19: "DEC",
-	#---- ALU logic
-	20: "AND",
-	21: "OR",
-	22: "XOR",
-	23: "NOT",
-	#---- ALU bitwise
-	24: "BAND",
-	25: "BOR",
-	26: "BXOR",
-	27: "BNOT",  
-	28: "SHIFT", #opts: barrel y/n, carry set/get, left/right
-	29: "BSET",   # set bit N = 1
-	30: "BGET",   # get bit N (to dest and to cmp is-zero)
-	31: "BCLEAR", # clear bit N = 0
-	#---- generic
-	32: "NOP",
-	#-: "#DB",     # insert data here
-	#-: "#ALLOC",  # insert N empty bytes
-	#-: "#WP",     # set write pointer   
-};
 
 
 signal on_cpu_error(new_errcode);
@@ -155,10 +46,10 @@ func cpu_assert(cond, code:int, msg:String):
 
 func set_on(on):
 	if on:
-		regs[REG_CTRL] |= BIT_PWR;
+		regs[ISA.REG_CTRL] |= ISA.BIT_PWR;
 		if(debug_vm):print("cpu turned on");
 	else:
-		regs[REG_CTRL] &= ~BIT_PWR;
+		regs[ISA.REG_CTRL] &= ~ISA.BIT_PWR;
 		if(debug_vm):print("cpu turned off");
 
 func reset():
@@ -195,8 +86,8 @@ func getBit(Byte:int, bit:int):
 func clearBit(Byte, bit): setBit(Byte, bit, 0);
 
 func fetchByte():
-	var byte = read8(regs[REG_IP]); #Bus.readCell(regs[REG_IP]);
-	regs[REG_IP] += 1;
+	var byte = read8(regs[ISA.REG_IP]); #Bus.readCell(regs[REG_IP]);
+	regs[ISA.REG_IP] += 1;
 	return byte;
 
 var bus_setting = [];
@@ -232,14 +123,14 @@ func decodeCmd(cmd:PackedByteArray):
 	var is_32bit = flags & (0b1 << 3);
 	var spec_flags = (flags >> 4) & 0b111;
 	
-	if not (cpu_assert(op in range(opcodes.size()), ERR_EXEC_DATA,"trying to execute data")
-	and cpu_assert(reg1 in range(regnames.size()), ERR_BAD_OP, "dest-register index out of bounds ("+str(reg1)+")") 
-	and cpu_assert(reg2 in range(regnames.size()), ERR_BAD_OP, "src-register index out of bounds ("+str(reg2)+")")):
+	if not (cpu_assert(op in range(ISA.opcodes.size()), ERR_EXEC_DATA,"trying to execute data")
+	and cpu_assert(reg1 in range(ISA.regnames.size()), ERR_BAD_OP, "dest-register index out of bounds ("+str(reg1)+")") 
+	and cpu_assert(reg2 in range(ISA.regnames.size()), ERR_BAD_OP, "src-register index out of bounds ("+str(reg2)+")")):
 		return false;
 	
-	var regname1 = regnames[reg1];
-	var regname2 = regnames[reg2];
-	var opname = opcodes[op];
+	var regname1 = ISA.regnames[reg1];
+	var regname2 = ISA.regnames[reg2];
+	var opname = ISA.opcodes[op];
 	
 	var decoded = {
 		"op_num": op,
@@ -334,9 +225,9 @@ func check_jmp_cond(cmd):
 	var need_l = cmd.flags.special & (0b1 << 0);
 	var need_e = cmd.flags.special & (0b1 << 1);
 	var need_g = cmd.flags.special & (0b1 << 2);
-	var has_l = regs[REG_CTRL] & BIT_CMP_L;
-	var has_e = regs[REG_CTRL] & BIT_CMP_Z;
-	var has_g = regs[REG_CTRL] & BIT_CMP_G;
+	var has_l = regs[ISA.REG_CTRL] & ISA.BIT_CMP_L;
+	var has_e = regs[ISA.REG_CTRL] & ISA.BIT_CMP_Z;
+	var has_g = regs[ISA.REG_CTRL] & ISA.BIT_CMP_G;
 	if(debug_vm):print("(jmp cond: need_l "+str(need_l)+", need_e "+str(need_e)+", need_g "+str(need_g)+")");
 	if(debug_vm):print("has_l "+str(has_l)+", has_e "+str(has_e)+", has_g "+str(has_g));
 	
@@ -430,19 +321,19 @@ func write32(adr, val):
 		write8(adr+i, buff[i]);
 
 func push8(val):
-	if(regs[REG_ESP] <= regs[REG_ESS]): 
+	if(regs[ISA.REG_ESP] <= regs[ISA.REG_ESS]): 
 		error_overflow();
 	else:
-		write8(regs[REG_ESP], val); #Bus.writeCell(regs[REG_ESP], val);
-		regs[REG_ESP] -= 1;
+		write8(regs[ISA.REG_ESP], val); #Bus.writeCell(regs[REG_ESP], val);
+		regs[ISA.REG_ESP] -= 1;
 
 func pop8():
-	if(regs[REG_ESP] >= regs[REG_ESZ]):
+	if(regs[ISA.REG_ESP] >= regs[ISA.REG_ESZ]):
 		error_underflow();
 		return 0;
 	else:
-		regs[REG_ESP] += 1;
-		var val = Bus.readCell(regs[REG_ESP]);
+		regs[ISA.REG_ESP] += 1;
+		var val = Bus.readCell(regs[ISA.REG_ESP]);
 		return val;
 
 func push_all(): for i in range(1, regs.size()): push(regs[i]);
@@ -450,17 +341,17 @@ func pop_all(): for i in range(1, regs.size()): regs[i] = pop();
 
 func _call(new_ip):
 	if(debug_vm):print("calling ("+str(new_ip)+")");
-	push(regs[REG_IP]);
-	push(regs[REG_EBP]);
-	regs[REG_EBP] = regs[REG_ESP];
-	regs[REG_IP] = new_ip;
+	push(regs[ISA.REG_IP]);
+	push(regs[ISA.REG_EBP]);
+	regs[ISA.REG_EBP] = regs[ISA.REG_ESP];
+	regs[ISA.REG_IP] = new_ip;
 
 func _ret(): 
-	regs[REG_ESP] = regs[REG_EBP];
-	regs[REG_EBP] = pop();
-	regs[REG_IP] = pop(); 
+	regs[ISA.REG_ESP] = regs[ISA.REG_EBP];
+	regs[ISA.REG_EBP] = pop();
+	regs[ISA.REG_IP] = pop(); 
 
-func halt(): regs[REG_CTRL] &= ~BIT_PWR;
+func halt(): regs[ISA.REG_CTRL] &= ~ISA.BIT_PWR;
 
 func cmd_halt(_cmd): 
 	if(debug_vm):print("CPU halted.");
@@ -470,7 +361,7 @@ func cmd_jmp(cmd):
 	var dest = fetch_dest(cmd); 
 	var cond = check_jmp_cond(cmd);
 	if(cond): 
-		regs[REG_IP] = dest;
+		regs[ISA.REG_IP] = dest;
 	if(debug_vm):print("[JMP to "+str(dest)+", cond "+str(cond)+"]")
 func cmd_call(cmd): 
 	var dest = fetch_dest(cmd);
@@ -484,18 +375,18 @@ func cmd_cmp(cmd):
 	var is_G = int(A > B);
 	if(debug_vm):print("cmd cmp("+str(A)+" v "+str(B)+"): l"+str(is_L)+" e"+str(is_E)+" g"+str(is_G));
 	
-	regs[REG_CTRL] &= ~(BIT_CMP_L | BIT_CMP_Z | BIT_CMP_G);
-	if is_L: regs[REG_CTRL] |= BIT_CMP_L;
-	if is_E: regs[REG_CTRL] |= BIT_CMP_Z;
-	if is_G: regs[REG_CTRL] |= BIT_CMP_G;
+	regs[ISA.REG_CTRL] &= ~(ISA.BIT_CMP_L | ISA.BIT_CMP_Z | ISA.BIT_CMP_G);
+	if is_L: regs[ISA.REG_CTRL] |= ISA.BIT_CMP_L;
+	if is_E: regs[ISA.REG_CTRL] |= ISA.BIT_CMP_Z;
+	if is_G: regs[ISA.REG_CTRL] |= ISA.BIT_CMP_G;
 	
 func cmd_int(cmd):
 	var int_num = fetch_src(cmd);
-	if( not (regs[REG_CTRL] & BIT_IE)): return; #interrupts disabled
-	if(regs[REG_CTRL] & BIT_IRS): return; # already in interrupt
-	regs[REG_IRQ] = int_num; # interrupt will be serviced next step
+	if( not (regs[ISA.REG_CTRL] & ISA.BIT_IE)): return; #interrupts disabled
+	if(regs[ISA.REG_CTRL] & ISA.BIT_IRS): return; # already in interrupt
+	regs[ISA.REG_IRQ] = int_num; # interrupt will be serviced next step
 func cmd_intret(_cmd):
-	regs[REG_CTRL] &= ~BIT_IRS;
+	regs[ISA.REG_CTRL] &= ~ISA.BIT_IRS;
 	_ret();
 	pop_all();
 func cmd_mov(cmd):
@@ -687,29 +578,29 @@ const IVT_entry_size = 1;
 func service_interrupt():
 	# flag it that we are currently servicing an interrupt
 	# and therefore there is no need to jump into other interrupts
-	regs[REG_CTRL] |= BIT_IRS;
-	var int_num = regs[REG_IRQ];
+	regs[ISA.REG_CTRL] |= ISA.BIT_IRS;
+	var int_num = regs[ISA.REG_IRQ];
 	#built-in interrupts:
 	# int 0 - halt
 	# int 1 - reset
 	if(int_num == 0): halt(); return;
 	if(int_num == 1): reset(); return;
 	#user interrupts:
-	if(regs[REG_IRQ] >= regs[REG_IVS]): error_interrupt_oor(); # interrupt index out of range
-	var IV_addr = regs[REG_IVT] + int_num * IVT_entry_size;
+	if(regs[ISA.REG_IRQ] >= regs[ISA.REG_IVS]): error_interrupt_oor(); # interrupt index out of range
+	var IV_addr = regs[ISA.REG_IVT] + int_num * IVT_entry_size;
 	push_all();
 	call(IV_addr);
 	
 	
 func step():
-	if(regs[REG_IRQ] and not (regs[REG_CTRL] & BIT_IRS)):
+	if(regs[ISA.REG_IRQ] and not (regs[ISA.REG_CTRL] & ISA.BIT_IRS)):
 		service_interrupt();
 	var cmd = fetchCmd();
 	var decode = decodeCmd(cmd);
 	if not decode: return;
 	run_single_command(decode);
-	if(regs[REG_CTRL] & BIT_STEP):
-		regs[REG_CTRL] &= ~BIT_PWR;
+	if(regs[ISA.REG_CTRL] & ISA.BIT_STEP):
+		regs[ISA.REG_CTRL] &= ~ISA.BIT_PWR;
 	cpu_step_done.emit(self);
 
 func setup(dict:Dictionary):
@@ -726,5 +617,5 @@ func _ready():
 func _process(delta):
 	var n_per_tick = int(freq*delta);
 	for i in range(n_per_tick):
-		if(regs[REG_CTRL] & BIT_PWR):
+		if(regs[ISA.REG_CTRL] & ISA.BIT_PWR):
 			step();
