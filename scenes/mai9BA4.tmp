@@ -1,0 +1,189 @@
+[gd_scene load_steps=11 format=3 uid="uid://cfii8rrppxgqq"]
+
+[ext_resource type="Texture2D" uid="uid://hwt08gf4iq4w" path="res://res/tex/d45b53c08165420d3a1a00bed085e299aaec6bc6.png" id="1_4ynat"]
+[ext_resource type="Script" path="res://scenes/main.gd" id="1_ggytm"]
+[ext_resource type="Script" path="res://scenes/Editor.gd" id="3_6wt7m"]
+[ext_resource type="Script" path="res://scenes/VM.gd" id="3_m68nv"]
+[ext_resource type="PackedScene" uid="uid://cmb3hamipl46" path="res://editor/cd_save_discard.tscn" id="4_inoj7"]
+[ext_resource type="Script" path="res://scenes/GPU_cs.gd" id="4_yy5uk"]
+[ext_resource type="PackedScene" uid="uid://ev46am1blkcl" path="res://scenes/gpu_scene.tscn" id="5_5bfjd"]
+[ext_resource type="Script" path="res://scenes/KB.gd" id="6_jv3qg"]
+[ext_resource type="Script" path="res://scenes/CPU_vm.gd" id="7_p2205"]
+
+[sub_resource type="SystemFont" id="SystemFont_30trl"]
+font_names = PackedStringArray("Courier New")
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ggytm")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TabContainer" type="TabContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+current_tab = 2
+
+[node name="Screen" type="Control" parent="Panel/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="V" type="VBoxContainer" parent="Panel/TabContainer/Screen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="TextureRect" parent="Panel/TabContainer/Screen/V"]
+custom_minimum_size = Vector2(512, 512)
+layout_mode = 2
+texture = ExtResource("1_4ynat")
+
+[node name="Control" type="Control" parent="Panel/TabContainer/Screen/V"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GridContainer" type="GridContainer" parent="Panel/TabContainer/Screen/V/Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+columns = 4
+
+[node name="cbOn" type="CheckButton" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
+layout_mode = 2
+text = "On"
+
+[node name="cr_led_on" type="ColorRect" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+color = Color(0.168627, 0.168627, 0.168627, 1)
+
+[node name="status" type="Label" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.392157, 0.392157, 0.392157, 1)
+text = "status"
+
+[node name="btnKeyboard" type="Button" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Keyboard"
+
+[node name="btnReset" type="Button" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
+layout_mode = 2
+text = "Reset"
+
+[node name="cr_led_error" type="ColorRect" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+color = Color(0.196078, 0.196078, 0.196078, 1)
+
+[node name="error" type="Label" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.364706, 0.364706, 0.364706, 1)
+text = "error"
+
+[node name="Memory" type="Control" parent="Panel/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="Editor" type="Control" parent="Panel/TabContainer"]
+layout_mode = 2
+script = ExtResource("3_6wt7m")
+
+[node name="V" type="VBoxContainer" parent="Panel/TabContainer/Editor"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MenuBar" type="MenuBar" parent="Panel/TabContainer/Editor/V"]
+layout_mode = 2
+
+[node name="File" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
+item_count = 4
+item_0/text = "New"
+item_0/id = 0
+item_1/text = "Save"
+item_1/id = 1
+item_2/text = "Save as..."
+item_2/id = 2
+item_3/text = "Load"
+item_3/id = 3
+
+[node name="View" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
+
+[node name="Language" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
+
+[node name="EFiles" type="TabContainer" parent="Panel/TabContainer/Editor/V"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="fd_save" type="FileDialog" parent="Panel/TabContainer/Editor"]
+initial_position = 2
+size = Vector2i(400, 400)
+access = 1
+root_subfolder = "CpuDerp"
+
+[node name="fd_load" type="FileDialog" parent="Panel/TabContainer/Editor"]
+title = "Open a File"
+initial_position = 2
+size = Vector2i(400, 400)
+ok_button_text = "Open"
+file_mode = 0
+access = 1
+
+[node name="cd_save_discard" parent="Panel/TabContainer/Editor" instance=ExtResource("4_inoj7")]
+visible = false
+
+[node name="VM" type="Node" parent="."]
+script = ExtResource("3_m68nv")
+
+[node name="Bus" type="Node" parent="VM"]
+
+[node name="RAM_64k" type="Node" parent="VM/Bus"]
+
+[node name="GPU_cs" type="Node" parent="VM/Bus"]
+script = ExtResource("4_yy5uk")
+font = SubResource("SystemFont_30trl")
+
+[node name="SubViewport" type="SubViewport" parent="VM/Bus/GPU_cs"]
+render_target_update_mode = 0
+
+[node name="GPU_scene" parent="VM/Bus/GPU_cs/SubViewport" instance=ExtResource("5_5bfjd")]
+
+[node name="KB" type="Node" parent="VM/Bus"]
+script = ExtResource("6_jv3qg")
+
+[node name="CPU_vm" type="Node" parent="VM"]
+script = ExtResource("7_p2205")
+
+[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/File" to="Panel/TabContainer/Editor" method="_on_file_index_pressed"]
+[connection signal="tab_changed" from="Panel/TabContainer/Editor/V/EFiles" to="Panel/TabContainer/Editor" method="_on_e_files_tab_changed"]
+[connection signal="file_selected" from="Panel/TabContainer/Editor/fd_save" to="Panel/TabContainer/Editor" method="_on_fd_save_file_selected"]
+[connection signal="file_selected" from="Panel/TabContainer/Editor/fd_load" to="Panel/TabContainer/Editor" method="_on_fd_load_file_selected"]

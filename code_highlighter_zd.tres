@@ -1,0 +1,9 @@
+[gd_resource type="CodeHighlighter" format=3 uid="uid://bwan1bn5pvr40"]
+
+[resource]
+number_color = Color(1, 0, 0, 1)
+symbol_color = Color(1, 0.8, 0, 1)
+function_color = Color(0.207843, 0.435294, 1, 1)
+keyword_colors = {
+"mov": Color(0.623529, 0.2, 1, 1)
+}

@@ -1,0 +1,43 @@
+[gd_scene load_steps=2 format=3 uid="uid://cmb3hamipl46"]
+
+[ext_resource type="Script" uid="uid://bumekrw47q1tm" path="res://editor/cd_save_discard.gd" id="1_trgwr"]
+
+[node name="cd_save_discard" type="Popup"]
+title = "File not saved"
+size = Vector2i(266, 100)
+visible = true
+script = ExtResource("1_trgwr")
+
+[node name="V" type="VBoxContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="V"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "File <name> has unsaved changes."
+vertical_alignment = 1
+
+[node name="H" type="HBoxContainer" parent="V"]
+layout_mode = 2
+alignment = 1
+
+[node name="btn_save" type="Button" parent="V/H"]
+layout_mode = 2
+text = "Save"
+
+[node name="btn_discard" type="Button" parent="V/H"]
+layout_mode = 2
+text = "Discard"
+
+[node name="btn_cancel" type="Button" parent="V/H"]
+layout_mode = 2
+text = "Cancel"
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="pressed" from="V/H/btn_save" to="." method="_on_btn_save_pressed"]
+[connection signal="pressed" from="V/H/btn_discard" to="." method="_on_btn_discard_pressed"]
+[connection signal="pressed" from="V/H/btn_cancel" to="." method="_on_btn_cancel_pressed"]

@@ -1,0 +1,107 @@
+[gd_scene load_steps=10 format=3 uid="uid://dg8o8urks7l22"]
+
+[ext_resource type="Script" uid="uid://oodpp66xpni2" path="res://debug_panel.gd" id="1_16avt"]
+[ext_resource type="Texture2D" uid="uid://ctxp8jsxllqys" path="res://res/icons/control-play-blue-icon.png" id="2_xr3ei"]
+[ext_resource type="Texture2D" uid="uid://c05t6g4qlhqko" path="res://res/icons/control-pause-blue-icon.png" id="3_0m0rc"]
+[ext_resource type="Texture2D" uid="uid://c5qsa4ersc7ps" path="res://res/icons/control-stop-blue-icon.png" id="4_hxmj2"]
+[ext_resource type="Texture2D" uid="uid://nssblgoyi2wy" path="res://res/icons/control-end-blue-icon.png" id="5_702yq"]
+[ext_resource type="Texture2D" uid="uid://ds0ls3t40sb1k" path="res://res/icons/arrow-undo-icon.png" id="6_gvcux"]
+[ext_resource type="Texture2D" uid="uid://dttfb6js1e0dy" path="res://res/icons/arrow-down-icon.png" id="7_4kryu"]
+[ext_resource type="Texture2D" uid="uid://dbr5py0b8o4vo" path="res://res/icons/arrow-up-icon.png" id="8_nxosy"]
+[ext_resource type="Texture2D" uid="uid://dbkxwlrkhodfm" path="res://res/icons/arrow-right-icon.png" id="9_qp3qd"]
+
+[node name="debug_panel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_16avt")
+
+[node name="V" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="lbl_0" type="Label" parent="V"]
+layout_mode = 2
+text = "Registers"
+
+[node name="reg_view" type="ItemList" parent="V"]
+layout_mode = 2
+size_flags_vertical = 3
+max_columns = 8
+same_column_width = true
+
+[node name="lbl_1" type="Label" parent="V"]
+layout_mode = 2
+text = "Stack"
+
+[node name="stack_view" type="ItemList" parent="V"]
+layout_mode = 2
+size_flags_vertical = 3
+same_column_width = true
+
+[node name="lbl_line" type="Label" parent="V"]
+layout_mode = 2
+text = "cur line: 0"
+
+[node name="lbl_2" type="Label" parent="V"]
+layout_mode = 2
+text = "controls"
+
+[node name="H" type="HBoxContainer" parent="V"]
+layout_mode = 2
+
+[node name="btn_run" type="Button" parent="V/H"]
+layout_mode = 2
+tooltip_text = "Run"
+icon = ExtResource("2_xr3ei")
+
+[node name="btn_pause" type="Button" parent="V/H"]
+layout_mode = 2
+tooltip_text = "Pause"
+icon = ExtResource("3_0m0rc")
+
+[node name="btn_stop" type="Button" parent="V/H"]
+layout_mode = 2
+tooltip_text = "Stop"
+icon = ExtResource("4_hxmj2")
+
+[node name="btn_step" type="Button" parent="V/H"]
+layout_mode = 2
+tooltip_text = "Step"
+icon = ExtResource("5_702yq")
+
+[node name="btn_next_line" type="Button" parent="V/H"]
+layout_mode = 2
+tooltip_text = "Next Line"
+icon = ExtResource("6_gvcux")
+
+[node name="btn_step_in" type="Button" parent="V/H"]
+layout_mode = 2
+tooltip_text = "Step In"
+icon = ExtResource("7_4kryu")
+
+[node name="btn_step_out" type="Button" parent="V/H"]
+layout_mode = 2
+tooltip_text = "Step out"
+icon = ExtResource("8_nxosy")
+
+[node name="btn_run_to_line" type="Button" parent="V/H"]
+layout_mode = 2
+tooltip_text = "Run to"
+icon = ExtResource("9_qp3qd")
+
+[connection signal="pressed" from="V/H/btn_run" to="." method="_on_btn_run_pressed"]
+[connection signal="pressed" from="V/H/btn_pause" to="." method="_on_btn_pause_pressed"]
+[connection signal="pressed" from="V/H/btn_stop" to="." method="_on_btn_stop_pressed"]
+[connection signal="pressed" from="V/H/btn_step" to="." method="_on_btn_step_pressed"]
+[connection signal="pressed" from="V/H/btn_next_line" to="." method="_on_btn_next_line_pressed"]
+[connection signal="pressed" from="V/H/btn_step_in" to="." method="_on_btn_step_in_pressed"]
+[connection signal="pressed" from="V/H/btn_step_out" to="." method="_on_btn_step_out_pressed"]
+[connection signal="pressed" from="V/H/btn_run_to_line" to="." method="_on_btn_run_to_line_pressed"]

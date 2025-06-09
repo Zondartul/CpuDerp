@@ -1,0 +1,46 @@
+[gd_scene load_steps=3 format=3 uid="uid://ev46am1blkcl"]
+
+[ext_resource type="Script" uid="uid://m4s7ceivsbp8" path="res://scenes/tile_text.gd" id="1_dxldo"]
+
+[sub_resource type="SystemFont" id="SystemFont_3gllt"]
+font_names = PackedStringArray("Courier New")
+subpixel_positioning = 0
+
+[node name="GPU_scene" type="Control"]
+custom_minimum_size = Vector2(512, 512)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0627451, 0.0627451, 0.0627451, 1)
+
+[node name="tile_text" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_dxldo")
+
+[node name="scr_text" type="Label" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = SubResource("SystemFont_3gllt")
+text = "
+            test tile text
+hello from tile text
+aa"
