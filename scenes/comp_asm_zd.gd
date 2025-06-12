@@ -14,6 +14,9 @@ var cur_line = "";
 var cur_line_idx = 0;
 var error_code;
 
+#debug info
+var op_locations = []
+
 func assemble(source:String):
 	error_code = null;
 	var lines = source.split("\n",false);
@@ -29,6 +32,10 @@ func assemble(source:String):
 	chunk = link_internally(chunk);
 	var unlinked = len(chunk["refs"]);
 	if unlinked: push_error("Unlinked references remain (count "+str(unlinked)+")")
+	print("Assembly done");
+	print("stats: ")
+	print("    "+str(len(chunk["code"]))+" bytes")
+	print("    "+str(len(chunk["labels"]))+" labels")
 	return chunk;
 
 func point_out_error(msg, line_text, line_idx, char_idx):
@@ -76,7 +83,7 @@ func link_internally(chunk):
 			patch_ref(code_out, ref, lbl_pos);
 		else:
 			refs_remain[ref] = lbl_name;
-	var out_chunk = {"code":code_out, "labels":labels.duplicate(), "refs":refs_remain}
+	var out_chunk = {"code":code_out, "labels":in_labels.duplicate(), "refs":refs_remain}
 	return out_chunk;
 	 
 ## modifies the code in-place to alter a command's offset to a given value.
@@ -144,7 +151,7 @@ class Cmd_flags:
 # ---------- Basic preprocess ---------------------------------
 # preprocess the line: remove comments, trim whitespace, etc
 func preproc(line:String)->String:
-	var line_old = line;
+	#var line_old = line;
 	line = remove_comments(line);
 	line = trim_spaces(line);
 	#print("preproc: before ["+line_old+"] -> after ["+line+"]")
@@ -291,6 +298,7 @@ func parse_label(iter):
 	else: return false;
 
 func parse_db(iter):
+	var old_iter = iter.duplicate();
 	if match_tokens(iter, ["\\db"]):
 		var items = [];
 		while iter[1] != len(iter[0]):
@@ -305,12 +313,23 @@ func parse_db(iter):
 			match_tokens(iter, ["\\,"]);
 			if match_tokens(iter, ["\\;"]):
 				break;
+		record_op_position(old_iter, iter);
 		emit_db_items(items);
+		#add debug info for this instuction
 		print("Parsed DB (count "+str(len(items))+")");
 		return true;
 	else: return false;
 
+func record_op_position(old_iter, iter):
+	var tok_first = old_iter[0][old_iter[1]];
+	var tok_last = iter[0][iter[1]-1];
+	var begin_col = tok_first["col"];
+	var end_col = tok_last["col"]+len(tok_last["text"]);
+	var op = {"ip":write_pos,"filename":cur_filename, "line":cur_line_idx, "begin":begin_col, "end":end_col};
+	op_locations.append(op);
+
 func parse_command(iter):
+	var old_iter = iter.duplicate();
 	var toks = [];
 	if match_tokens(iter, ["WORD"],toks):
 		var op_name = str(toks[0]["text"]).to_upper();
@@ -319,7 +338,7 @@ func parse_command(iter):
 		if op_name in ISA.spec_ops:
 			var spec_op = ISA.spec_ops[op_name];
 			op_code = spec_op["op_code"];
-			flags.spec_flags = spec_op["flagas"];
+			flags.spec_flags = spec_op["flags"];
 		else:
 			op_code = ISA.opcodes.find_key(op_name);
 		if not op_code: 
@@ -329,14 +348,15 @@ func parse_command(iter):
 		var arg1:Cmd_arg = parse_arg(iter);
 		match_tokens(iter, ["\\,"]);
 		var arg2:Cmd_arg = parse_arg(iter);
+		match_tokens(iter, ["\\;"]); # optional semicolon
+		
 		# if argument is present: arg1/arg2 gets set
 		# if argument is not present: arg1/arg2 stays zero-ed
 		# if syntax error: parse_arg pushes an error.
 		flags.set_arg1(arg1);
 		flags.set_arg2(arg2);
+		record_op_position(old_iter, iter);
 		emit_opcode(op_code, flags, arg1.reg_idx, arg2.reg_idx, 0);
-		match_tokens(iter, ["\\;"]); # optional semicolon
-		var n_args = 0; 
 		print("Parsed ["+op_name+"("+str(int(arg1.is_present) + int(arg2.is_present))+")]")
 		return true;
 	else: return false;
@@ -345,7 +365,7 @@ func is_label(word:String):
 	return (not ISA.opcodes.find_key(word)) and (word not in ISA.spec_ops);
 
 func print_tokens(tokens):
-	var S:String
+	var S:String = "";
 	for tok in tokens:
 		S += tok["class"]+"("+tok["text"]+")"+"  ";
 	print(S);
