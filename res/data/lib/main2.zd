@@ -1,0 +1,54 @@
+call main;
+halt; reset;
+@bitwidth 32
+@include "lib/string.zd"
+@include "lib/libscreen.zd"
+str_1: db "Hello world.zd 1!",0;
+str_2: db "Done",0;
+
+main:
+	push.32 str_1;
+	call puts;
+	add esp, 4;
+
+	main_loop:
+		call has_key;
+		cmp eax, 1;
+		je main_then;
+		jmp main_else;
+		main_then:
+			call get_key;
+			push eax;
+			#push '['; call putch; add esp, 1;
+			pop eax;
+			push eax; call putch; add esp, 1;
+			#push ']'; call putch; add esp, 1;
+			jmp main_endif;
+		main_else:
+		main_endif:
+	jmp main_loop;
+	push.32 str_2;
+	call puts;
+	add esp, 4;
+ret;
+
+adr_kb: db 81648;
+
+has_key:
+	mov.32 eax, *adr_kb;
+	mov eax, *eax;
+	cmp eax, 0;
+	je has_key_0;
+	mov eax, 1;
+	ret;
+	has_key_0:
+	mov eax, 0;
+ret;
+
+get_key:
+	mov.32 ebx, *adr_kb;
+	mov eax, ebx[1];
+	mov ecx, 1;
+	mov ebx[0], ecx;
+ret;
+

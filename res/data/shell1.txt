@@ -1,0 +1,99 @@
+call main;
+halt;
+reset;
+adr_scr: db 67536; #65536;
+str_1: db "Hello World 2!", 0;
+str_done: db "done",0;
+str_test: db "<test>",0;
+var_printI: db 0;
+inp_buff: db "                                                                                   ",0;
+
+main:
+	call scr_clear;
+	#puts(str_1)
+	push.32 str_1; call puts; add esp, 4;
+	push.32 str_test; call puts; add esp, 4;
+	#for (i = 32, 128): putch(i)
+	push.32 32; push.32 128; push.32 print_test; call for_loop; add esp, 12;
+	push str_done; call puts; add esp, 1;
+	ret;
+
+str_scr_clear: db "                                                                              ", 0;
+
+scr_clear:
+	mov eax, 0; mov.32 *var_printI, eax;
+	push.32 str_scr_clear;
+	call puts; call puts; call puts;
+	add esp, 4;
+	mov eax, 0; mov.32 *var_printI, eax;
+ret;
+	
+
+print_test:
+	push str_test; call puts; add esp, 1;
+ret;
+
+# for(int i = from, i < to, i++): foo(i)
+for_loop:
+	mov.32 eax, ebp[17];   #arg1 = from
+	mov.32 ebx, ebp[13];   #arg2 = to
+	mov.32 ecx, ebp[9];     #arg3 = foo
+	loop_loop: cmp eax, ebx; je loop_loop_end;
+		#preserve eax, ebx, ecx
+		push eax; push ebx; push ecx;
+		# foo(i)
+		push eax; call ecx; pop eax;
+		#restore eax, ebx, ecx
+		pop ecx; pop ebx; pop eax;
+		inc eax;
+		jmp loop_loop;
+	loop_loop_end:
+ret;
+
+puts:
+	#char *str = arg1;
+	mov.32 eax, ebp[9]
+	#while(*str)
+	puts_loop:
+		cmp *eax, 0;
+		je puts_loop_end;
+		push eax;
+			#putch(*str);
+			push *eax;
+			call putch;
+			pop eax;
+		pop eax;
+		inc eax;
+		jmp puts_loop;
+	puts_loop_end:
+ret;
+
+putch:
+	mov.32 eax, *adr_scr;
+	# add current letter index
+	mov ecx, *var_printI;
+	mul ecx, 7;
+	add eax, ecx;
+	# --
+	mov ebx, ebp[9];
+	mov eax[0], ebx;
+	call set_color;
+	# increase letter index
+	inc *var_printI;
+ret
+
+set_color:
+	mov.32 eax, *adr_scr;
+	# add current letter index
+	mov ecx, *var_printI;
+	mul ecx, 7;
+	add eax, ecx;
+	# --
+	inc eax;
+	mov *eax, 255; inc eax;
+	mov *eax, 255; inc eax;
+	mov *eax, 255; inc eax;
+	mov *eax, 0; inc eax;
+	mov *eax, 0; inc eax;
+	mov *eax, 0; inc eax;
+ret;

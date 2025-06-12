@@ -68,9 +68,10 @@ func init_reg_view():
 	for reg in regnames:
 		n_regview.add_item(reg);
 		n_regview.add_item("");
+
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
-	pass
+#func _process(delta):
+#	pass
 
 func update_registers():
 	for i in range(regnames.size()):
@@ -168,7 +169,7 @@ func update_stack():
 		cur_ebp = prev_ebp;
 		cur_ip = prev_ip;
 
-func _on_cpu_vm_cpu_step_done(cpu):
+func _on_cpu_vm_cpu_step_done(_vm_cpu):
 	assert(is_setup);
 	if(cpu.regs[cpu.REG_CTRL] & cpu.BIT_STEP):
 		update_cpu();

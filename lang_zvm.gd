@@ -69,47 +69,59 @@ const N_REGS = REG_CTRL;
 
 const opcodes = {
 	#---- general ---
-	0: "HALT",
-	1: "RESET",
+	0: "NONE",
+	1: "HALT",
+	2: "RESET",
 	#---- control ---
-	2: "JMP", #[op][cond][arg]
-	3: "CALL",
-	4: "RET",
-	5: "CMP",
+	3: "JMP", #[op][cond][arg]
+	4: "CALL",
+	5: "RET",
+	6: "CMP",
 	#---- interrupt ---
-	6: "INT",
-	7: "INTRET",
+	7: "INT",
+	8: "INTRET",
 	#---- memory ----
-	8: "MOV",
-	9: "PUSH",
-	10: "POP",
+	9: "MOV",
+	10: "PUSH",
+	11: "POP",
 	#---- ALU arithmetic ---
-	11: "ADD",
-	12: "SUB",
-	13: "MUL",
-	14: "DIV",
-	15: "MOD",
-	16: "ABS",
-	17: "NEG",
-	18: "INC",
-	19: "DEC",
+	12: "ADD",
+	13: "SUB",
+	14: "MUL",
+	15: "DIV",
+	16: "MOD",
+	17: "ABS",
+	18: "NEG",
+	19: "INC",
+	20: "DEC",
 	#---- ALU logic
-	20: "AND",
-	21: "OR",
-	22: "XOR",
-	23: "NOT",
+	21: "AND",
+	22: "OR",
+	23: "XOR",
+	24: "NOT",
 	#---- ALU bitwise
-	24: "BAND",
-	25: "BOR",
-	26: "BXOR",
-	27: "BNOT",  
-	28: "SHIFT", #opts: barrel y/n, carry set/get, left/right
-	29: "BSET",   # set bit N = 1
-	30: "BGET",   # get bit N (to dest and to cmp is-zero)
-	31: "BCLEAR", # clear bit N = 0
+	25: "BAND",
+	26: "BOR",
+	27: "BXOR",
+	28: "BNOT",  
+	29: "SHIFT", #opts: barrel y/n, carry set/get, left/right
+	30: "BSET",   # set bit N = 1
+	31: "BGET",   # get bit N (to dest and to cmp is-zero)
+	32: "BCLEAR", # clear bit N = 0
 	#---- generic
-	32: "NOP",
+	33: "NOP",
 	#-: "#DB",     # insert data here
 	#-: "#ALLOC",  # insert N empty bytes
 	#-: "#WP",     # set write pointer   
+};
+
+const spec_ops = {
+	"JG": {"op_code":3, "flags":BIT_SPEC_IFGREATER},
+	"JL": {"op_code":3, "flags":BIT_SPEC_IFLESS},
+	"JE": {"op_code":3, "flags":BIT_SPEC_IFZERO},
+	"JZ": {"op_code":3, "flags":BIT_SPEC_IFZERO},
+	"JNZ": {"op_code":3, "flags":(BIT_SPEC_IFLESS | BIT_SPEC_IFGREATER)},
+	"JNE": {"op_code":3, "flags":(BIT_SPEC_IFLESS | BIT_SPEC_IFGREATER)},
+	"JNG": {"op_code":3, "flags":(BIT_SPEC_IFLESS | BIT_SPEC_IFZERO)},
+	"JNL": {"op_code":3, "flags":(BIT_SPEC_IFGREATER | BIT_SPEC_IFZERO)},
 };
