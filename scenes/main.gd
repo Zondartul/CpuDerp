@@ -72,7 +72,7 @@ func _on_btn_reset_pressed():
 	n_VM.reset();
 	n_led_error.color = Color.BLACK;
 
-func _on_cpu_vm_on_cpu_error(errcode):
+func _on_cpu_vm_on_cpu_error(_errcode):
 	update_cpu_error_led();
 
 

@@ -1,0 +1,54 @@
+adr_scr: db 67536;
+var_printI: db 0;
+
+str_scr_clear: db " .......................................................................", 0;
+
+scr_clear:
+	mov eax, 0; mov.32 *var_printI, eax;
+	mov eax, str_scr_clear;
+	mov ebx, str_1;
+	push.32 str_scr_clear;
+	call puts; call puts; call puts;
+	add esp, 4;
+	mov eax, 0; mov.32 *var_printI, eax;
+ret;
+
+puts:
+	#char *str = arg1;
+	#mov.32 eax, ebp[9]
+	mov.32 eax, ebp[9];
+	#while(*str)
+	puts_loop:
+		cmp *eax, 0;
+		je puts_loop_end;
+		push.32 eax;
+			#putch(*str);
+			push *eax;
+			call putch;
+			pop eax;
+		pop.32 eax;
+		inc eax;
+		jmp puts_loop;
+	puts_loop_end:
+ret;
+
+putch:
+	mov.32 eax, *adr_scr;
+	# add current letter index
+	mov.32 ecx, *var_printI;
+	mul ecx, 7;
+	add eax, ecx;
+	# --
+	mov ebx, ebp[9];
+	mov eax[0], ebx;
+	mov ebx, 255;
+	mov eax[1], ebx;
+	mov eax[2], ebx;
+	mov eax[3], ebx;
+	mov ebx, 0;
+	mov eax[4], ebx;
+	mov eax[5], ebx;
+	mov eax[6], ebx;
+	# increase letter index
+	inc.32 *var_printI;
+ret

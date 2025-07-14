@@ -1,4 +1,6 @@
 extends Control
+# Debug Panel
+const ISA = preload("res://lang_zvm.gd")
 
 @onready var n_regview = $V/reg_view;
 @onready var n_stackview = $V/stack_view;
@@ -40,7 +42,7 @@ const REG_IVS = 11;
 const REG_IRQ = 12;
 const REG_CTRL = 13;
 
-var cpu;
+var cpu:CPU_vm;
 var bus;
 var assembler;
 var efile;
@@ -68,9 +70,10 @@ func init_reg_view():
 	for reg in regnames:
 		n_regview.add_item(reg);
 		n_regview.add_item("");
+
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
-	pass
+#func _process(delta):
+#	pass
 
 func update_registers():
 	for i in range(regnames.size()):
@@ -89,7 +92,7 @@ func cache_op_locations():
 func update_ip_highlight():
 	if assembler and assembler.op_locations.size():
 		cache_op_locations();
-		var ip = cpu.regs[cpu.REG_IP];
+		var ip = cpu.regs[cpu.ISA.REG_IP];
 		var idx = op_ips.bsearch(ip, false)-1;
 		if(idx >= 0):
 			var op = op_locations[idx];
@@ -116,7 +119,7 @@ func read32r(adr):
 	
 # cpu bug? push/pull store LSB while mov stores MSB
 func custom_search(k_has, k_want):
-	print("k_has = ["+str(k_has)+"], k_want = ")
+	print("k_has = ["+str(k_has)+"], k_want = "+str(k_want))
 
 # we need to do a binary search among the values of a dictionary,
 # for that we need them sorted, so we make an inverse dictionary,
@@ -154,8 +157,8 @@ func update_stack():
 	n_stackview.add_item("IP");
 	n_stackview.add_item("EBP");
 	n_stackview.add_item("Function");
-	var cur_ebp = cpu.regs[cpu.REG_EBP];
-	var cur_ip = cpu.regs[cpu.REG_IP];
+	var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
+	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
 	for i in range(10):
 		n_stackview.add_item(str(cur_ip));
 		n_stackview.add_item(str(cur_ebp));
@@ -168,26 +171,26 @@ func update_stack():
 		cur_ebp = prev_ebp;
 		cur_ip = prev_ip;
 
-func _on_cpu_vm_cpu_step_done(cpu):
+func _on_cpu_vm_cpu_step_done(_vm_cpu):
 	assert(is_setup);
-	if(cpu.regs[cpu.REG_CTRL] & cpu.BIT_STEP):
+	if(cpu.regs[cpu.ISA.REG_CTRL] & cpu.ISA.BIT_STEP):
 		update_cpu();
 
 
 func _on_btn_run_pressed():
-	cpu.regs[REG_CTRL] &= ~BIT_STEP;
-	cpu.regs[REG_CTRL] |= BIT_PWR;
+	cpu.regs[cpu.ISA.REG_CTRL] &= ~cpu.ISA.BIT_STEP;
+	cpu.regs[cpu.ISA.REG_CTRL] |= cpu.ISA.BIT_PWR;
 	
 func _on_btn_pause_pressed():
-	cpu.regs[REG_CTRL] ^= BIT_PWR;
+	cpu.regs[cpu.ISA.REG_CTRL] ^= cpu.ISA.BIT_PWR;
 
 func _on_btn_stop_pressed():
-	cpu.regs[REG_CTRL] &= ~BIT_STEP;
+	cpu.regs[cpu.ISA.REG_CTRL] &= ~cpu.ISA.BIT_STEP;
 	cpu.reset();
 	update_cpu();
 
 func _on_btn_step_pressed():
-	cpu.regs[REG_CTRL] |= (BIT_STEP | BIT_PWR);
+	cpu.regs[cpu.ISA.REG_CTRL] |= (cpu.ISA.BIT_STEP | cpu.ISA.BIT_PWR);
 
 func _on_btn_next_line_pressed():
 	print("unimplemented");

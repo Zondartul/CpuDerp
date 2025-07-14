@@ -1,0 +1,88 @@
+call main;
+#call putch2;
+#call test;
+halt;
+adr_scr: db 67536; #65536;
+str_1: db "Hello World!", 0;
+str_2: db "ABCDEFG", 0;
+str_yn: db "NYE",0;
+var_printI: db 0;
+
+test:
+	call test2;
+	cmp eax, 0;
+	je.32 test_N;
+	jg.32 test_Y;
+	jmp.32 test_E;
+	test_N:
+		mov eax, str_yn;
+		push eax[0];
+		call.32 putch3;
+		jmp test_end;
+	test_Y:
+		mov eax, str_yn;
+		push eax[1];
+		call.32 putch3;
+		jmp test_end;
+	test_E:
+		mov eax, str_yn;
+		push eax[2];
+		call.32 putch3;
+		jmp test_end;
+	test_end:
+ret;
+
+test2:
+	mov eax, 1;
+ret;
+
+
+main:
+	mov.32 eax, str_1;
+	loop:
+		cmp *eax, 0;
+		je endloop;
+			push eax;
+
+			push *eax;
+			call putch3;
+			add esp,1;
+
+			pop eax;
+			inc eax;
+		jmp loop;
+	endloop:
+ret;
+
+
+putch3:
+	mov.32 eax, *adr_scr;
+	# add current letter index
+	mov ecx, *var_printI;
+	mul ecx, 7;
+	add eax, ecx;
+	# --
+	mov ebx, ebp[9];
+	mov eax[0], ebx;
+	call set_color;
+	# increase letter index
+	inc *var_printI;
+ret
+
+set_color:
+	mov.32 eax, *adr_scr;
+	# add current letter index
+	mov ecx, *var_printI;
+	mul ecx, 7;
+	add eax, ecx;
+	# --
+	inc eax;
+	mov *eax, 255; inc eax;
+	mov *eax, 255; inc eax;
+	mov *eax, 255; inc eax;
+	mov *eax, 0; inc eax;
+	mov *eax, 0; inc eax;
+	mov *eax, 0; inc eax;
+ret;
+
+	

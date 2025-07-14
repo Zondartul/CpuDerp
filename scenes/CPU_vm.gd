@@ -1,5 +1,5 @@
 extends Node
-
+class_name CPU_vm
 var Bus;
 #var GPU;
 #var KB;

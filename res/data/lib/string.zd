@@ -1,0 +1,57 @@
+itoa_buff: db "####.####.####",0;
+itoa_digits: db "0123456789",0;
+
+itoa:
+	mov.32 eax, ebp[9]; #int num = arg1
+	mov.32 edx, itoa_buff; #char* buff = &itoa_buff;
+	mov.32 ecx, itoa_digits; #char* pdigC = &itoa_digits;
+	itoa_loop:			# do...
+		mov ebx, eax;
+		mod ebx, 10;  # int digN = num % 10;
+		add ebx, ecx; # char* digN = digN + pdigC;
+		mov *edx, *ebx; # *buff = digits[digN]
+		inc edx; #buff++;
+		div eax, 10; # num = num / 10
+		cmp eax, 0;  #while(num)
+		jg itoa_loop;
+	mov *edx, 0;   #*buff = '\0';
+	mov.32 eax, itoa_buff; #return buff;
+	push.32 eax;
+	call str_rev;
+ret;
+
+#reverses a string
+str_rev:
+	mov.32 eax, ebp[9]; #eax: char* buff = arg1
+	push.32 eax;
+	call strlen; 				 #eax: int len = strlen(buff)
+	add esp, 4;
+	mov.32 ebx, ebp[9]  #ebx: char* buff = arg1
+	add eax, ebx;			 #eax: char* p = buff+len;
+	dec eax; # p == buff+(len-1)
+	str_rev_loop:
+		# condition
+		cmp eax, ebx;
+		jg str_rev_loop_yes; # while( p != buff)
+		jmp str_rev_loop_end;
+		str_rev_loop_yes:
+		# body
+		mov edx, *ebx;
+		mov *ebx, *eax;
+		mov *eax, edx;
+		inc ebx;
+		dec eax;
+	str_rev_loop_end:
+	mov.32 eax, ebp[9]; #return arg1;
+ret;
+
+#tells you the length of the string
+strlen:
+	mov.32 ebx, ebp[9];
+	mov eax, 0;
+	strlen_loop:
+	cmp *ebx, 0;
+	inc eax; inc ebx;
+	jg strlen_loop;
+	dec eax;
+ret;

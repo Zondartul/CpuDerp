@@ -3,7 +3,7 @@ extends Node
 @onready var n_assembler = $comp_asm_zd
 
 var cur_efile;
-
+var Memory;
 #var is_setup = false;
 
 # Called when the node enters the scene tree for the first time.
@@ -11,6 +11,8 @@ func _ready():
 	pass # Replace with function body.
 
 func setup(dict:Dictionary):
+	assert("memory" in dict);
+	Memory = dict["memory"];
 	for ch in get_children():
 		if "setup" in ch:
 			ch.setup(dict);
@@ -25,11 +27,29 @@ func setup(dict:Dictionary):
 func compile():
 	if cur_efile:
 		n_assembler.cur_path = cur_efile.path;
-		n_assembler.assemble(cur_efile.get_text());
+		var chunk = n_assembler.assemble(cur_efile.get_text());
+		if chunk:
+			assert("code" in chunk);
+			return chunk["code"];
+	return null;
+
+func upload(code):
+	Memory.clear()
+	var idx = 0;
+	# make sure all cells are initialized
+	for i in range(len(code)):
+		if not code[i]: code[i] = 0
+	# actually upload
+	for byte in code:
+		Memory.writeCell(idx, byte);
+		idx += 1;
+	print("Uploaded "+str(idx)+" bytes");
 
 func _on_build_index_pressed(index):
 	if index == 0: # "compile"
-		compile();
+		var code = compile();
+		if code: upload(code);
+		else: push_error("Code did not compile - not uploading")
 
 func _on_comp_file_cur_efile_changed(efile):
 	cur_efile = efile;

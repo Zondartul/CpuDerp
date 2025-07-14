@@ -1,0 +1,58 @@
+call.32 main;
+halt;
+adr_scr: db 67536;
+str_1: db "Hello World! 3", 0;
+var_printI: db 0;
+
+main:
+	push str_1;
+	call puts;
+ret;
+
+puts:
+	#char *str = arg1;
+	mov.32 eax, ebp[9]
+	#while(*str)
+	puts_loop:
+		cmp *eax, 0;
+		je puts_loop_end;
+		push eax;
+			#putch(*str);
+			push *eax;
+			call putch3;
+			pop eax;
+		pop eax;
+		inc eax;
+		jmp puts_loop;
+	puts_loop_end:
+ret;
+
+putch3:
+	mov.32 eax, *adr_scr;
+	# add current letter index
+	mov ecx, *var_printI;
+	mul ecx, 7;
+	add eax, ecx;
+	# --
+	mov ebx, ebp[9];
+	mov eax[0], ebx;
+	call set_color;
+	# increase letter index
+	inc *var_printI;
+ret
+
+set_color:
+	mov.32 eax, *adr_scr;
+	# add current letter index
+	mov ecx, *var_printI;
+	mul ecx, 7;
+	add eax, ecx;
+	# --
+	inc eax;
+	mov *eax, 255; inc eax;
+	mov *eax, 255; inc eax;
+	mov *eax, 255; inc eax;
+	mov *eax, 0; inc eax;
+	mov *eax, 0; inc eax;
+	mov *eax, 0; inc eax;
+ret;

@@ -3,8 +3,7 @@ extends Node
 var memory:PackedByteArray;
 
 func _ready():
-	memory = PackedByteArray();
-	memory.resize(65536);
+	reset();
 
 func getSize():
 	return memory.size();
@@ -23,3 +22,9 @@ func writeCell(cell:int, val:int):
 		return;
 	memory[cell] = val;
 	#print("ram: write("+str(cell)+") <- "+str(val));
+
+func clear(): reset();
+
+func reset():
+	memory = PackedByteArray();
+	memory.resize(65536);

@@ -1,0 +1,163 @@
+call.32 main;
+halt;
+reset;
+adr_scr: db 67536; #65536;
+str_1: db "Hello World 2!", 0;
+str_done: db "done",0;
+str_test: db "<test>",0;
+var_printI: db 0;
+inp_buff: db "                                                                                   ",0;
+
+main:
+	#call push_test;
+	#call scr_clear;
+	#puts(str_1)
+	#push.32 str_1; call.32 puts; add esp, 4;
+	#push.32 str_test; call puts; add esp, 4;
+	#for (i = 32, 128): putch(i)
+	push.32 32; push.32 128; push.32 print_test; call for_loop; add esp, 12;
+	push.32 str_done; call puts; add esp, 4;
+ret;
+
+#str_scr_clear: db "                                                                              ", 0;
+str_scr_clear: db " .......................................................................", 0;
+
+scr_clear:
+	mov eax, 0; mov.32 *var_printI, eax;
+	mov eax, str_scr_clear;
+	mov ebx, str_1;
+	push.32 str_scr_clear;
+	call puts; call puts; call puts;
+	add esp, 4;
+	mov eax, 0; mov.32 *var_printI, eax;
+ret;
+	
+itoa_buff: db "####.####.####",0;
+itoa_digits: db "0123456789",0;
+
+itoa:
+	mov.32 eax, ebp[9]; #int num = arg1
+	mov.32 edx, itoa_buff; #char* buff = &itoa_buff;
+	mov.32 ecx, itoa_digits; #char* pdigC = &itoa_digits;
+	itoa_loop:			# do...
+		mov ebx, eax;
+		mod ebx, 10;  # int digN = num % 10;
+		add ebx, ecx; # char* digN = digN + pdigC;
+		mov *edx, *ebx; # *buff = digits[digN]
+		inc edx; #buff++;
+		div eax, 10; # num = num / 10
+		cmp eax, 0;  #while(num)
+		jg itoa_loop;
+	mov *edx, 0;   #*buff = '\0';
+	mov.32 eax, itoa_buff; #return buff;
+	push.32 eax;
+	call str_rev;
+ret;
+
+#reverses a string
+str_rev:
+	mov.32 eax, ebp[9]; #eax: char* buff = arg1
+	push.32 eax;
+	call strlen; 				 #eax: int len = strlen(buff)
+	add esp, 4;
+	mov.32 ebx, ebp[9]  #ebx: char* buff = arg1
+	add eax, ebx;			 #eax: char* p = buff+len;
+	dec eax; # p == buff+(len-1)
+	str_rev_loop:
+		# condition
+		cmp eax, ebx;
+		jg str_rev_loop_yes; # while( p != buff)
+		jmp str_rev_loop_end;
+		str_rev_loop_yes:
+		# body
+		mov edx, *ebx;
+		mov *ebx, *eax;
+		mov *eax, edx;
+		inc ebx;
+		dec eax;
+	str_rev_loop_end:
+	mov.32 eax, ebp[9]; #return arg1;
+ret;
+
+#tells you the length of the string
+strlen:
+	mov.32 ebx, ebp[9];
+	mov eax, 0;
+	strlen_loop:
+	cmp *ebx, 0;
+	inc eax; inc ebx;
+	jg strlen_loop;
+	dec eax;
+ret;
+
+print_test:
+	push.32 ebp[9]; call itoa; add esp, 4;
+	push.32 eax; call puts; add esp, 4;		#puts(itoa(arg1))
+	push 32; call putch; add esp, 1;			# putch(' ');
+ret;
+
+# for(int i = from, i < to, i++): foo(i)
+for_loop:
+	mov.32 eax, ebp[17];   #arg1 = from
+	mov.32 ebx, ebp[13];   #arg2 = to
+	mov.32 ecx, ebp[9];     #arg3 = foo
+	loop_loop: cmp eax, ebx; je loop_loop_end;
+		#preserve eax, ebx, ecx
+		push.32 eax; push.32 ebx; push.32 ecx;
+		# foo(i)
+		push.32 eax; call ecx; pop.32 eax;
+		#restore eax, ebx, ecx
+		pop.32 ecx; pop.32 ebx; pop.32 eax;
+		inc eax;
+		jmp loop_loop;
+	loop_loop_end:
+ret;
+
+puts:
+	#char *str = arg1;
+	#mov.32 eax, ebp[9]
+	mov.32 eax, ebp[9];
+	#while(*str)
+	puts_loop:
+		cmp *eax, 0;
+		je puts_loop_end;
+		push.32 eax;
+			#putch(*str);
+			push *eax;
+			call putch;
+			pop eax;
+		pop.32 eax;
+		inc eax;
+		jmp puts_loop;
+	puts_loop_end:
+ret;
+
+putch:
+	mov.32 eax, *adr_scr;
+	# add current letter index
+	mov.32 ecx, *var_printI;
+	mul ecx, 7;
+	add eax, ecx;
+	# --
+	mov ebx, ebp[9];
+	mov eax[0], ebx;
+	call set_color;
+	# increase letter index
+	inc.32 *var_printI;
+ret
+
+set_color:
+	mov.32 eax, *adr_scr;
+	# add current letter index
+	mov.32 ecx, *var_printI;
+	mul ecx, 7;
+	add eax, ecx;
+	# --
+	inc eax;
+	mov *eax, 255; inc eax;
+	mov *eax, 255; inc eax;
+	mov *eax, 255; inc eax;
+	mov *eax, 0; inc eax;
+	mov *eax, 0; inc eax;
+	mov *eax, 0; inc eax;
+ret;
