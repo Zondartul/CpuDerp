@@ -29,14 +29,18 @@ func compile():
 		n_assembler.cur_path = cur_efile.path;
 		var chunk = n_assembler.assemble(cur_efile.get_text());
 		if chunk:
+			assert("code" in chunk);
 			return chunk["code"];
 	return null;
 
 func upload(code):
 	Memory.clear()
 	var idx = 0;
+	# make sure all cells are initialized
+	for i in range(len(code)):
+		if not code[i]: code[i] = 0
+	# actually upload
 	for byte in code:
-		if not byte: byte = 0;
 		Memory.writeCell(idx, byte);
 		idx += 1;
 	print("Uploaded "+str(idx)+" bytes");
@@ -45,6 +49,7 @@ func _on_build_index_pressed(index):
 	if index == 0: # "compile"
 		var code = compile();
 		if code: upload(code);
+		else: push_error("Code did not compile - not uploading")
 
 func _on_comp_file_cur_efile_changed(efile):
 	cur_efile = efile;

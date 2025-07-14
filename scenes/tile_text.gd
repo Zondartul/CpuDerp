@@ -73,7 +73,7 @@ func _init_tiles():
 	tiles = [];
 	tile_texts = [];
 	@warning_ignore("integer_division")
-	n_tiles_x = width/char_w;
+	n_tiles_x = width/char_w; #note: // is not available in GDScript
 	@warning_ignore("integer_division")
 	n_tiles_y = height/char_h;
 	var offset = Vector2i(width % char_w, height % char_h) / 2;

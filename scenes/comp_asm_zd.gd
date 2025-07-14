@@ -499,5 +499,6 @@ func emit_db_items(items:Array): #maybe we could use the .32 specifier with db t
 			emit8(0);
 		else:
 			push_error("unknown DB item");
-	write_pos += (cmd_size - (write_pos % cmd_size)); # pad until alignement is reached
+	if (write_pos % cmd_size): # if not aligned
+		write_pos += (cmd_size - (write_pos % cmd_size)); # pad until alignement is reached
 	assert(write_pos % cmd_size == 0);
