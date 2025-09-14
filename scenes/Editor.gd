@@ -30,3 +30,9 @@ func setup(dict:Dictionary):
 
 func switch_to_file(filename):
 	$comp_file.switch_to_file(filename);
+
+func print_console(text):
+	var console:TextEdit = $V/TE_console;
+	console.text += text + "\n";
+	#scroll to bottom
+	console.scroll_vertical = console.get_line_count()

@@ -4,6 +4,7 @@ extends Node
 
 var cur_efile;
 var Memory;
+var Editor;
 #var is_setup = false;
 
 # Called when the node enters the scene tree for the first time.
@@ -12,7 +13,9 @@ func _ready():
 
 func setup(dict:Dictionary):
 	assert("memory" in dict);
+	assert("editor" in dict);
 	Memory = dict["memory"];
+	Editor = dict["editor"];
 	for ch in get_children():
 		if "setup" in ch:
 			ch.setup(dict);
@@ -48,8 +51,13 @@ func upload(code):
 func _on_build_index_pressed(index):
 	if index == 0: # "compile"
 		var code = compile();
-		if code: upload(code);
-		else: push_error("Code did not compile - not uploading")
+		if code: 
+			Editor.print_console("Compiled successfully");
+			upload(code);
+			Editor.print_console("Code uploaded to memory");
+		else: 
+			Editor.print_console("Failed to compile");
+			push_error("Code did not compile - not uploading")
 
 func _on_comp_file_cur_efile_changed(efile):
 	cur_efile = efile;
