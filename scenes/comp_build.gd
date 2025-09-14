@@ -5,6 +5,7 @@ extends Node
 var cur_efile;
 var Memory;
 var Editor;
+var view_Memory;
 #var is_setup = false;
 
 # Called when the node enters the scene tree for the first time.
@@ -14,8 +15,10 @@ func _ready():
 func setup(dict:Dictionary):
 	assert("memory" in dict);
 	assert("editor" in dict);
+	assert("view_memory" in dict);
 	Memory = dict["memory"];
 	Editor = dict["editor"];
+	view_Memory = dict["view_memory"];
 	for ch in get_children():
 		if "setup" in ch:
 			ch.setup(dict);
@@ -38,6 +41,8 @@ func compile():
 
 func upload(code):
 	Memory.clear()
+	view_Memory.clear();
+	view_Memory.add_memory_region(0,len(code),"code");
 	var idx = 0;
 	# make sure all cells are initialized
 	for i in range(len(code)):

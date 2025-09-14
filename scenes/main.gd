@@ -11,6 +11,7 @@ extends Control
 @onready var n_led_status = $Panel/TabContainer/Screen/V/Control/GridContainer/cr_led_on
 @onready var n_Bus = $VM/Bus
 @onready var n_assembler = $Panel/TabContainer/Editor/comp_build/comp_asm_zd
+@onready var n_view_memory = $Panel/TabContainer/Memory
 
 var has_kb_capture = false;
 # Called when the node enters the scene tree for the first time.
@@ -24,9 +25,11 @@ func _ready():
 		"bus":n_Bus, 
 		"asm":n_assembler,
 		"editor":n_Editor,
+		"view_memory":n_view_memory,
 	};
 	n_VM.setup(dict);
 	n_Editor.setup(dict);
+	n_view_memory.setup(dict);
 	pass # Replace with function body.
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.

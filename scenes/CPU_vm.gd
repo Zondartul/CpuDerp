@@ -28,7 +28,7 @@ var regs:PackedInt32Array;
 #	  [cmd]	[ flags ][reg1|reg2][immediate u32][pad]
 # idea: use pad as checksum. if checksum doesn't match, it's data.
 const cmd_size = 8;
-
+var no_side_effects:bool = false; #set to true to use utility functions as pure
 
 
 signal on_cpu_error(new_errcode);
@@ -41,7 +41,7 @@ func cpu_error(code:int, msg:String):
 
 func cpu_assert(cond, code:int, msg:String):
 	var b = bool(cond);
-	if not b: cpu_error(code, msg);
+	if (not b) and not no_side_effects: cpu_error(code, msg);
 	return b;
 
 func set_on(on):
@@ -108,6 +108,16 @@ func fetchCmd():
 	for i in range(8): cmd.append(fetchByte())
 	dbg_pop_bus_dbg();
 	return PackedByteArray(cmd);
+
+func disasm_pure(cmd:PackedByteArray):
+	no_side_effects = true;
+	var decoded = decodeCmd(cmd);
+	if not decoded: 
+		no_side_effects = false;
+		return false;
+	var text = debug_disasm_cmd(decoded);
+	no_side_effects = false;
+	return text;
 
 func decodeCmd(cmd:PackedByteArray):
 	var op:int = cmd[0];

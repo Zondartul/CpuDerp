@@ -1,6 +1,7 @@
-[gd_scene load_steps=20 format=3 uid="uid://cfii8rrppxgqq"]
+[gd_scene load_steps=22 format=3 uid="uid://cfii8rrppxgqq"]
 
 [ext_resource type="Script" uid="uid://c4qakorwmu6dc" path="res://scenes/main.gd" id="1_ggytm"]
+[ext_resource type="Script" uid="uid://c44d4a042o542" path="res://scenes/Memory.gd" id="2_0ld40"]
 [ext_resource type="Script" uid="uid://dma5vy0j68ilt" path="res://scenes/Editor.gd" id="3_6wt7m"]
 [ext_resource type="Script" uid="uid://do2o7jy66djys" path="res://scenes/VM.gd" id="3_m68nv"]
 [ext_resource type="Script" uid="uid://befrtr2e0sjij" path="res://scenes/comp_file.gd" id="4_3f0fj"]
@@ -18,6 +19,9 @@
 [ext_resource type="Script" uid="uid://0em7edt5tnsg" path="res://scenes/Bus.gd" id="11_37vc5"]
 [ext_resource type="Texture2D" uid="uid://j2f1v3ps3264" path="res://res/icons/Bug-silk.png" id="11_nykja"]
 [ext_resource type="Script" uid="uid://b74jfmkseejoc" path="res://scenes/todo.gd" id="19_a20q3"]
+
+[sub_resource type="SystemFont" id="SystemFont_0ld40"]
+font_names = PackedStringArray("Consolas")
 
 [sub_resource type="SystemFont" id="SystemFont_30trl"]
 font_names = PackedStringArray("Courier New")
@@ -47,7 +51,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-current_tab = 2
+current_tab = 1
 
 [node name="Screen" type="Control" parent="Panel/TabContainer"]
 visible = false
@@ -125,11 +129,36 @@ value = 1000.0
 suffix = "Hz"
 
 [node name="Memory" type="Control" parent="Panel/TabContainer"]
-visible = false
 layout_mode = 2
+script = ExtResource("2_0ld40")
 metadata/_tab_index = 1
 
+[node name="BoxContainer" type="BoxContainer" parent="Panel/TabContainer/Memory"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="mem_map" type="ItemList" parent="Panel/TabContainer/Memory/BoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+max_text_lines = 2
+icon_mode = 0
+
+[node name="VSeparator" type="VSeparator" parent="Panel/TabContainer/Memory/BoxContainer"]
+layout_mode = 2
+
+[node name="TextEdit" type="TextEdit" parent="Panel/TabContainer/Memory/BoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 5.0
+theme_override_fonts/font = SubResource("SystemFont_0ld40")
+
 [node name="Editor" type="Control" parent="Panel/TabContainer"]
+visible = false
 layout_mode = 2
 script = ExtResource("3_6wt7m")
 metadata/_tab_index = 2
@@ -260,6 +289,7 @@ script = ExtResource("19_a20q3")
 [connection signal="toggled" from="Panel/TabContainer/Screen/V/Control/GridContainer/btnKeyboard" to="." method="_on_btn_keyboard_toggled"]
 [connection signal="pressed" from="Panel/TabContainer/Screen/V/Control/GridContainer/btnReset" to="." method="_on_btn_reset_pressed"]
 [connection signal="value_changed" from="Panel/TabContainer/Screen/V/Control/GridContainer/sb_freq" to="VM" method="_on_sb_freq_value_changed"]
+[connection signal="item_selected" from="Panel/TabContainer/Memory/BoxContainer/mem_map" to="Panel/TabContainer/Memory" method="_on_mem_map_item_selected"]
 [connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/File" to="Panel/TabContainer/Editor/comp_file" method="_on_file_index_pressed"]
 [connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Build" to="Panel/TabContainer/Editor/comp_build" method="_on_build_index_pressed"]
 [connection signal="tab_changed" from="Panel/TabContainer/Editor/V/EFiles" to="Panel/TabContainer/Editor/comp_file" method="_on_e_files_tab_changed"]
