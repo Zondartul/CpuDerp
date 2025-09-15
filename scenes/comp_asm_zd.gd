@@ -3,7 +3,8 @@ extends Node
 
 var cur_filename = ""
 var cur_path = ""
-var code = []
+var code = [];
+var shadow = [];
 var write_pos = 0;
 var labels = {}
 var label_refs = {}
@@ -60,10 +61,11 @@ func point_out_error_iter(msg, iter):
 	#return -1;
 
 func output_chunk():
-	var chunk = {"code":code.duplicate(), "labels":labels.duplicate(), "refs":label_refs.duplicate()}
+	var chunk = {"code":code.duplicate(), "labels":labels.duplicate(), "refs":label_refs.duplicate(), "shadow":shadow.duplicate()}
 	code.clear();
 	labels.clear();
 	label_refs.clear();
+	shadow.clear();
 	return chunk;
 
 ## links the code chunk to itself
@@ -75,28 +77,38 @@ func link_internally(chunk):
 	var in_refs = chunk["refs"];
 	
 	var code_out = in_code.duplicate();
+	var shadow_out = chunk.shadow.duplicate();
 	var refs_remain = {};
 	for ref in in_refs:
 		var lbl_name = in_refs[ref];
 		if lbl_name in in_labels:
 			var lbl_pos = in_labels[lbl_name];
-			patch_ref(code_out, ref, lbl_pos);
+			patch_ref(code_out, ref, lbl_pos, shadow_out);
 		else:
 			refs_remain[ref] = lbl_name;
-	var out_chunk = {"code":code_out, "labels":in_labels.duplicate(), "refs":refs_remain}
+	var out_chunk = {"code":code_out, "labels":in_labels.duplicate(), "refs":refs_remain, "shadow":shadow_out}
 	return out_chunk;
 	 
 ## modifies the code in-place to alter a command's offset to a given value.
 ##  ref: position of command (then the immediate value lies in bytes [ref+3...ref+7)
 ##  lbl_pos: the new value to insert
-func patch_ref(out_code:Array, ref:int, lbl_pos:int):
+func patch_ref(out_code:Array, ref:int, lbl_pos:int, out_shadow:Array):
 	var old_code = code;
 	var old_wp = write_pos;
+	var old_shadow = shadow;
 	code = out_code;
-	write_pos = ref+3;
-	emit32(lbl_pos);
+	shadow = out_shadow;
+	write_pos = ref; #ref+3;
+	var prev_mark = out_shadow[write_pos];
+	var shadow_flag = ISA.SHADOW_UNUSED;
+	match prev_mark:
+		ISA.SHADOW_DATA_UNRESOLVED: shadow_flag = ISA.SHADOW_DATA_RESOLVED;
+		ISA.SHADOW_CMD_UNRESOLVED: shadow_flag = ISA.SHADOW_CMD_RESOLVED;
+		_: push_error("patch_ref: reference not marked in shadows"); assert(false);
+	emit32(lbl_pos, shadow_flag);
 	code = old_code;
 	write_pos = old_wp;
+	shadow = old_shadow;
 
 #-------------- INTERNAL DATA ------------------------
 # command structure:
@@ -126,6 +138,7 @@ class Cmd_arg:
 	var is_deref:bool = false;
 	var is_imm:bool = false;
 	var is_32bit:bool = false; # is this even arg-level?
+	var is_unresolved:bool = false; #is this a label that needs to be resolved by linker?
 
 class Cmd_flags:
 	var deref_reg1:bool = false;
@@ -355,8 +368,9 @@ func parse_command(iter):
 		# if syntax error: parse_arg pushes an error.
 		flags.set_arg1(arg1);
 		flags.set_arg2(arg2);
+		var shadow_flags = {"unresolved":(arg1.is_unresolved or arg2.is_unresolved)};
 		record_op_position(old_iter, iter);
-		emit_opcode(op_code, flags, arg1.reg_idx, arg2.reg_idx, 0);
+		emit_opcode(op_code, flags, arg1.reg_idx, arg2.reg_idx, 0, shadow_flags);
 		print("Parsed ["+op_name+"("+str(int(arg1.is_present) + int(arg2.is_present))+")]")
 		return true;
 	else: return false;
@@ -432,9 +446,10 @@ func parse_arg(iter)->Cmd_arg:
 			var lbl_name = word;
 			arg.reg_name = lbl_name;
 			arg.is_imm = true;
+			arg.is_unresolved = true;
 			# register the reference for later,
 			# we will patch the command when linking
-			label_refs[write_pos+4] = lbl_name;
+			label_refs[write_pos+3] = lbl_name;
 	var toks_num = match_tokens(iter, ["NUMBER"]);
 	if toks_num:
 		arg.is_present = true;
@@ -463,42 +478,47 @@ func get_reg(rname:String):
 #------------- CODE GEN -----------
 
 
-func emit_opcode(cmd:int, flags:Cmd_flags, reg1:int=0, reg2:int=0, imm_u32:int=0):
+func emit_opcode(cmd:int, flags:Cmd_flags, reg1:int=0, reg2:int=0, imm_u32:int=0, shadow_flags={}):
 	assert(write_pos % cmd_size == 0);
-	emit8(cmd);
-	emit8(flags.to_byte());
-	emit8((reg1 & 0b1111) | ((reg2 & 0b1111) << 4));
-	emit32(imm_u32);
-	emit8(0xFF); # pad
+	emit8(cmd, ISA.SHADOW_CMD_HEAD);
+	emit8(flags.to_byte(), ISA.SHADOW_CMD_TAIL);
+	emit8((reg1 & 0b1111) | ((reg2 & 0b1111) << 4), ISA.SHADOW_CMD_TAIL);
+	var tail_flag = ISA.SHADOW_CMD_TAIL;
+	if "unresolved" in shadow_flags and shadow_flags.unresolved: tail_flag = ISA.SHADOW_CMD_UNRESOLVED;
+	emit32(imm_u32, tail_flag);
+	emit8(0xFF, ISA.SHADOW_CMD_TAIL); # pad
 
-func emit8(val:int):
+func emit8(val:int, shadow_val:int):
 	if (val < 0) or (val > 255): push_error("can't emit value, doesn't fit in byte: ["+str(val)+"]")
-	if len(code) <= write_pos: code.resize(write_pos+1);
+	if len(code) <= write_pos: code.resize(write_pos+1); shadow.resize(write_pos+1);
 	code[write_pos] = val;
+	shadow[write_pos] = shadow_val;
 	write_pos += 1;
 
-func emit32(val:int):
+func emit32(val:int, shadow_val:int):
 	if (val < 0) or (val > (2**32-1)): push_error("can't emit value, doesn't fit in u32: ["+str(val)+"]")
-	emit8((val >> 8*0) & 0xFF);
-	emit8((val >> 8*1) & 0xFF);
-	emit8((val >> 8*2) & 0xFF);
-	emit8((val >> 8*3) & 0xFF);	
+	emit8((val >> 8*0) & 0xFF, shadow_val);
+	emit8((val >> 8*1) & 0xFF, shadow_val);
+	emit8((val >> 8*2) & 0xFF, shadow_val);
+	emit8((val >> 8*3) & 0xFF, shadow_val);	
 	
 func emit_db_items(items:Array): #maybe we could use the .32 specifier with db too
 	for item in items:
 		if item["class"] == "NUMBER": # a 32-bit number
 			var num = str(item["text"]).to_int();
-			emit32(num);
+			emit32(num, ISA.SHADOW_DATA);
 		elif item["class"] == "WORD": # it's a label
-			emit32(0);
+			emit32(0, ISA.SHADOW_DATA_UNRESOLVED);
 			label_refs[write_pos] = item["text"];
 		elif item["class"] == "STRING": # a bunch of text
 			var text = str(item["text"]).to_ascii_buffer()
 			for ch in text:
-				emit8(ch);
-			emit8(0);
+				emit8(ch, ISA.SHADOW_DATA);
+			emit8(0, ISA.SHADOW_DATA);
 		else:
 			push_error("unknown DB item");
-	if (write_pos % cmd_size): # if not aligned
-		write_pos += (cmd_size - (write_pos % cmd_size)); # pad until alignement is reached
+	#if (write_pos % cmd_size): # if not aligned
+	#	write_pos += (cmd_size - (write_pos % cmd_size)); # pad until alignement is reached
+	while(write_pos % cmd_size):
+		emit8(0, ISA.SHADOW_PADDING);
 	assert(write_pos % cmd_size == 0);

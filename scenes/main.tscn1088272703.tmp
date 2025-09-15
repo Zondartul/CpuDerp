@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://cfii8rrppxgqq"]
+[gd_scene load_steps=22 format=3 uid="uid://cfii8rrppxgqq"]
 
 [ext_resource type="Script" uid="uid://c4qakorwmu6dc" path="res://scenes/main.gd" id="1_ggytm"]
 [ext_resource type="Script" uid="uid://c44d4a042o542" path="res://scenes/Memory.gd" id="2_0ld40"]
@@ -19,6 +19,9 @@
 [ext_resource type="Script" uid="uid://0em7edt5tnsg" path="res://scenes/Bus.gd" id="11_37vc5"]
 [ext_resource type="Texture2D" uid="uid://j2f1v3ps3264" path="res://res/icons/Bug-silk.png" id="11_nykja"]
 [ext_resource type="Script" uid="uid://b74jfmkseejoc" path="res://scenes/todo.gd" id="19_a20q3"]
+
+[sub_resource type="SystemFont" id="SystemFont_0ld40"]
+font_names = PackedStringArray("Consolas")
 
 [sub_resource type="SystemFont" id="SystemFont_30trl"]
 font_names = PackedStringArray("Courier New")
@@ -148,12 +151,11 @@ icon_mode = 0
 [node name="VSeparator" type="VSeparator" parent="Panel/TabContainer/Memory/BoxContainer"]
 layout_mode = 2
 
-[node name="TextEdit" type="RichTextLabel" parent="Panel/TabContainer/Memory/BoxContainer"]
+[node name="TextEdit" type="TextEdit" parent="Panel/TabContainer/Memory/BoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 5.0
-theme_override_colors/default_color = Color(0.497474, 0.497474, 0.497474, 1)
-bbcode_enabled = true
+theme_override_fonts/font = SubResource("SystemFont_0ld40")
 
 [node name="Editor" type="Control" parent="Panel/TabContainer"]
 visible = false

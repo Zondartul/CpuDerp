@@ -36,7 +36,9 @@ func compile():
 		var chunk = n_assembler.assemble(cur_efile.get_text());
 		if chunk:
 			assert("code" in chunk);
-			return chunk["code"];
+			var res = {"code":chunk.code};
+			if "shadow" in chunk: res["shadow"] = chunk.shadow;
+			return res;
 	return null;
 
 func upload(code):
@@ -53,12 +55,24 @@ func upload(code):
 		idx += 1;
 	print("Uploaded "+str(idx)+" bytes");
 
+func upload_shadow(bytes):
+	view_Memory.add_memory_region(len(bytes), len(bytes),"shadow");
+	var idx = len(bytes);
+	for i in range(len(bytes)):
+		if not bytes[i]: bytes[i] = 0
+	for byte in bytes:
+		Memory.writeCell(idx, byte);
+		idx += 1;
+	print("shadow memory uploaded");
+
 func _on_build_index_pressed(index):
 	if index == 0: # "compile"
+		var res = compile();
 		var code = compile();
-		if code: 
+		if res: 
 			Editor.print_console("Compiled successfully");
-			upload(code);
+			upload(res.code);
+			upload_shadow(res.shadow);
 			Editor.print_console("Code uploaded to memory");
 		else: 
 			Editor.print_console("Failed to compile");

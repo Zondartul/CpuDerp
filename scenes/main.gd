@@ -30,7 +30,61 @@ func _ready():
 	n_VM.setup(dict);
 	n_Editor.setup(dict);
 	n_view_memory.setup(dict);
+	
+	debug_automation_script();
 	pass # Replace with function body.
+
+func debug_automation_script():
+	# Go to editor and open the file
+	autotab($Panel/TabContainer, "Editor");
+	automenu($Panel/TabContainer/Editor/V/MenuBar, ["File", "Load"]);
+	autofile($Panel/TabContainer/Editor/comp_file/fd_load, "C:/Stride/godot/CpuDerp/res/data/main.txt");
+	# Compile it
+	automenu($Panel/TabContainer/Editor/V/MenuBar, ["Build", "compile"]);
+	# Go to memory map and open the first region
+	autotab($Panel/TabContainer, "Memory");
+	autolist($Panel/TabContainer/Memory/BoxContainer/mem_map, 0);
+
+# activates the tab in a TabContainer
+func autotab(node:TabContainer, tab_name):
+	for i in range(node.get_tab_count()):
+		var title = node.get_tab_title(i)
+		if title == tab_name:
+			node.current_tab = i;
+			return true;
+	push_error("automation: can't find tab named ["+tab_name+"]");
+	return false;
+
+func autofile(node:FileDialog, filename):
+	node.file_selected.emit(filename);
+	node.hide();
+
+# clicks the buttons on a menu
+func automenu(node, selections:Array):
+	if node is MenuBar:
+		for child in node.get_children():
+			if child.name == selections[0]:
+				var sel2 = selections.duplicate();
+				sel2.remove_at(0);
+				return automenu(child, sel2);
+	if node is PopupMenu:
+		for i in range(node.item_count):
+			var item_text = node.get_item_text(i);
+			if item_text == selections[0]:
+				assert(selections.size() == 1);
+				node.index_pressed.emit(i);
+				return true;
+	push_error("automation: can't find menu entry ["+selections[0]+"]")
+	return false;
+
+func autolist(node:ItemList, index):
+	if index < node.item_count:
+		node.select(index);
+		node.item_selected.emit(index);
+		return true;
+	push_error("automation: can't find list item number "+str(index));
+	return false;
+
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta):

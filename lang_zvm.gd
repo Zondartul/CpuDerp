@@ -125,3 +125,13 @@ const spec_ops = {
 	"JNG": {"op_code":3, "flags":(BIT_SPEC_IFLESS | BIT_SPEC_IFZERO)},
 	"JNL": {"op_code":3, "flags":(BIT_SPEC_IFGREATER | BIT_SPEC_IFZERO)},
 };
+
+const SHADOW_UNUSED = 0;
+const SHADOW_DATA = 1;
+const SHADOW_CMD_HEAD = 2;
+const SHADOW_CMD_TAIL = 3;
+const SHADOW_CMD_UNRESOLVED = 4;
+const SHADOW_CMD_RESOLVED = 5;
+const SHADOW_DATA_UNRESOLVED = 6;
+const SHADOW_DATA_RESOLVED = 7;
+const SHADOW_PADDING = 8;
