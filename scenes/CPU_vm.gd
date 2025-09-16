@@ -161,9 +161,22 @@ func decodeCmd(cmd:PackedByteArray):
 	if(debug_vm):print("Decoded command: [ "+debug_disasm_cmd(decoded)+" ]");
 	return decoded;
 
+func decode_op_variant(decoded:Dictionary):
+	var op_name = decoded.op_str;
+	if op_name in ISA.spec_ops:
+		var spec_op = ISA.spec_ops[op_name];
+		var op_code = spec_op["op_code"];
+		for op2_name in ISA.spec_ops:
+			var spec_op2 = ISA.spec_ops[op2_name];
+			if (spec_op2["op_code"] == op_code) and (spec_op2["flags"] == decoded.flags.special):
+				op_name = op2_name; 
+				break;
+	return op_name;
+
 func debug_disasm_cmd(decoded:Dictionary):
 	var S = "";
-	S += decoded.op_str;
+	var op_name = decode_op_variant(decoded);
+	S += op_name;
 	if(decoded.is_32bit): S += ".32";
 	
 	var has_arg1:bool = (decoded.reg1_num or decoded.reg1_im);
@@ -185,7 +198,7 @@ func debug_disasm_cmd(decoded:Dictionary):
 		else:
 			if(decoded.reg1_num):
 				if not cpu_assert(decoded.reg1_str != "", ERR_SANITY, ""): return false;
-				if(decoded.reg1_im):
+				if(decoded.reg1_im and decoded.im):
 					# eax+num syntax
 					S += decoded.reg1_str + "+" + str(decoded.im);
 				else:
@@ -212,7 +225,7 @@ func debug_disasm_cmd(decoded:Dictionary):
 		else:
 			if(decoded.reg2_num):
 				if not cpu_assert(decoded.reg2_str != "", ERR_SANITY, ""): return false;
-				if(decoded.reg2_im):
+				if(decoded.reg2_im and decoded.im):
 					# eax+num syntax
 					S += decoded.reg2_str + "+" + str(decoded.im);
 				else:

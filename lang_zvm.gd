@@ -116,6 +116,7 @@ const opcodes = {
 };
 
 const spec_ops = {
+	"JMP": {"op_code":3, "flags":(BIT_SPEC_IFLESS | BIT_SPEC_IFGREATER | BIT_SPEC_IFZERO)},
 	"JG": {"op_code":3, "flags":BIT_SPEC_IFGREATER},
 	"JL": {"op_code":3, "flags":BIT_SPEC_IFLESS},
 	"JE": {"op_code":3, "flags":BIT_SPEC_IFZERO},

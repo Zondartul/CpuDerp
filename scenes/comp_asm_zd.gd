@@ -18,8 +18,20 @@ var error_code;
 #debug info
 var op_locations = []
 
-func assemble(source:String):
+func clear():
+	cur_filename = "";
+	cur_path = "";
+	code.clear();
+	shadow.clear();
+	write_pos = 0;
+	labels.clear();
+	label_refs.clear();
+	cur_line = "";
+	cur_line_idx = 0;
 	error_code = null;
+
+func assemble(source:String):
+	clear();
 	var lines = source.split("\n",false);
 	print(lines);
 	for line in lines:
@@ -370,7 +382,7 @@ func parse_command(iter):
 		flags.set_arg2(arg2);
 		var shadow_flags = {"unresolved":(arg1.is_unresolved or arg2.is_unresolved)};
 		record_op_position(old_iter, iter);
-		emit_opcode(op_code, flags, arg1.reg_idx, arg2.reg_idx, 0, shadow_flags);
+		emit_opcode(op_code, flags, arg1.reg_idx, arg2.reg_idx, arg1.offset+arg2.offset, shadow_flags);
 		print("Parsed ["+op_name+"("+str(int(arg1.is_present) + int(arg2.is_present))+")]")
 		return true;
 	else: return false;
@@ -465,7 +477,7 @@ func parse_arg(iter)->Cmd_arg:
 		if arg.is_imm: push_error("Can't have array access on top of immediate")
 		arg.is_imm = true;
 		arg.offset = num;
-	
+		arg.is_deref = true;
 	return arg;
 
 func get_reg(rname:String):

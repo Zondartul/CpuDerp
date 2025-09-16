@@ -298,5 +298,6 @@ script = ExtResource("19_a20q3")
 [connection signal="close_requested" from="Panel/TabContainer/Editor/window_debug" to="Panel/TabContainer/Editor/window_debug" method="hide"]
 [connection signal="set_highlight" from="Panel/TabContainer/Editor/window_debug/debug_panel" to="Panel/TabContainer/Editor/comp_build" method="_on_debug_panel_set_highlight"]
 [connection signal="pressed" from="Panel/btn_debugger" to="Panel/TabContainer/Editor/window_debug" method="show"]
+[connection signal="cpu_step_done" from="VM/CPU_vm" to="Panel/TabContainer/Memory" method="_on_cpu_vm_cpu_step_done"]
 [connection signal="cpu_step_done" from="VM/CPU_vm" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="_on_cpu_vm_cpu_step_done"]
 [connection signal="on_cpu_error" from="VM/CPU_vm" to="." method="_on_cpu_vm_on_cpu_error"]

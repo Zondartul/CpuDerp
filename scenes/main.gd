@@ -38,7 +38,7 @@ func debug_automation_script():
 	# Go to editor and open the file
 	autotab($Panel/TabContainer, "Editor");
 	automenu($Panel/TabContainer/Editor/V/MenuBar, ["File", "Load"]);
-	autofile($Panel/TabContainer/Editor/comp_file/fd_load, "C:/Stride/godot/CpuDerp/res/data/main.txt");
+	autofile($Panel/TabContainer/Editor/comp_file/fd_load, "res://res/data/main.txt");#"C:/Stride/godot/CpuDerp/res/data/main.txt");
 	# Compile it
 	automenu($Panel/TabContainer/Editor/V/MenuBar, ["Build", "compile"]);
 	# Go to memory map and open the first region

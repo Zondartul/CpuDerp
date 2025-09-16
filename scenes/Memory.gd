@@ -53,24 +53,30 @@ func update_mem_view():
 	var end = start + handle["size"];
 	shadow_at = end;
 	var step = 8;
-	var end_adj = end + (step-end%step);
+	#var end_adj = end + (step-end%step); we maybe will need to think about unaligned end of region
 	var mode = "hex";
 	var n_addr_decimals = len(str(end));
+	
+	# lets grab the ip and highlight the line
+	var ip = cpu_vm.regs[ISA.REG_IP];
+	
 	for i in range(start, end, step):
 		var line_text = "";
-		line_text = line_text + str(i).pad_zeros(n_addr_decimals)+": ";
+		if i == ip: line_text += "[bgcolor="+Color.DARK_BLUE.to_html(false)+"]";
+		line_text += str(i).pad_zeros(n_addr_decimals)+": ";
 		for j in range(i,i+step):
 			var val = read_cell(j);
 			var col:Color = shadow_colors[read_cell(shadow_at+j)];
 			#color_fixups.append({"pos":line_text.length(), "line":i, "col":col});
-			line_text = line_text + "[color="+col.to_html(false)+"]"
+			line_text += "[color="+col.to_html(false)+"]"
 			var val_text = "";
 			if(mode == "normal"): val_text = str(val);
 			if(mode == "hex"): val_text = to_hex(val);
-			line_text = line_text + val_text + " ";
-			line_text = line_text + "[/color]";
-		line_text = line_text + "| " + interp_text(i,i+step);
-		text = text + line_text + "\n";
+			line_text += val_text + " ";
+			line_text += "[/color]";
+		if i == ip: line_text += "[/bgcolor]";
+		line_text += "| " + interp_text(i,i+step);
+		text += line_text + "\n";
 	memview.text = text;
 #	apply_color_fixups();
 
@@ -89,6 +95,7 @@ func _on_mem_map_item_selected(_index):
 func to_hex(num:int):
 	const hex_alph = "0123456789ABCDEF";
 	if(num < 0) or (num > 255): return "XX";
+	@warning_ignore("integer_division")
 	return hex_alph[num/16] + hex_alph[num % 16];
 
 # returns a string with a possible interpretation of the selected bytes
@@ -170,3 +177,7 @@ func is_shadow_data(sbytes):
 		if not sbytes[i] in allowed_data_bytes:
 			return false;
 	return true;
+
+
+func _on_cpu_vm_cpu_step_done(_cpu):
+	update_mem_view();
