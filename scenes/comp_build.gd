@@ -1,11 +1,13 @@
 extends Node
 
 @onready var n_assembler = $comp_asm_zd
+@onready var n_compiler = $comp_compile_md
 
 var cur_efile;
 var Memory;
 var Editor;
 var view_Memory;
+var cur_lang = "zderp" # we should probably figure out the lang from extension
 #var is_setup = false;
 
 # Called when the node enters the scene tree for the first time.
@@ -30,15 +32,26 @@ func setup(dict:Dictionary):
 #func _process(delta):
 #	pass
 
+func assemble_zderp():
+	n_assembler.cur_path = cur_efile.path;
+	var chunk = n_assembler.assemble(cur_efile.get_text());
+	if chunk:
+		assert("code" in chunk);
+		var res = {"code":chunk.code};
+		if "shadow" in chunk: res["shadow"] = chunk.shadow;
+		return res;
+
+func compile_miniderp():
+	n_compiler.cur_path = cur_efile.path;
+	var assy = n_compiler.compile(cur_efile.get_text());
+	return {"code":[], "shadow":[]};
+
 func compile():
 	if cur_efile:
-		n_assembler.cur_path = cur_efile.path;
-		var chunk = n_assembler.assemble(cur_efile.get_text());
-		if chunk:
-			assert("code" in chunk);
-			var res = {"code":chunk.code};
-			if "shadow" in chunk: res["shadow"] = chunk.shadow;
-			return res;
+		if cur_lang == "zderp":
+			return assemble_zderp();
+		elif cur_lang == "miniderp":
+			return compile_miniderp()
 	return null;
 
 func upload(code):
@@ -68,7 +81,7 @@ func upload_shadow(bytes):
 func _on_build_index_pressed(index):
 	if index == 0: # "compile"
 		var res = compile();
-		var code = compile();
+		#var code = compile();
 		if res: 
 			Editor.print_console("Compiled successfully");
 			upload(res.code);
@@ -81,7 +94,7 @@ func _on_build_index_pressed(index):
 func _on_comp_file_cur_efile_changed(efile):
 	cur_efile = efile;
 	n_assembler.cur_filename = efile.file_name;
-
+	n_compiler.cur_filename = efile.file_name;
 
 func set_highlight(from_line, from_col, to_line, to_col):
 	var TE = cur_efile.find_child("TextEdit");
@@ -96,3 +109,7 @@ func _on_comp_asm_zd_highlight_error(from_line, from_col, to_line, to_col):
 
 func _on_debug_panel_set_highlight(from_line, from_col, to_line, to_col):
 	set_highlight(from_line, from_col, to_line, to_col);
+
+
+func _on_language_index_pressed(index: int) -> void:
+	cur_lang = ["zderp", "miniderp"][index];

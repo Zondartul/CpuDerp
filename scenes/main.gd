@@ -35,7 +35,11 @@ func _ready():
 	pass # Replace with function body.
 
 func debug_automation_script():
-	# Go to editor and open the file
+	#automate_compile_asm_zd();
+	automate_compile_miniderp();
+
+func automate_compile_asm_zd():
+		# Go to editor and open the file
 	autotab($Panel/TabContainer, "Editor");
 	automenu($Panel/TabContainer/Editor/V/MenuBar, ["File", "Load"]);
 	autofile($Panel/TabContainer/Editor/comp_file/fd_load, "res://res/data/main.txt");#"C:/Stride/godot/CpuDerp/res/data/main.txt");
@@ -44,6 +48,18 @@ func debug_automation_script():
 	# Go to memory map and open the first region
 	autotab($Panel/TabContainer, "Memory");
 	autolist($Panel/TabContainer/Memory/BoxContainer/mem_map, 0);
+
+func automate_compile_miniderp():
+	# Go to editor and open the file
+	autotab($Panel/TabContainer, "Editor");
+	automenu($Panel/TabContainer/Editor/V/MenuBar, ["File", "Load"]);
+	autofile($Panel/TabContainer/Editor/comp_file/fd_load, "res://res/data/miniderp.txt");#"C:/Stride/godot/CpuDerp/res/data/main.txt");
+	# Compile it
+	automenu($Panel/TabContainer/Editor/V/MenuBar, ["Language", "miniderp"]);
+	automenu($Panel/TabContainer/Editor/V/MenuBar, ["Build", "compile"]);
+	# Go to memory map and open the first region
+	#autotab($Panel/TabContainer, "Memory");
+	#autolist($Panel/TabContainer/Memory/BoxContainer/mem_map, 0);
 
 # activates the tab in a TabContainer
 func autotab(node:TabContainer, tab_name):

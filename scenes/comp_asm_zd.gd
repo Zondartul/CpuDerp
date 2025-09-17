@@ -13,10 +13,14 @@ const ISA = preload("res://lang_zvm.gd");
 # error reporting
 var cur_line = "";
 var cur_line_idx = 0;
-var error_code;
+var error_code#:set = set_error;
 
 #debug info
 var op_locations = []
+
+#func set_error(new_error):
+	#error_code = new_error;
+	#print("error:" + str(new_error));
 
 func clear():
 	cur_filename = "";
@@ -41,6 +45,7 @@ func assemble(source:String):
 		cur_line = line;
 		var tokens = tokenize(line);
 		process(tokens);
+		if error_code: return false;
 	var chunk = output_chunk();
 	chunk = link_internally(chunk);
 	var unlinked = len(chunk["refs"]);
@@ -305,13 +310,14 @@ func process(tokens):
 		if parse_label(iter) \
 		or parse_db(iter) \
 		or parse_command(iter):
-			pass; # all ok, continue to next command
+			pass # all ok, continue to next command
 		else:
 			point_out_error_iter("unexpected input", iter);
 			print("current tokens: ");
 			print_tokens(tokens);
 			error_code = "unexpected input";
-			return;
+			return false;
+	return true;
 
 func parse_label(iter):
 	var toks = [];

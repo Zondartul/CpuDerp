@@ -36,3 +36,8 @@ func print_console(text):
 	console.text += text + "\n";
 	#scroll to bottom
 	console.scroll_vertical = console.get_line_count()
+
+
+func _on_view_index_pressed(index: int) -> void:
+	match index:
+		0: print("view tokens");#view tokens

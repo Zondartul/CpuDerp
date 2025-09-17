@@ -1,0 +1,19 @@
+// blah blah
+// minibasic - something to compile into zderp
+//
+
+#include "asm_screen.txt"
+var x = 12;
+
+var hex = "0123456789ABCDEF";
+
+while(x > 2){
+	putch(hex[x]);
+	x = x - 1;
+}
+
+// dynamic vars
+// 	ops assume the type
+//		+ always works on ints
+//		[] always on arrays
+//		but .+ and .[] call op_add and op_array by user

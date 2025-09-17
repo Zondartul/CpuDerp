@@ -30,7 +30,7 @@ func update_line_numbers():
 		n_text.set_line_gutter_item_color(i,0,col_linenum);
 		#n_text.set_line_gutter_text(0,i,str(i));
 
-func file_save(): file_save_as(path);
+func file_save(): return file_save_as(path);
 
 func file_save_as(new_path): 
 	path = new_path;

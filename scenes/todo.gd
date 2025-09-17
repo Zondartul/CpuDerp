@@ -19,4 +19,5 @@ extends Node
 #			- from stack trace
 # [automation] for debug, set a list of UI interactions 
 #			that should happen automatically when starting
-#
+# [enhancement] infer language from file extension
+# 
