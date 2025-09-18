@@ -1,0 +1,30 @@
+[gd_scene load_steps=2 format=3 uid="uid://bctk63nmyhslj"]
+
+[ext_resource type="Script" uid="uid://b57oqth0kb5g5" path="res://scenes/win_token_view.gd" id="1_um410"]
+
+[node name="win_token_view" type="Window"]
+oversampling_override = 1.0
+title = "Tokens"
+initial_position = 2
+size = Vector2i(300, 400)
+script = ExtResource("1_um410")
+
+[node name="BC" type="BoxContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SC" type="ScrollContainer" parent="BC"]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 4
+
+[node name="FC" type="FlowContainer" parent="BC/SC"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[connection signal="close_requested" from="." to="." method="hide"]

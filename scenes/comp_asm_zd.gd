@@ -18,6 +18,8 @@ var error_code#:set = set_error;
 #debug info
 var op_locations = []
 
+signal tokens_ready;
+var output_tokens = [];
 #func set_error(new_error):
 	#error_code = new_error;
 	#print("error:" + str(new_error));
@@ -36,6 +38,7 @@ func clear():
 
 func assemble(source:String):
 	clear();
+	output_tokens.clear();
 	var lines = source.split("\n",false);
 	print(lines);
 	for line in lines:
@@ -44,8 +47,12 @@ func assemble(source:String):
 		line = preproc(line);
 		cur_line = line;
 		var tokens = tokenize(line);
+		output_tokens.append_array(tokens);
+		if output_tokens.size():
+			output_tokens.back()["token_viewer_newline"] = true;
 		process(tokens);
 		if error_code: return false;
+	tokens_ready.emit(output_tokens);
 	var chunk = output_chunk();
 	chunk = link_internally(chunk);
 	var unlinked = len(chunk["refs"]);

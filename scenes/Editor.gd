@@ -40,4 +40,4 @@ func print_console(text):
 
 func _on_view_index_pressed(index: int) -> void:
 	match index:
-		0: print("view tokens");#view tokens
+		0: $win_token_view.popup()

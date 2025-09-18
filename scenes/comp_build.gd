@@ -2,7 +2,7 @@ extends Node
 
 @onready var n_assembler = $comp_asm_zd
 @onready var n_compiler = $comp_compile_md
-
+@export var win_tokens:Node;
 var cur_efile;
 var Memory;
 var Editor;
@@ -24,6 +24,8 @@ func setup(dict:Dictionary):
 	for ch in get_children():
 		if "setup" in ch:
 			ch.setup(dict);
+		if "tokens_ready" in ch:
+			ch.tokens_ready.connect(on_tokens_ready);
 
 #func setup(dict:Dictionary):
 #	pass
@@ -113,3 +115,6 @@ func _on_debug_panel_set_highlight(from_line, from_col, to_line, to_col):
 
 func _on_language_index_pressed(index: int) -> void:
 	cur_lang = ["zderp", "miniderp"][index];
+
+func on_tokens_ready(tokens):
+	win_tokens.set_tokens(tokens);
