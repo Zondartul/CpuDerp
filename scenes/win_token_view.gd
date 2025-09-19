@@ -23,12 +23,31 @@ func add_item(text:String, col:Color, tooltip:String):
 func set_tokens(tokens):
 	clear();
 	show();
+	var prev_line_idx = [null];
 	for token in tokens:
+		var line_idx = maybe_prop(token, "token_viewer_line");
+		if val_changed(line_idx, prev_line_idx):
+			add_newline();
 		var tooltip = array_to_str(token);
-		add_item(token.text, Color.WHITE, tooltip);
+		var color = maybe_prop(token, "token_viewer_color", Color.WHITE);
+		add_item(token.text, color, tooltip);
 		if "token_viewer_newline" in token:
 			add_newline();
 	call_deferred("hide");
+
+# returns true if the value changed and saves the new value
+func val_changed(new_val, prev_val:Array):
+	var res = false;
+	if prev_val[0] != null:
+		if new_val != prev_val[0]:
+			res = true;
+	prev_val[0] = new_val;
+	return res;
+
+func maybe_prop(obj, propname, default=null):
+	if propname in obj:
+		return obj[propname];
+	return default;
 
 func array_to_str(arr):
 	return str(arr);

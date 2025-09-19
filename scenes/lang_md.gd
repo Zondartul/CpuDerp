@@ -3,11 +3,11 @@ extends Node
 
 var lang_name = "miniderp";
 
-const keywords = ["var", "func", "if", "else", "while", "return"];
-const punct_range = ["([{", ")]}"];
-const punct_single = [";"];
-const punct_multi = ["//"];
-const ops_single = [".+-*/%="];
+const keywords = ["var", "func", "if", "else", "while", "return", "and", "or", "not"];
+const ops = [".", "+", "-", "*", "/", "%", "=", "+=", "-=", "*=", "/=", "%=", "&", "|", "^",];
+const punct = [";", "//", "(", "[", "{", ")", "]", "}", "#"];
+const punct_range_begin = ["(", "[", "{"];
+const punct_range_end = [")", "]", "}"];
 
 func get_syntax():
 	var syn = CodeHighlighter.new();
@@ -37,7 +37,7 @@ func add_keywords(syn, kws, col):
 
 static func get_all_punct():
 	var s = "";
-	for list in [punct_range, punct_single, punct_multi, ops_single]:
+	for list in [punct, ops]:
 		for entry in list:
 			s += entry;
 	return s;

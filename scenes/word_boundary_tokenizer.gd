@@ -22,7 +22,7 @@ func tokenize(line:String):
 	if cur_tok != "":
 		tokens.append({"class":tok_class, "text":cur_tok, "col":col-1});
 		cur_tok = "";
-	tokens = tokens.filter(filter_tokens);
+	#tokens = tokens.filter(filter_tokens);
 	return tokens;
 
 func should_split_on_transition(new_tok_class, old_tok_class):
@@ -34,9 +34,9 @@ func should_split_on_transition(new_tok_class, old_tok_class):
 	else: return (old_tok_class != new_tok_class); #split on any other class change
 	
 
-func filter_tokens(tok):
-	if tok["class"] in ["SPACE", "ENDSTRING"]: return false;
-	return true;
+#func filter_tokens(tok):
+#	if tok["class"] in ["SPACE", "ENDSTRING"]: return false;
+#	return true;
 
 var ch_punct = ".,:[]+;";
 const ch_alphabet = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_";

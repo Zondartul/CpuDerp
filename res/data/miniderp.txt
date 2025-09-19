@@ -10,6 +10,7 @@ var hex = "0123456789ABCDEF";
 while(x > 2){
 	putch(hex[x]);
 	x = x - 1;
+	x--;
 }
 
 // dynamic vars
