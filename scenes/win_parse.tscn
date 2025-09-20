@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3 uid="uid://bystectvtbdhc"]
+
+[ext_resource type="Script" uid="uid://bqabs5ds683kd" path="res://scenes/win_parse.gd" id="1_cq0is"]
+
+[node name="win_parse" type="Window"]
+oversampling_override = 1.0
+initial_position = 2
+size = Vector2i(450, 300)
+script = ExtResource("1_cq0is")
+
+[node name="SC" type="ScrollContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BC" type="BoxContainer" parent="SC"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+vertical = true
