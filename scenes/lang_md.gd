@@ -4,10 +4,50 @@ extends Node
 var lang_name = "miniderp";
 
 const keywords = ["var", "func", "if", "else", "while", "return", "and", "or", "not"];
-const ops = [".", "+", "-", "*", "/", "%", "=", "+=", "-=", "*=", "/=", "%=", "&", "|", "^",];
+const ops = [".", "+", "-", "*", "/", "%", 
+			"=", "+=", "-=", "*=", "/=", "%=", 
+			"&", "|", "^", ">", "<", "!=", "==",
+			"--", "++",];
 const punct = [";", "//", "(", "[", "{", ")", "]", "}", "#"];
 const punct_range_begin = ["(", "[", "{"];
 const punct_range_end = [")", "]", "}"];
+
+# shift-reduce rules
+# 0..N-2 - rule input
+# N-1 - lookahead
+# N - result
+const rules = [
+	["stmt_list", "EOF", "start"],
+	["/#include", "STRING", "*", "stmt_preproc"],
+	["stmt_preproc", "*", "stmt"],
+	["NUMBER", "*", "expr"],
+	["STRING", "*", "expr"],
+	["IDENT", "/=", "SHIFT"],
+	["IDENT", "*", "expr"],
+	["IDENT", "/=", "expr", "/;", "*","assignment_stmt"],
+	["/var", "assignment_stmt", "*", "decl_assignment_stmt"],
+	["assignment_stmt", "*", "stmt"],
+	["decl_assignment_stmt", "*", "stmt"],
+	["/var", "IDENT", "/;", "*", "var_decl_stmt"],
+	["var_decl_stmt", "*", "stmt"],
+	["/if", "/(", "expr", "/)", "*", "if_start" ],
+	["/{", "stmt_list", "/}", "*", "block"],
+	["if_start", "block", "*","if_stmt"],
+	["/while", "/(", "expr", "/)", "*", "while_start"],
+	["while_start", "block", "*", "while_stmt"],
+	["while_stmt", "*", "stmt"],
+	["expr", "/;", "*", "stmt"],
+	["expr", "OP", "expr", "*", "expr"],
+	["expr", "OP", "/;", "expr"],
+	["expr", "OP", "/)", "expr"],
+	["expr", "OP", "/]", "expr"],
+	["expr", "/(", "expr", "/)", "*", "expr"],
+	["expr", "/(", "expr_list", "/)", "*", "expr"],
+	["expr", "/[", "expr", "/]", "*", "expr"],
+	["expr", "/,", "expr", "*", "expr_list"],
+	["stmt_list", "stmt", "*", "stmt_list"],
+	["stmt", "*", "stmt_list"],
+];
 
 func get_syntax():
 	var syn = CodeHighlighter.new();

@@ -45,7 +45,7 @@ func assemble_zderp():
 
 func compile_miniderp():
 	n_compiler.cur_path = cur_efile.path;
-	var assy = n_compiler.compile(cur_efile.get_text());
+	var _assy = n_compiler.compile(cur_efile.get_text());
 	return {"code":[], "shadow":[]};
 
 func compile():

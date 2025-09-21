@@ -3,12 +3,13 @@ extends Node
 var cur_filename: set=set_cur_filename;
 var cur_path: set=set_cur_path;
 @onready var tokenizer = $tokenizer_md;
+const lang = preload("res://scenes/lang_md.gd");
 signal tokens_ready;
 signal parse_ready;
 
 func compile(text):
 	var tokens = tokenizer.tokenize(text);
-	var ast = parse(tokens);
+	var _ast = parse(tokens);
 	#print(tokens);
 
 func _on_tokenizer_md_tokens_ready(tokens) -> void:
@@ -29,16 +30,19 @@ func parse(tokens:Array):
 		var stabilized = false;
 		while not stabilized:
 			stabilized = true;
-			for rule in rules:
+			for rule in lang.rules:
 				if rule_matches(stack, tok, rule):
+					if rule[-1] == "SHIFT": break; #(with stabilized == true)
 					apply_rule(stack, rule);
 					stabilized = false;
 					break;
 		dbg_print("PARSE","SHIFT "+str(tok)+"\n");
-		stack.push_back(tok);
+		if tok.class != "EOF": stack.push_back(tok);
 	parse_ready.emit(stack);
 	# parsed all tokens
 	if len(stack) == 1:
+		if stack[0].class != "start":
+			push_error("snippet is not a valid program");
 		return stack[0];
 	elif len(stack) == 0:
 		push_error("no input");
@@ -84,10 +88,6 @@ func apply_rule(stack:Array, rule:Array):
 	new_tok["children"] = toks;
 	stack.append(new_tok);
 
-const rules = [
-	["NUMBER", "*", "expr"],
-	["IDENT", "/=", "expr", "/;", "assignment"],
-];
 
 func stack_to_str(stack:Array, prefix:String):
 	var text:String = "";
@@ -99,6 +99,10 @@ func stack_to_str(stack:Array, prefix:String):
 	text = text.erase(len(text)-1); #remove the last \n
 	return text;
 
+var dbg_to_console = false;
+var dbg_to_file = true;
+var dbg_filename = "log.txt";
+var dbg_fp = FileAccess.open(dbg_filename, FileAccess.WRITE);
 var dbg_prints_enabled = [
 	#"TOKENIZE",
 	"PARSE",
@@ -106,6 +110,7 @@ var dbg_prints_enabled = [
 ];
 
 func dbg_print(print_class, msg):
-	if print_class in dbg_prints_enabled: print(msg);
-
+	if print_class in dbg_prints_enabled: 
+		if dbg_to_console:	print(msg);
+		if dbg_to_file: dbg_fp.store_line(msg);
 #-------------------------------------
