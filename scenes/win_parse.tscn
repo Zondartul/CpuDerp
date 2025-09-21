@@ -15,8 +15,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="BC" type="BoxContainer" parent="SC"]
+[node name="Tree" type="Tree" parent="SC"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-vertical = true
+
+[connection signal="close_requested" from="." to="." method="hide"]

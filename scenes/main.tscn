@@ -189,9 +189,11 @@ item_3/text = "Load"
 item_3/id = 3
 
 [node name="View" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
-item_count = 1
+item_count = 2
 item_0/text = "tokens"
 item_0/id = 0
+item_1/text = "parse (AST)"
+item_1/id = 1
 
 [node name="Language" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
 
@@ -266,6 +268,7 @@ visible = false
 visible = false
 
 [node name="win_parse" parent="Panel/TabContainer/Editor" instance=ExtResource("15_y6deb")]
+visible = false
 
 [node name="btn_debugger" type="Button" parent="Panel"]
 layout_mode = 1
