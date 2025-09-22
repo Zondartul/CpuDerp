@@ -6,10 +6,12 @@ var cur_path: set=set_cur_path;
 const lang = preload("res://scenes/lang_md.gd");
 signal tokens_ready;
 signal parse_ready;
+signal IR_ready;
 
 func compile(text):
 	var tokens = tokenizer.tokenize(text);
-	var _ast = parse(tokens);
+	var ast = parse(tokens);
+	var _IR = analyze(ast);
 	#print(tokens);
 
 func _on_tokenizer_md_tokens_ready(tokens) -> void:
@@ -114,3 +116,89 @@ func dbg_print(print_class, msg):
 		if dbg_to_console:	print(msg);
 		if dbg_to_file: dbg_fp.store_line(msg);
 #-------------------------------------
+#----------- Anlysis ----------------------
+
+const ast_bypass_list = ["start", "stmt_list", "stmt"];
+var IR = null;
+
+func clear_IR():
+	IR = {
+		"commands":[],
+	};
+
+func analyze(ast):
+	clear_IR();
+	analyze_one(ast);
+	IR_ready.emit(IR);
+	return IR;
+
+func analyze_one(ast):
+	if ast.class in ast_bypass_list:
+		analyze_all(ast.children);
+	
+	match ast.class:
+		"expr": analyze_expr(ast);
+		_: push_error("analyze: not implemented for class "+ast.class); return null;
+
+func analyze_all(list):
+	for ast in list: analyze_one(ast);
+
+var expr_stack = [];
+
+var val_idx = 0;
+# returns a handle to a new IR value
+func new_value():
+	var val_name = "val_"+str(val_idx);
+	return {"name":val_name};
+
+func analyze_expr(ast):
+	assert(ast.class == "expr");
+	var expr1 = ast.children[0];
+	assert(expr1.class == "expr");
+	var op = ast.children[1];
+	var expr2 = null
+	if len(ast.children) > 2: 
+		expr2 = ast.children[2];
+		assert(expr2.class == "expr");
+	match op.text:
+		"+": analyze_expr_infix_op(expr1, expr2, "ADD");
+		"-": analyze_expr_infix_op(expr1, expr2, "SUB");
+		"*": analyze_expr_infix_op(expr1, expr2, "MUL");
+		"++": analyze_expr_postfix_op(expr1, "INC");
+		"--": analyze_expr_postfix_op(expr1, "DEC");
+		"(": analyze_expr_call(expr1, expr2);
+		"[": analyze_expr_infix_op(expr1, expr2, "INDEX");
+		_: push_error("analyze: expr op not implemented"); return;
+
+func analyze_expr_infix_op(expr1, expr2, op):
+	analyze_expr(expr1);
+	analyze_expr(expr2);
+	var arg2 = expr_stack.pop();
+	var arg1 = expr_stack.pop();
+	var res = new_value();
+	emit_IR(["OP", op, arg1, arg2, res]);
+
+func analyze_expr_postfix_op(expr1, op):
+	analyze_expr(expr1);
+	var arg = expr_stack.pop();
+	var res = new_value();
+	emit_IR(["OP", op, arg, null, res]);
+
+func emit_IR(cmd:Array):
+	IR.commands.append(cmd);
+
+func analyze_expr_call(expr1, expr2):
+	analyze_expr(expr1);
+	analyze_expr_list(expr2);
+	var args = expr_stack.pop();
+	var fun = expr_stack.pop();
+	var res = new_value();
+	emit_IR(["CALL", fun, args, res]);
+
+func analyze_expr_list(expr_list):
+	assert(expr_list.class == "expr_list");
+	var res = [];
+	for expr in expr_list.children:
+		analyze_expr(expr);
+		res.append(expr_stack.pop());
+	expr_stack.push_back(res);
