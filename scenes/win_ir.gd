@@ -20,7 +20,7 @@ func set_stuff(obj, node):
 			leaf.set_text(0, str(i));
 			set_stuff(val, leaf);
 	else:
-		node.set_text(str(obj));
+		node.set_text(1, str(obj));
 	
 
 

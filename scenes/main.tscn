@@ -190,11 +190,13 @@ item_3/text = "Load"
 item_3/id = 3
 
 [node name="View" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
-item_count = 2
+item_count = 3
 item_0/text = "tokens"
 item_0/id = 0
 item_1/text = "parse (AST)"
 item_1/id = 1
+item_2/text = "analysis (IR)"
+item_2/id = 2
 
 [node name="Language" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
 
@@ -210,10 +212,11 @@ size_flags_vertical = 3
 [node name="HSeparator" type="HSeparator" parent="Panel/TabContainer/Editor/V"]
 layout_mode = 2
 
-[node name="TE_console" type="TextEdit" parent="Panel/TabContainer/Editor/V"]
+[node name="RTL_console" type="RichTextLabel" parent="Panel/TabContainer/Editor/V"]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
-editable = false
+bbcode_enabled = true
+scroll_following = true
 
 [node name="comp_file" type="Node" parent="Panel/TabContainer/Editor"]
 script = ExtResource("4_3f0fj")
@@ -273,6 +276,7 @@ title = "Parse (AST)"
 visible = false
 
 [node name="win_IR" parent="Panel/TabContainer/Editor" instance=ExtResource("16_og1vs")]
+visible = false
 
 [node name="btn_debugger" type="Button" parent="Panel"]
 layout_mode = 1
@@ -329,9 +333,11 @@ script = ExtResource("19_a20q3")
 [connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_load" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_load_file_selected"]
 [connection signal="IR_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor/win_IR" method="_on_comp_compile_md_ir_ready"]
 [connection signal="parse_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor/win_parse" method="_on_comp_compile_md_parse_ready"]
+[connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor" method="_on_comp_compile_md_sig_user_error"]
 [connection signal="tokens_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/tokenizer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_tokenizer_md_tokens_ready"]
 [connection signal="close_requested" from="Panel/TabContainer/Editor/window_debug" to="Panel/TabContainer/Editor/window_debug" method="hide"]
 [connection signal="set_highlight" from="Panel/TabContainer/Editor/window_debug/debug_panel" to="Panel/TabContainer/Editor/comp_build" method="_on_debug_panel_set_highlight"]
+[connection signal="close_requested" from="Panel/TabContainer/Editor/win_IR" to="Panel/TabContainer/Editor/win_IR" method="hide"]
 [connection signal="pressed" from="Panel/btn_debugger" to="Panel/TabContainer/Editor/window_debug" method="show"]
 [connection signal="cpu_step_done" from="VM/CPU_vm" to="Panel/TabContainer/Memory" method="_on_cpu_vm_cpu_step_done"]
 [connection signal="cpu_step_done" from="VM/CPU_vm" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="_on_cpu_vm_cpu_step_done"]

@@ -5,7 +5,7 @@ extends Control
 @onready var n_VM_memory = $VM/Bus/RAM_64k
 @onready var n_VM_KB = $VM/Bus/KB
 @onready var n_Editor = $Panel/TabContainer/Editor
-@onready var n_console = $Panel/TabContainer/Editor/V/TE_console
+@onready var n_console = $Panel/TabContainer/Editor/V/RTL_console
 @onready var n_CPU = $VM/CPU_vm
 @onready var n_led_error = $Panel/TabContainer/Screen/V/Control/GridContainer/cr_led_error
 @onready var n_led_status = $Panel/TabContainer/Screen/V/Control/GridContainer/cr_led_on

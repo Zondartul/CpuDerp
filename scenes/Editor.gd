@@ -2,7 +2,7 @@ extends Control
 
 var VM;
 var memory;
-var console;
+var console:RichTextLabel;
 var is_setup = false;
 
 func _ready():
@@ -31,14 +31,18 @@ func setup(dict:Dictionary):
 func switch_to_file(filename):
 	$comp_file.switch_to_file(filename);
 
-func print_console(text):
+func print_console(text, col=Color.GRAY):
 	#var console:TextEdit = $V/TE_console;
-	console.text += text + "\n";
+	console.text += "[color="+col.to_html(false)+"]"+ text + "[/color]" + "\n";
 	#scroll to bottom
-	console.scroll_vertical = console.get_line_count()
+	#console.scroll_vertical = console.get_line_count();
 
 
 func _on_view_index_pressed(index: int) -> void:
 	match index:
 		0: $win_token_view.popup();
 		1: $win_parse.popup();
+		2: $win_IR.popup();
+
+func _on_comp_compile_md_sig_user_error(msg) -> void:
+	print_console(msg, Color.RED);
