@@ -23,7 +23,7 @@ func show_line_numbers():
 
 func update_line_numbers():
 	var num_lines = n_text.get_line_count();
-	print("update line numbers: "+str(num_lines)+" lines");
+	#print("update line numbers: "+str(num_lines)+" lines");
 	var col_linenum = Color.DIM_GRAY;
 	for i in range(num_lines):
 		n_text.set_line_gutter_text(i,0,str(i));

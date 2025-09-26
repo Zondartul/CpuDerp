@@ -101,6 +101,7 @@ func last_non_space(line:String)->int:
 
 const recombinations = [
 	["#", "/*"], ["+", "+"], ["-", "-"], ["+", "="], ["-", "="],
+	["!", "="], ["=", "="],
 	["/WORD", "/NUMBER"], ["/NUMBER", ".", "/NUMBER"],
 ];
 

@@ -4,6 +4,8 @@
 
 #include "asm_screen.txt"
 var x = 12;
+extern func putch(c);
+extern var y;
 
 var hex = "0123456789ABCDEF";
 
@@ -11,6 +13,18 @@ while(x > 2){
 	putch(hex[x]);
 	x = x - 1;
 	x--;
+}
+
+if (x == y){
+	putch("yay");
+}elif(x < y){
+	putch("nay");
+}else{
+	putch("wah");
+}
+
+func bonk(x){
+	return 2*x;
 }
 
 // dynamic vars

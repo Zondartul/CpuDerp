@@ -9,7 +9,7 @@ func clear_IR():
 		"code_blocks":{},
 		"scopes":{},
 	};
-	var global_scope = new_scope("global",null);
+	var global_scope = new_scope("global", "none");
 	cur_scope = global_scope;
 	var global_code_block = new_code_block();
 	cur_code_block = global_code_block;#IR.code_blocks[0];
@@ -22,7 +22,14 @@ func make_unique_IR_name(type, text=null):
 	return val_name;
 	
 # returns a handle to a new IR value
-func new_val(): return {"val_type":null, "ir_name":null, "user_name":null, "type":null, "value":null};
+func new_val(): return {
+	"val_type":null, 	# what sort of object does this handle represent?
+	"ir_name":null, 	# what is a unique name of this handle?
+	"user_name":null, 	# how does the source code refer to the underlying object?
+	"type":null, 		# what is the data type of the underlying object?
+	"value":null,		# what is the actual value of the underlying object?
+	"storage":null		# where is the object located?
+	};
 
 func new_val_temp():
 	var val = new_val();
@@ -51,6 +58,20 @@ func new_val_error():
 	val.ir_name = "error";
 	return val;
 
+func new_val_none():
+	var val = new_val();
+	val.val_type = "none";
+	val.ir_name = "none";
+	return val;
+
+func new_val_func(fun_name, fun_scope, fun_code):
+	var val = new_val();
+	val.val_type = "func";
+	val.ir_name = make_unique_IR_name("func", fun_name);
+	val.user_name = fun_name;
+	val["scope"] = fun_scope.ir_name;
+	val["code"] = fun_code.ir_name;
+	return val;
 
 func emit_IR(cmd:Array):
 	#IR.commands.append(cmd);
@@ -80,6 +101,9 @@ func serialize_ir_arg(arg):
 func save_variable(var_handle):
 	cur_scope.vars.append(var_handle);
 
+func save_function(fun_handle):
+	cur_scope.funcs.append(fun_handle);
+
 func push_code_block(new_block=null):
 	var old_cb = cur_code_block;
 	if not new_block: 
@@ -98,7 +122,19 @@ func new_code_block():
 	IR.code_blocks[cb.ir_name] = cb;
 	return cb;
 
-func new_scope(scp_name, scp_parent):
+func push_scope(scope=null):
+	var old_sc = cur_scope;
+	if not scope:
+		scope = new_scope(null,cur_scope.ir_name);
+	cur_scope = scope;
+	return old_sc;
+
+func pop_scope(old_scope):
+	var popped_scope = cur_scope;
+	cur_scope = old_scope;
+	return popped_scope;
+	
+func new_scope(scp_name, scp_parent:String=""):
 	var scp = {
 				"ir_name":make_unique_IR_name("scp",scp_name),
 				"parent":scp_parent,
@@ -131,3 +167,101 @@ func get_func(fun_name:String):
 		else:
 			break;
 	return null;
+#
+#func serialize_full():
+	#return serialize_helper(IR, 0);
+#
+#func serialize_helper(obj, indent):
+	#var text = "";
+	#if obj == null:
+		#return "NULL";
+	#if obj is String:
+		#return obj;
+	#elif obj is Dictionary:
+		#for key in obj:
+			#var val = obj[key];
+			#text += serialize_helper_kv(key, val, indent);
+	#elif obj is Array:
+		#for i in range(len(obj)):
+			#var key = str(i);
+			#var val = obj[i];
+			#text += serialize_helper_kv(key, val, indent);
+	#else:
+		#assert(false);
+	#return text;
+#
+#func serialize_helper_kv(key, val, indent):
+	#var text = str(" ").repeat(indent)+key+":";
+	#assert((val is String) or (val is Dictionary) or (val is Array) or (val==null));
+	#if val == null: val = "NULL";
+	#if val is String:
+		#text += " "+val + "\n";
+	#else:
+		#text += "\n" + serialize_helper(val, indent+1) + "\n";
+	#return text;
+
+func serialize_full():
+	var text = "";
+	text += serialize_code_blocks() + "\n";
+	text += serialize_scopes() + "\n";
+	return text;
+
+func remove_last_newline(text): 
+	return text.substr(0,len(text)-1);
+
+func serialize_code_blocks():
+	var text = "code:\n";
+	for key in IR.code_blocks:
+		var cb = IR.code_blocks[key];
+		text += serialize_code_block(cb) + "\n";
+	text = remove_last_newline(text);
+	return text;
+
+func serialize_code_block(cb):
+	var text:String = " "+cb.ir_name+":\n";
+	for cmd in cb.code:
+		text += "  " + serialize_cmd(cmd) + "\n";
+	text = remove_last_newline(text);
+	return text;
+
+func serialize_cmd(cmd):
+	var text = "";
+	for arg:String in cmd:
+		text += arg + " ";
+	return text;
+
+func serialize_scopes():
+	var text = "scopes:\n";
+	for key in IR.scopes:
+		var sc = IR.scopes[key];
+		text += serialize_scope(sc) + "\n";
+	text = remove_last_newline(text);
+	return text;
+
+func serialize_scope(sc):
+	var text = " "+sc.ir_name + ":\n";
+	text += "# ir_name: val_type, user_name, data_type, storage, value, scope, code\n";
+	text += "  vars:\n";
+	for val in sc.vars:
+		text += "   "+serialize_val(val)+"\n";
+	text += "  funcs:\n";
+	for val in sc.funcs:
+		text += "   "+serialize_val(val)+"\n";
+	text = remove_last_newline(text);
+	return text;
+
+func serialize_val(val):
+	var text = val.ir_name+": ";
+	for key in ["val_type", "user_name", "data_type", "storage", "value", "scope", "code"]:
+		if (key in val) and (val[key] != null):
+			text += val[key] + " ";
+		else:
+			text += "NULL ";
+	return text;
+		
+func to_file(filename):
+	var fp = FileAccess.open(filename, FileAccess.ModeFlags.WRITE);
+	if not fp: push_error("can't write file: "+filename); return;
+	var text = serialize_full();
+	fp.store_line(text);
+	fp.close();

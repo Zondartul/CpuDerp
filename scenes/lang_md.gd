@@ -3,7 +3,7 @@ extends Node
 
 var lang_name = "miniderp";
 
-const keywords = ["var", "func", "if", "else", "while", "return", "and", "or", "not"];
+const keywords = ["var", "func", "if", "else", "elif", "continue", "break", "while", "return", "and", "or", "not", "extern"];
 const ops = [".", "+", "-", "*", "/", "%", 
 			"=", "+=", "-=", "*=", "/=", "%=", 
 			"&", "|", "^", ">", "<", "!=", "==",
@@ -17,40 +17,83 @@ const punct_range_end = [")", "]", "}"];
 # N-1 - lookahead
 # N - result
 const rules = [
-	["stmt_list", "EOF", "start"],
-	["/#include", "STRING", "*", "stmt_preproc"],
-	["stmt_preproc", "*", "stmt"],
-	["NUMBER", "*", "expr_immediate"],
-	["STRING", "*", "expr_immediate"],
-	["expr_immediate", "*", "expr"],
-	["IDENT", "/=", "SHIFT"],
-	["IDENT", "*", "expr_ident"],
-	["expr_ident", "*", "expr"],
-	["IDENT", "/=", "expr", "/;", "*","assignment_stmt"],
-	["/var", "assignment_stmt", "*", "decl_assignment_stmt"],
-	["assignment_stmt", "*", "stmt"],
-	["decl_assignment_stmt", "*", "stmt"],
-	["/var", "IDENT", "/;", "*", "var_decl_stmt"],
-	["var_decl_stmt", "*", "stmt"],
-	["/if", "/(", "expr", "/)", "*", "if_start" ],
-	["/{", "stmt_list", "/}", "*", "block"],
-	["if_start", "block", "*","if_stmt"],
-	["/while", "/(", "expr", "/)", "*", "while_start"],
-	["while_start", "block", "*", "while_stmt"],
-	["while_stmt", "*", "stmt"],
-	["expr", "/;", "*", "stmt"],
-	["expr", "OP", "expr", "*", "expr_infix"],
-	["expr", "OP", "/;", "expr_postfix"],
-	["expr", "OP", "/)", "expr_postfix"],
-	["expr", "OP", "/]", "expr_postfix"],
-	["expr_postfix", "*", "expr"],
-	["expr", "/(", "expr", "/)", "*", "expr_infix"],
-	["expr", "/(", "expr_list", "/)", "*", "expr_infix"],
-	["expr", "/[", "expr", "/]", "*", "expr_infix"],
-	["expr_infix", "*", "expr"],
-	["expr", "/,", "expr", "*", "expr_list"],
-	["stmt_list", "stmt", "*", "stmt_list"],
-	["stmt", "*", "stmt_list"],
+	["stmt_list", 					"EOF", "start"],
+	["stmt_list", "stmt", 			"*", "stmt_list"],
+	["stmt", 						"*", "stmt_list"],
+	["/{", "stmt_list", "/}", 		"*", "block"],
+	# statements
+	["var_decl_stmt", "/;",			"*", "stmt"],
+	["assignment_stmt", "/;",		"*", "stmt"],
+	["decl_assignment_stmt", "/;",	"*", "stmt"],
+	["decl_extern_stmt","/;",		"*", "stmt"],
+	["func_decl_stmt",	"/;",		"*", "stmt"],
+	["func_def_stmt", 				"*", "stmt"],
+	["while_stmt", 					"*", "stmt"],
+	["if_stmt",						"*", "stmt"],
+	["flow_stmt", "/;",				"*", "stmt"],
+	["preproc_stmt", 				"*", "stmt"],
+	["expr", "/;", 					"*", "stmt"],
+	
+	#sub-statements
+	#-- var_decl_stmt
+	["/var", "IDENT",					"/;", "var_decl_stmt"],
+	#-- assignment_stmt
+	["IDENT", "/=", "expr", 			"/;", "assignment_stmt"],
+	#-- decl_assignment_stmt
+	["/var", "assignment_stmt", 		"*", "decl_assignment_stmt"],
+	#-- decl_extern_stmt
+	["/extern", "var_decl_stmt",		"/;", "decl_extern_stmt"],
+	["/extern", "func_decl_stmt",		"/;", "decl_extern_stmt"],
+	#-- func_decl_stmt
+	["/func", "expr_call",				"/;", "func_decl_stmt"],
+	#-- func_def_stmt
+	["expr_call",						"/{", "SHIFT"],
+	["/func", "expr_call", "block", 	"*", "func_def_stmt"],
+	#-- while_stmt
+	["/while", "/(", "expr", "/)", 		"*", "while_start"],
+	["while_start", "block", 			"*", "while_stmt"],
+	#-- if_stmt
+	["/if", "/(", "expr", "/)",	"block",					"*", "if_block"],
+	["if_block", "/elif", "/(", "expr", "/)", "block",		"*", "if_block"],
+	["if_block", "/else", "block",							"*", "if_else_block"],
+	["if_block", 											"/else", "SHIFT"],
+	["if_block", 											"/elif", "SHIFT"],
+	["if_block", 											"/else", "SHIFT"],
+	["if_block", 											"*", "if_stmt"],
+	["if_else_block", 										"*", "if_stmt"],
+	#-- flow_stmt
+	["/break",							"/;", "flow_stmt"],
+	["/continue",						"/;", "flow_stmt"],
+	["/return",							"/;", "flow_stmt"],
+	["/return", "expr", 				"/;", "flow_stmt"],
+	#-- preproc_stmt
+	["/#include", "STRING", 			"*", "preproc_stmt"],
+	
+	# expressions
+	["expr_immediate", 					"*", "expr"],
+	["expr_ident", 						"*", "expr"],
+	["expr_postfix", 					"*", "expr"],
+	["expr_infix", 						"*", "expr"],
+	["expr_call",						"*", "expr"],
+	
+	# sub-expressions
+	# -- expr_immediate
+	["NUMBER", 							"*", "expr_immediate"],
+	["STRING", 							"*", "expr_immediate"],
+	# -- expr_ident
+	["IDENT", 							"/=", "SHIFT"],
+	["IDENT", 							"*", "expr_ident"],
+	# -- expr_postfix
+	["expr", "OP", 						"/;", "expr_postfix"],
+	["expr", "OP",						"/)", "expr_postfix"],
+	["expr", "OP", 						"/]", "expr_postfix"],
+	# -- expr_infix
+	["expr", "OP", "expr", 				"*", "expr_infix"],
+	["expr", "/[", "expr", "/]",		"*", "expr_infix"],
+	# -- expr_call
+	["expr", "/,", "expr", 				"*", "expr_list"],
+	["expr", "/(", "expr", "/)",		"*", "expr_call"],
+	["expr", "/(", "expr_list", "/)",	"*", "expr_call"],
 ];
 
 func get_syntax():

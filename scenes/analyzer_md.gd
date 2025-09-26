@@ -12,6 +12,7 @@ func analyze(ast):
 	analyze_one(ast);
 	IR_ready.emit(IR.IR);
 	print(IR);
+	IR.to_file("IR.txt");
 	return IR;
 
 func analyze_expr(ast):
@@ -29,10 +30,17 @@ func analyze_one(ast):
 		analyze_all(ast.children);
 		return;
 	
+	if ast.class != "expr": expr_stack.clear();
+	
 	match ast.class:
-		"stmt_preproc": analyze_stmt_preproc(ast);
+		"preproc_stmt": analyze_preproc_stmt(ast);
+		"var_decl_stmt": analyze_var_decl_stmt(ast);
+		"func_decl_stmt": analyze_func_decl_stmt(ast);
 		"decl_assignment_stmt": analyze_decl_assignment(ast);
 		"assignment_stmt": analyze_assignment_stmt(ast);
+		"decl_extern_stmt": analyze_decl_extern_stmt(ast);
+		"if_stmt": analyze_if_stmt(ast);
+		"func_def_stmt": analyze_func_def_stmt(ast);
 		"expr": analyze_expr(ast);
 		"while_stmt": analyze_while_stmt(ast);
 		"block": analyze_block(ast);
@@ -100,12 +108,14 @@ func analyze_expr_infix_op(expr1, expr2, op):
 	var arg1 = expr_stack.pop_back();
 	var res = IR.new_val_temp();
 	IR.emit_IR(["OP", op, arg1, arg2, res]);
+	expr_stack.push_back(res);
 
 func analyze_expr_postfix_op(expr1, op):
 	analyze_expr(expr1);
 	var arg = expr_stack.pop_back();
 	var res = IR.new_val_temp();
-	IR.emit_IR(["OP", op, arg, null, res]);
+	IR.emit_IR(["OP", op, arg, IR.new_val_none(), res]);
+	expr_stack.push_back(res);
 
 
 func analyze_expr_call(expr1, expr2):
@@ -115,6 +125,7 @@ func analyze_expr_call(expr1, expr2):
 	var fun = expr_stack.pop_back();
 	var res = IR.new_val_temp();
 	IR.emit_IR(["CALL", fun, args, res]);
+	expr_stack.push_back(res);
 
 func analyze_expr_list(expr_list):
 	assert(expr_list.class == "expr_list");
@@ -124,10 +135,45 @@ func analyze_expr_list(expr_list):
 		res.append(expr_stack.pop_back());
 	expr_stack.push_back(res);
 
-func analyze_stmt_preproc(ast):
-	assert(ast.class == "stmt_preproc");
+func analyze_preproc_stmt(ast):
+	assert(ast.class == "preproc_stmt");
 	push_error("analyze_stmt_preproc: unimplemented");
-	
+
+func analyze_var_decl_stmt(ast):
+	assert(ast.class == "var_decl_stmt");
+	var tok_ident = ast.children[1];
+	assert(tok_ident.class == "IDENT");
+	var var_name = tok_ident.text;
+	var var_handle = IR.new_val_var(var_name);
+	IR.save_variable(var_handle);
+
+func analyze_func_decl_stmt(ast):
+	assert(ast.class == "func_decl_stmt");
+	var tok_ident = ast.children[1];
+	assert(tok_ident.class == "IDENT");
+	var fun_name = tok_ident.text;
+	var fun_handle = IR.new_val_func(fun_name);
+	IR.save_function(fun_handle);
+
+func analyze_decl_extern_stmt(ast):
+	assert(ast.class == "decl_extern_stmt");
+	var decl = ast.children[1];
+	if (decl.class == "var_decl_stmt"):
+		var tok_ident = decl.children[1];
+		assert(tok_ident.class == "IDENT");
+		var var_name = tok_ident.text;
+		var var_handle = IR.new_val_var(var_name);
+		var_handle.storage = "extern";
+		IR.save_variable(var_handle);
+	elif (decl.class == "func_decl_stmt"):
+		var tok_ident = decl.children[1].children[0].children[0].children[0];
+		assert(tok_ident.class == "IDENT");
+		var fun_name = tok_ident.text;
+		var fun_handle = IR.new_val_func(fun_name, IR.new_val_none(), IR.new_val_none());
+		fun_handle.storage = "extern";
+		IR.save_function(fun_handle);
+		
+
 func analyze_decl_assignment(ast):
 	# decl part
 	assert(ast.class == "decl_assignment_stmt");
@@ -154,10 +200,10 @@ func analyze_while_stmt(ast):
 	
 	var ocb = IR.push_code_block();
 	analyze_one(expr_cond);
+	var arg = expr_stack.pop_back();
 	var code_condition = IR.pop_code_block(ocb);
 	
 	ocb = IR.push_code_block();
-	var arg = expr_stack.pop_back();
 	analyze_one(stmt_block);
 	var code_block = IR.pop_code_block(ocb);
 	
@@ -220,3 +266,99 @@ func analyze_block(ast):
 
 func user_error(msg):
 	sig_user_error.emit(msg);
+
+func analyze_if_stmt(ast):
+	assert(ast.class == "if_stmt");
+	var if_block = ast.children[0];
+	if (if_block.class == "if_block"):
+		analyze_if_block(if_block);
+	elif (if_block.class == "if_else_block"):
+		analyze_if_else_block(if_block);
+	else:
+		assert(false);
+
+func analyze_if_block(ast):
+	assert(ast.class == "if_block");
+	var tok_start = ast.children[0];
+	var cond = null;
+	var block = null;
+	if tok_start.text == "if":
+		cond = ast.children[2];
+		block = ast.children[4];
+	elif tok_start.class == "if_block":
+		var tok_elif = ast.children[1];
+		assert(tok_elif.text == "elif"); 
+		analyze_if_block(tok_start);
+		cond = ast.children[3];
+		block = ast.children[5];
+	elif ast.children[1].text == ";":
+		pass;
+	else:
+		push_error("analyze: broken if-else block");
+		
+	assert(cond.class == "expr");
+	assert(block.class == "block");
+	
+	var ocb = IR.push_code_block();
+	analyze_expr(cond);
+	var arg = expr_stack.pop_back();
+	var code_cond = IR.pop_code_block(ocb);
+	
+	ocb = IR.push_code_block();
+	analyze_block(block);
+	var code_block = IR.pop_code_block(ocb);
+	
+	IR.emit_IR(["IF", code_cond, arg, code_block]);
+
+func analyze_if_else_block(ast):
+	assert(ast.class == "if_else_block");
+	var if_block = ast.children[0];
+	assert(if_block.class == "if_block");
+	analyze_if_block(if_block);
+	
+	var block = ast.children[2];
+	analyze_block(block);
+	
+func analyze_func_def_stmt(ast):
+	assert(ast.class == "func_def_stmt");
+	var tok_func = ast.children[0];
+	assert(tok_func.text == "func");
+	var expr_call = ast.children[1];
+	assert(expr_call.class == "expr_call");
+	var block = ast.children[2];
+	assert(block.class == "block");
+	
+	var tok_ident = expr_call.children[0].children[0].children[0];
+	assert(tok_ident.class == "IDENT");
+	var fun_name = tok_ident.text;
+	
+	var arg_names = [];
+	var expr = expr_call.children[2];
+	while true:
+		if expr.class == "expr_list":
+			var arg = expr.children[2].children[0].children[0];
+			assert(arg.class == "IDENT");
+			arg_names.push_front(arg.text);
+			expr = expr.children[0];
+		if expr.class == "expr":
+			var arg = expr.children[0].children[0];
+			assert(arg.class == "IDENT");
+			arg_names.push_front(arg.text);
+			break;
+	
+	
+	var ocb = IR.push_code_block();
+	var osc = IR.push_scope();
+	for arg_name in arg_names:
+		var arg_handle = IR.new_val_var(arg_name);
+		arg_handle.storage = "arg";
+		IR.save_variable(arg_handle);
+	analyze_block(block);
+	var fun_scope = IR.pop_scope(osc);
+	var fun_code = IR.pop_code_block(ocb);
+	var fun_handle = IR.new_val_func(fun_name, fun_scope, fun_code);
+	IR.save_function(fun_handle);
+	
+	
+	
+	

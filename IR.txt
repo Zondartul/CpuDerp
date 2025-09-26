@@ -1,0 +1,36 @@
+code:
+ cb_1:
+  MOV var_2__x imm_3 
+  MOV var_6__hex imm_7 
+  WHILE cb_8 tmp_10 cb_11 
+  IF cb_15 tmp_16 cb_17 
+  IF cb_18 tmp_19 cb_20 
+ cb_8:
+  OP GREATER var_2__x imm_9 tmp_10 
+ cb_11:
+  OP SUB var_2__x imm_12 tmp_13 
+  MOV var_2__x tmp_13 
+  OP DEC var_2__x none tmp_14 
+ cb_15:
+  OP EQUAL var_2__x var_5__y tmp_16 
+ cb_17:
+ cb_18:
+  OP LESS var_2__x var_5__y tmp_19 
+ cb_20:
+ cb_21:
+scopes:
+ scp_0__global:
+# ir_name: val_type, user_name, data_type, storage, value, scope, code
+  vars:
+   var_2__x: variable x NULL NULL NULL NULL NULL 
+   var_5__y: variable y NULL extern NULL NULL NULL 
+   var_6__hex: variable hex NULL NULL NULL NULL NULL 
+  funcs:
+   func_4__putch: func putch NULL extern NULL none none 
+   func_24__bonk: func bonk NULL NULL NULL scp_22 cb_21 
+ scp_22:
+# ir_name: val_type, user_name, data_type, storage, value, scope, code
+  vars:
+   var_23__x: variable x NULL arg NULL NULL NULL 
+  funcs:
+
