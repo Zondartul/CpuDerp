@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://cfii8rrppxgqq"]
+[gd_scene load_steps=30 format=3 uid="uid://cfii8rrppxgqq"]
 
 [ext_resource type="Script" uid="uid://c4qakorwmu6dc" path="res://scenes/main.gd" id="1_ggytm"]
 [ext_resource type="Script" uid="uid://c44d4a042o542" path="res://scenes/Memory.gd" id="2_0ld40"]
@@ -24,6 +24,7 @@
 [ext_resource type="Script" uid="uid://c82uc0neu8mnf" path="res://scenes/analyzer_md.gd" id="13_2wyq8"]
 [ext_resource type="PackedScene" uid="uid://bctk63nmyhslj" path="res://scenes/win_token_view.tscn" id="13_jscy8"]
 [ext_resource type="Script" uid="uid://b0dpyaiyjb2ks" path="res://scenes/ir_md.gd" id="14_vxglm"]
+[ext_resource type="Script" uid="uid://bupipg6ylmfsi" path="res://scenes/codegen_md.gd" id="15_2f3dj"]
 [ext_resource type="PackedScene" uid="uid://bystectvtbdhc" path="res://scenes/win_parse.tscn" id="15_y6deb"]
 [ext_resource type="PackedScene" uid="uid://bgb5s3xu12cb0" path="res://scenes/win_ir.tscn" id="16_og1vs"]
 [ext_resource type="Script" uid="uid://b74jfmkseejoc" path="res://scenes/todo.gd" id="19_a20q3"]
@@ -268,6 +269,9 @@ IR = NodePath("../IR_md")
 
 [node name="IR_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md"]
 script = ExtResource("14_vxglm")
+
+[node name="codegen_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md"]
+script = ExtResource("15_2f3dj")
 
 [node name="window_debug" type="Window" parent="Panel/TabContainer/Editor"]
 title = "Debug"

@@ -4,6 +4,7 @@ var cur_filename: set=set_cur_filename;
 var cur_path: set=set_cur_path;
 @onready var tokenizer = $tokenizer_md;
 @onready var analyzer = $analyzer_md;
+@onready var codegen = $codegen_md;
 const lang = preload("res://scenes/lang_md.gd");
 signal tokens_ready;
 signal parse_ready;
@@ -16,6 +17,7 @@ func compile(text):
 	var ast = parse(tokens);
 	if not ast: return;
 	var _IR = analyzer.analyze(ast);
+	codegen.parse_file("IR.txt");
 	#print(tokens);
 
 func _on_tokenizer_md_tokens_ready(tokens) -> void:
