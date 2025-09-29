@@ -23,7 +23,8 @@ func analyze_expr(ast):
 		"expr_postfix": analyze_expr_postfix(ch);
 		"expr_immediate": analyze_expr_immediate(ch);
 		"expr_ident": analyze_expr_ident(ch);
-		_: push_error("analyze_expr: unimplemented expr type");
+		"expr_call": analyze_expr_call(ch);
+		_: push_error("analyze_expr: unimplemented expr type: "+ch.class);
 
 func analyze_one(ast):
 	if ast.class in ast_bypass_list:
@@ -44,6 +45,7 @@ func analyze_one(ast):
 		"expr": analyze_expr(ast);
 		"while_stmt": analyze_while_stmt(ast);
 		"block": analyze_block(ast);
+		"flow_stmt": analyze_flow_stmt(ast);
 		"PUNCT": pass;
 		_: push_error("analyze: not implemented for class "+ast.class); return null;
 
@@ -51,7 +53,7 @@ func analyze_all(list):
 	for ast in list: analyze_one(ast);
 
 var expr_stack = [];
-
+var control_flow_stack = []; #for break and continue
 
 const  op_map = {
 	"+":"ADD",
@@ -88,8 +90,7 @@ func analyze_expr_infix(ast):
 	var expr2 = ast.children[2];
 	assert(expr2.class == "expr");
 	
-	if op.text == "(": analyze_expr_call(expr1, expr2);
-	elif op.text in op_map: analyze_expr_infix_op(expr1, expr2, op_map[op.text]);
+	if op.text in op_map: analyze_expr_infix_op(expr1, expr2, op_map[op.text]);
 	else: push_error("analyze: expr op not implemented: "+op.text); return;
 
 func analyze_expr_postfix(ast):
@@ -117,12 +118,16 @@ func analyze_expr_postfix_op(expr1, op):
 	IR.emit_IR(["OP", op, arg, IR.new_val_none(), res]);
 	expr_stack.push_back(res);
 
-
-func analyze_expr_call(expr1, expr2):
+func analyze_expr_call(ast):
+	assert(ast.class == "expr_call");
+	var expr1 = ast.children[0];
+	assert(expr1.class == "expr");
+	var expr2 = ast.children[2];
+	assert(expr2.class == "expr");
 	analyze_expr(expr1);
+	var fun = expr_stack.pop_back();
 	analyze_expr(expr2);
 	var args = expr_stack.pop_back();
-	var fun = expr_stack.pop_back();
 	var res = IR.new_val_temp();
 	IR.emit_IR(["CALL", fun, args, res]);
 	expr_stack.push_back(res);
@@ -198,6 +203,9 @@ func analyze_while_stmt(ast):
 	var stmt_block = ast.children[1];
 	assert(stmt_block.class == "block");
 	
+	var label_next = IR.new_val_lbl("while_next");
+	var label_end = IR.new_val_lbl("while_end");
+	control_flow_stack.push_back({"type":"while", "next":label_next, "end":label_end});
 	var ocb = IR.push_code_block();
 	analyze_one(expr_cond);
 	var arg = expr_stack.pop_back();
@@ -206,8 +214,8 @@ func analyze_while_stmt(ast):
 	ocb = IR.push_code_block();
 	analyze_one(stmt_block);
 	var code_block = IR.pop_code_block(ocb);
-	
-	IR.emit_IR(["WHILE", code_condition, arg, code_block]);
+	control_flow_stack.pop_back();
+	IR.emit_IR(["WHILE", code_condition, arg, code_block, label_next, label_end]);
 
 
 func analyze_assignment_stmt(ast):
@@ -282,6 +290,7 @@ func analyze_if_block(ast):
 	var tok_start = ast.children[0];
 	var cond = null;
 	var block = null;
+	var is_elif = false;
 	if tok_start.text == "if":
 		cond = ast.children[2];
 		block = ast.children[4];
@@ -291,6 +300,7 @@ func analyze_if_block(ast):
 		analyze_if_block(tok_start);
 		cond = ast.children[3];
 		block = ast.children[5];
+		is_elif = true;
 	elif ast.children[1].text == ";":
 		pass;
 	else:
@@ -308,17 +318,23 @@ func analyze_if_block(ast):
 	analyze_block(block);
 	var code_block = IR.pop_code_block(ocb);
 	
-	IR.emit_IR(["IF", code_cond, arg, code_block]);
+	var cmd = "IF"; if is_elif: cmd = "ELSE_IF";
+	
+	IR.emit_IR([cmd, code_cond, arg, code_block]);
 
 func analyze_if_else_block(ast):
 	assert(ast.class == "if_else_block");
 	var if_block = ast.children[0];
 	assert(if_block.class == "if_block");
+	var block = ast.children[2];
+	assert(block.class == "block");
 	analyze_if_block(if_block);
 	
-	var block = ast.children[2];
+	var ocb = IR.push_code_block();
 	analyze_block(block);
-	
+	var code_block = IR.pop_code_block(ocb);
+	IR.emit_IR(["ELSE", code_block]);
+
 func analyze_func_def_stmt(ast):
 	assert(ast.class == "func_def_stmt");
 	var tok_func = ast.children[0];
@@ -345,8 +361,6 @@ func analyze_func_def_stmt(ast):
 			assert(arg.class == "IDENT");
 			arg_names.push_front(arg.text);
 			break;
-	
-	
 	var ocb = IR.push_code_block();
 	var osc = IR.push_scope();
 	for arg_name in arg_names:
@@ -359,6 +373,28 @@ func analyze_func_def_stmt(ast):
 	var fun_handle = IR.new_val_func(fun_name, fun_scope, fun_code);
 	IR.save_function(fun_handle);
 	
-	
-	
-	
+func analyze_flow_stmt(ast):
+	assert(ast.class == "flow_stmt");
+	var cmd = ast.children[0];
+	match cmd.text:
+		"break":
+			if len(control_flow_stack):
+				var cur_loop = control_flow_stack.back();
+				IR.emit_IR(["GOTO", cur_loop.end]);
+		"continue":
+			if len(control_flow_stack):
+				var cur_loop = control_flow_stack.back();
+				IR.emit_IR(["GOTO", cur_loop.next]);
+			else:
+				user_error("'Continue' statement outside of a loop");
+				return;
+		"return":
+			if len(ast.children) == 2:
+				var expr = ast.children[1];
+				assert(expr.class == "expr");
+				analyze_expr(expr);
+				var res = expr_stack.pop_back();
+				IR.emit_IR(["RETURN", res]);
+			else:
+				IR.emit_IR(["RETURN"]);
+		

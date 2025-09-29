@@ -1,6 +1,7 @@
 extends Window
 
-@onready var tree = $SC/Tree;
+@onready var tree = $TC/Tree;
+@onready var view_file = $TC/File;
 var root = null;
 
 func _ready():
@@ -41,3 +42,10 @@ func set_stuff(obj, node):
 
 func _on_comp_compile_md_ir_ready(IR):
 	set_stuff(IR, root);
+	update_file_view();
+
+func update_file_view():
+	var fp = FileAccess.open("IR.txt", FileAccess.READ);
+	var text = fp.get_as_text();
+	fp.close();
+	$TC/File.text = text;

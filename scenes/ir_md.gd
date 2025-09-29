@@ -73,6 +73,13 @@ func new_val_func(fun_name, fun_scope, fun_code):
 	val["code"] = fun_code.ir_name;
 	return val;
 
+func new_val_lbl(lbl_name=null):
+	var val = new_val();
+	val.val_type = "label";
+	val.ir_name = make_unique_IR_name("lbl", lbl_name);
+	val.user_name = lbl_name;
+	return val;
+
 func emit_IR(cmd:Array):
 	#IR.commands.append(cmd);
 	var cmd_translated = [];
@@ -150,8 +157,8 @@ func get_var(var_name:String):
 		for variable in seek_scope.vars:
 			if variable.user_name == var_name:
 				return variable;
-		if seek_scope.parent:
-			seek_scope = seek_scope.parent;
+		if seek_scope.parent and seek_scope.parent != "none":
+			seek_scope = IR.scopes[seek_scope.parent];
 		else:
 			break;
 	return null;
@@ -162,43 +169,11 @@ func get_func(fun_name:String):
 		for fun in seek_scope.funcs:
 			if fun.user_name == fun_name:
 				return fun;
-		if seek_scope.parent:
-			seek_scope = seek_scope.parent;
+		if seek_scope.parent and seek_scope.parent != "none":
+			seek_scope = IR.scopes[seek_scope.parent];
 		else:
 			break;
 	return null;
-#
-#func serialize_full():
-	#return serialize_helper(IR, 0);
-#
-#func serialize_helper(obj, indent):
-	#var text = "";
-	#if obj == null:
-		#return "NULL";
-	#if obj is String:
-		#return obj;
-	#elif obj is Dictionary:
-		#for key in obj:
-			#var val = obj[key];
-			#text += serialize_helper_kv(key, val, indent);
-	#elif obj is Array:
-		#for i in range(len(obj)):
-			#var key = str(i);
-			#var val = obj[i];
-			#text += serialize_helper_kv(key, val, indent);
-	#else:
-		#assert(false);
-	#return text;
-#
-#func serialize_helper_kv(key, val, indent):
-	#var text = str(" ").repeat(indent)+key+":";
-	#assert((val is String) or (val is Dictionary) or (val is Array) or (val==null));
-	#if val == null: val = "NULL";
-	#if val is String:
-		#text += " "+val + "\n";
-	#else:
-		#text += "\n" + serialize_helper(val, indent+1) + "\n";
-	#return text;
 
 func serialize_full():
 	var text = "";
