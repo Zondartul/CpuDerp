@@ -1,45 +1,84 @@
-code:
- cb_1:
-  MOV var_2__x imm_3 
-  MOV var_6__hex imm_7 
-  WHILE cb_10 tmp_12 cb_13 lbl_8__while_next lbl_9__while_end 
-  IF cb_19 tmp_20 cb_21 
-  ELSE_IF cb_24 tmp_25 cb_26 
-  ELSE cb_29 
- cb_10:
-  OP GREATER var_2__x imm_11 tmp_12 
- cb_13:
-  OP INDEX var_6__hex var_2__x tmp_14 
-  CALL func_4__putch tmp_14 tmp_15 
-  OP SUB var_2__x imm_16 tmp_17 
-  MOV var_2__x tmp_17 
-  OP DEC var_2__x none tmp_18 
- cb_19:
-  OP EQUAL var_2__x var_5__y tmp_20 
- cb_21:
-  CALL func_4__putch imm_22 tmp_23 
- cb_24:
-  OP LESS var_2__x var_5__y tmp_25 
- cb_26:
-  CALL func_4__putch imm_27 tmp_28 
- cb_29:
-  CALL func_4__putch imm_30 tmp_31 
- cb_32:
-  OP MUL imm_35 var_34__x tmp_36 
-  RETURN tmp_36 
-scopes:
- scp_0__global:
-# ir_name: val_type, user_name, data_type, storage, value, scope, code
-  vars:
-   var_2__x: variable x NULL NULL NULL NULL NULL 
-   var_5__y: variable y NULL extern NULL NULL NULL 
-   var_6__hex: variable hex NULL NULL NULL NULL NULL 
-  funcs:
-   func_4__putch: func putch NULL extern NULL none none 
-   func_37__bonk: func bonk NULL NULL NULL scp_33 cb_32 
- scp_33:
-# ir_name: val_type, user_name, data_type, storage, value, scope, code
-  vars:
-   var_34__x: variable x NULL arg NULL NULL NULL 
-  funcs:
-
+code_blocks: 
+ cb_1: 
+  ir_name: cb_1
+  code: 
+   MOV var_2__x imm_3
+   MOV var_6__hex imm_7
+   WHILE cb_10 tmp_12 cb_13 lbl_8__while_next lbl_9__while_end
+   IF cb_19 tmp_20 cb_21
+   ELSE_IF cb_24 tmp_25 cb_26
+   ELSE cb_29
+ cb_10: 
+  ir_name: cb_10
+  code: 
+   OP GREATER var_2__x imm_11 tmp_12
+ cb_13: 
+  ir_name: cb_13
+  code: 
+   OP INDEX var_6__hex var_2__x tmp_14
+   CALL func_4__putch tmp_14 tmp_15
+   OP SUB var_2__x imm_16 tmp_17
+   MOV var_2__x tmp_17
+   OP DEC var_2__x none tmp_18
+ cb_19: 
+  ir_name: cb_19
+  code: 
+   OP EQUAL var_2__x var_5__y tmp_20
+ cb_21: 
+  ir_name: cb_21
+  code: 
+   CALL func_4__putch imm_22 tmp_23
+ cb_24: 
+  ir_name: cb_24
+  code: 
+   OP LESS var_2__x var_5__y tmp_25
+ cb_26: 
+  ir_name: cb_26
+  code: 
+   CALL func_4__putch imm_27 tmp_28
+ cb_29: 
+  ir_name: cb_29
+  code: 
+   CALL func_4__putch imm_30 tmp_31
+ cb_32: 
+  ir_name: cb_32
+  code: 
+   OP MUL imm_35 var_34__x tmp_36
+   RETURN tmp_36
+scopes: 
+ scp_0__global: 
+  ir_name: scp_0__global
+  user_name: global
+  parent: none
+  vars: 
+   var_2__x variable x NULL NULL NULL NULL NULL
+   imm_3 immediate NULL NULL NULL 12 NULL NULL
+   var_5__y variable y NULL extern NULL NULL NULL
+   var_6__hex variable hex NULL NULL NULL NULL NULL
+   imm_7 immediate NULL NULL NULL 0123456789ABCDEF NULL NULL
+   imm_11 immediate NULL NULL NULL 2 NULL NULL
+   tmp_12 temporary NULL NULL NULL NULL NULL NULL
+   tmp_14 temporary NULL NULL NULL NULL NULL NULL
+   tmp_15 temporary NULL NULL NULL NULL NULL NULL
+   imm_16 immediate NULL NULL NULL 1 NULL NULL
+   tmp_17 temporary NULL NULL NULL NULL NULL NULL
+   tmp_18 temporary NULL NULL NULL NULL NULL NULL
+   tmp_20 temporary NULL NULL NULL NULL NULL NULL
+   imm_22 immediate NULL NULL NULL yay NULL NULL
+   tmp_23 temporary NULL NULL NULL NULL NULL NULL
+   tmp_25 temporary NULL NULL NULL NULL NULL NULL
+   imm_27 immediate NULL NULL NULL nay NULL NULL
+   tmp_28 temporary NULL NULL NULL NULL NULL NULL
+   imm_30 immediate NULL NULL NULL wah NULL NULL
+   tmp_31 temporary NULL NULL NULL NULL NULL NULL
+  funcs: 
+   func_4__putch func putch NULL extern NULL none none
+   func_37__bonk func bonk NULL NULL NULL scp_33__NULL cb_32
+ scp_33__NULL: 
+  ir_name: scp_33__NULL
+  user_name: NULL
+  parent: scp_0__global
+  vars: 
+   var_34__x variable x NULL arg NULL NULL NULL
+   imm_35 immediate NULL NULL NULL 2 NULL NULL
+   tmp_36 temporary NULL NULL NULL NULL NULL NULL

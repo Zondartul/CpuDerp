@@ -3,6 +3,7 @@ extends Node
 var IR = null;
 var cur_scope = null;
 var cur_code_block = null;
+const uYaml = preload("res://scenes/uYaml.gd");
 
 func clear_IR():
 	IR = {
@@ -142,8 +143,10 @@ func pop_scope(old_scope):
 	return popped_scope;
 	
 func new_scope(scp_name, scp_parent:String=""):
+	if not scp_name: scp_name = "NULL";
 	var scp = {
 				"ir_name":make_unique_IR_name("scp",scp_name),
+				"user_name":scp_name,
 				"parent":scp_parent,
 				"vars":[],
 				"funcs":[],
@@ -175,65 +178,86 @@ func get_func(fun_name:String):
 			break;
 	return null;
 
-func serialize_full():
-	var text = "";
-	text += serialize_code_blocks() + "\n";
-	text += serialize_scopes() + "\n";
-	return text;
-
-func remove_last_newline(text): 
-	return text.substr(0,len(text)-1);
-
-func serialize_code_blocks():
-	var text = "code:\n";
-	for key in IR.code_blocks:
-		var cb = IR.code_blocks[key];
-		text += serialize_code_block(cb) + "\n";
-	text = remove_last_newline(text);
-	return text;
-
-func serialize_code_block(cb):
-	var text:String = " "+cb.ir_name+":\n";
-	for cmd in cb.code:
-		text += "  " + serialize_cmd(cmd) + "\n";
-	text = remove_last_newline(text);
-	return text;
-
-func serialize_cmd(cmd):
-	var text = "";
-	for arg:String in cmd:
-		text += arg + " ";
-	return text;
-
-func serialize_scopes():
-	var text = "scopes:\n";
-	for key in IR.scopes:
-		var sc = IR.scopes[key];
-		text += serialize_scope(sc) + "\n";
-	text = remove_last_newline(text);
-	return text;
-
-func serialize_scope(sc):
-	var text = " "+sc.ir_name + ":\n";
-	text += "# ir_name: val_type, user_name, data_type, storage, value, scope, code\n";
-	text += "  vars:\n";
-	for val in sc.vars:
-		text += "   "+serialize_val(val)+"\n";
-	text += "  funcs:\n";
-	for val in sc.funcs:
-		text += "   "+serialize_val(val)+"\n";
-	text = remove_last_newline(text);
-	return text;
-
-func serialize_val(val):
-	var text = val.ir_name+": ";
-	for key in ["val_type", "user_name", "data_type", "storage", "value", "scope", "code"]:
-		if (key in val) and (val[key] != null):
-			text += val[key] + " ";
-		else:
-			text += "NULL ";
-	return text;
+#func serialize_full():
+	#var text = "";
+	#text += serialize_code_blocks() + "\n";
+	#text += serialize_scopes() + "\n";
+	#return text;
+#
+#func remove_last_newline(text): 
+	#return text.substr(0,len(text)-1);
+#
+#func serialize_code_blocks():
+	#var text = "code:\n";
+	#for key in IR.code_blocks:
+		#var cb = IR.code_blocks[key];
+		#text += serialize_code_block(cb) + "\n";
+	#text = remove_last_newline(text);
+	#return text;
+#
+#func serialize_code_block(cb):
+	#var text:String = " "+cb.ir_name+":\n";
+	#for cmd in cb.code:
+		#text += "  " + serialize_cmd(cmd) + "\n";
+	#text = remove_last_newline(text);
+	#return text;
+#
+#func serialize_cmd(cmd):
+	#var text = "";
+	#for arg:String in cmd:
+		#text += arg + " ";
+	#return text;
+#
+#func serialize_scopes():
+	#var text = "scopes:\n";
+	#for key in IR.scopes:
+		#var sc = IR.scopes[key];
+		#text += serialize_scope(sc) + "\n";
+	#text = remove_last_newline(text);
+	#return text;
+#
+#func serialize_scope(sc):
+	#var text = " "+sc.ir_name + ":\n";
+	#text += "# ir_name: val_type, user_name, data_type, storage, value, scope, code\n";
+	#text += "  vars:\n";
+	#for val in sc.vars:
+		#text += "   "+serialize_val(val)+"\n";
+	#text += "  funcs:\n";
+	#for val in sc.funcs:
+		#text += "   "+serialize_val(val)+"\n";
+	#text = remove_last_newline(text);
+	#return text;
+#
+#func serialize_val(val):
+	#var text = val.ir_name+": ";
+	#for key in ["val_type", "user_name", "data_type", "storage", "value", "scope", "code"]:
+		#if (key in val) and (val[key] != null):
+			#text += val[key] + " ";
+		#else:
+			#text += "NULL ";
+	#return text;
 		
+func serialize_full()->String:
+	var sIR = IR.duplicate();
+	for key in sIR.scopes:
+		var scope = sIR.scopes[key];
+		serialize_vals(scope.vars);
+		if not len(scope.vars): scope.erase("vars");
+		serialize_vals(scope.funcs);
+		if not len(scope.funcs): scope.erase("funcs");
+	return uYaml.serialize(sIR);
+
+func serialize_vals(arr):
+	for i in range(len(arr)):
+			var old_var = arr[i];
+			var new_var = [];
+			for key2 in ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code"]:
+				if (key2 in old_var) and (old_var[key2] != null):
+					new_var.append(old_var[key2]);
+				else:
+					new_var.append("NULL");
+			arr[i] = new_var;
+
 func to_file(filename):
 	var fp = FileAccess.open(filename, FileAccess.ModeFlags.WRITE);
 	if not fp: push_error("can't write file: "+filename); return;

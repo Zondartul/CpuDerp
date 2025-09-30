@@ -72871,36 +72871,4 @@ Rule matches? (test 8471)
 		[start:]
 	vs
 		[expr_call]
-	. { "class": "EOF", "text": "" } vs *
-	No
-
-Rule matches? (test 8472)
-		[start:]
-	vs
-		[NUMBER]
-	. { "class": "EOF", "text": "" } vs *
-	No
-
-Rule matches? (test 8473)
-		[start:]
-	vs
-		[STRING]
-	. { "class": "EOF", "text": "" } vs *
-	No
-
-Rule matches? (test 8474)
-		[start:]
-	vs
-		[IDENT]
-	. { "class": "EOF", "text": "" } vs /=
-	No
-
-Rule matches? (test 8475)
-		[start:]
-	vs
-		[IDENT]
-	. { "class": "EOF", "text": "" } vs *
-	No
-
-SHIFT { "class": "EOF", "text": "" }
-
+	.

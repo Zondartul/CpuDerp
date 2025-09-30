@@ -108,6 +108,7 @@ func analyze_expr_infix_op(expr1, expr2, op):
 	var arg2 = expr_stack.pop_back();
 	var arg1 = expr_stack.pop_back();
 	var res = IR.new_val_temp();
+	IR.save_variable(res);
 	IR.emit_IR(["OP", op, arg1, arg2, res]);
 	expr_stack.push_back(res);
 
@@ -115,6 +116,7 @@ func analyze_expr_postfix_op(expr1, op):
 	analyze_expr(expr1);
 	var arg = expr_stack.pop_back();
 	var res = IR.new_val_temp();
+	IR.save_variable(res);
 	IR.emit_IR(["OP", op, arg, IR.new_val_none(), res]);
 	expr_stack.push_back(res);
 
@@ -129,6 +131,7 @@ func analyze_expr_call(ast):
 	analyze_expr(expr2);
 	var args = expr_stack.pop_back();
 	var res = IR.new_val_temp();
+	IR.save_variable(res);
 	IR.emit_IR(["CALL", fun, args, res]);
 	expr_stack.push_back(res);
 
@@ -142,7 +145,8 @@ func analyze_expr_list(expr_list):
 
 func analyze_preproc_stmt(ast):
 	assert(ast.class == "preproc_stmt");
-	push_error("analyze_stmt_preproc: unimplemented");
+	#push_error("analyze_stmt_preproc: unimplemented");
+	pass;
 
 func analyze_var_decl_stmt(ast):
 	assert(ast.class == "var_decl_stmt");
@@ -240,10 +244,12 @@ func analyze_expr_immediate(ast):
 		value = read_number(tok.text);
 		if value is int: type = "int";
 		if value is float: type = "float";
+		value = str(value);
 	if tok.class == "STRING":
 		value = tok.text;
 		type = "string";
 	var res = IR.new_val_immediate(value, type);	
+	IR.save_variable(res);
 	expr_stack.push_back(res);
 
 func read_number(text:String):

@@ -22,14 +22,36 @@ extends Node
 
 #--------- SERIALIZATION ------------------
 
-func serialize(obj)->String:
-	if is_serializible(obj):
+static func serialize(obj)->String:
+	var state = {};
+	if is_serializible(obj, state):
 		return serialize_helper(obj, 0);
 	else:
-		push_error("object is not serializible");
+		push_error("object is not serializible ("+decode_ser_err(state.err)+", path: "+"".join(state.path)+")");
 		return "";
 
-func serialize_helper(obj, indent:int)->String:
+static func decode_ser_err(ser_err_code):
+	const msgs = {
+		101:"empty_string",
+		102:"special_symbol_in_string",
+		103:"empty_array",
+		104:"in_array",
+		105:"empty_dict",
+		106:"as_key_in_dict",
+		107:"as_val_in_dict",
+		108:"not_a_string_or_dict_or_array",
+		109:"null_value",
+		110:"array_too_deep",
+		111:"dict",
+		112:"not_a_string",
+		113:"not_a_string_or_array",
+	};
+	var text = "";
+	for code in ser_err_code:
+		text += msgs[code]+".";
+	return text;
+
+static func serialize_helper(obj, indent:int)->String:
 	var text = "";
 	var is_first = true;
 	if obj is String:
@@ -55,10 +77,10 @@ func serialize_helper(obj, indent:int)->String:
 				assert(is_one_liner(val));
 				if is_first: is_first = false;
 				else: text += "\n";
-				text += serialize_helper(val, indent+1);
+				text += " ".repeat(indent)+serialize_helper(val, indent);
 	return text;
 			
-func is_one_liner(obj):
+static func is_one_liner(obj):
 	if obj is String: return true;
 	if obj is Array:
 		for ch in obj:
@@ -66,35 +88,58 @@ func is_one_liner(obj):
 		return true;
 	return false;
 
-func is_serializible(obj): return is_serializible_helper(obj, 0);
 
-func is_serializible_helper(obj, in_array):
+# is_serializible(obj, state) - returns true if object can be serialized. 
+# provides diagnostic as to what's wrong.
+static func is_serializible(obj, state:Dictionary): 
+	state["in_array"] = 0;
+	state["in_dict"] = 0;
+	state["err"] = [];
+	state["path"] = [];
+	return is_serializible_helper(obj, state);
+
+static func is_serializible_helper(obj, state):
 	const spec_symbols = " :#\n";
+	if obj == null: state.err.append(109); return false; #no nulls
 	if obj is String:
-		if len(obj) == 0: return false; # no empty strings
+		if len(obj) == 0: state.err.append(101); return false; # no empty strings
 		if obj[0] == "#": return true; #comment marker
 		for s in spec_symbols:
-			if s in obj: return false;
+			if s in obj: state.err.append(102); return false;
 		return true;
-	if obj is Array and in_array < 2:
-		if len(obj) == 0: return false;
+	if obj is Array:
+		if state.in_array >= 2: state.err.append(110); return false;
+		if len(obj) == 0: state.err.append(103); return false;
+		state.in_array += 1;
+		var i = 0;
 		for ch in obj:
-			if not is_serializible_helper(ch, in_array+1): return false;
+			state.path.push_back("["+str(i)+"]");
+			if not is_serializible_helper(ch, state): state.err.append(104); return false;
+			state.path.pop_back();
+			i += 1;
+		state.in_array -= 1;
 		return true;
-	if obj is Dictionary and not in_array:
-		if len(obj) == 0: return false;
+	if obj is Dictionary:
+		if state.in_array: state.err.append(111); return false;
+		if len(obj) == 0: state.err.append(105); return false;
+		state.in_dict += 1;
 		for key in obj:
-			if not (key is String and is_serializible_helper(key,0)): return false;
+			if not (key is String and is_serializible_helper(key,state)): state.err.append(106); return false;
+			state.path.push_back("."+key);
 			var val = obj[key];
-			if not is_serializible_helper(val,0): return false;
+			if not is_serializible_helper(val,state): state.err.append(107); return false;
+			state.path.pop_back();
+		state.in_dict -= 1;
 		return true;
+	# wrong object type
+	if state.in_array == 0: state.err.append(108);
+	if state.in_array == 1: state.err.append(113);
+	if state.in_array >= 2: state.err.append(112);
 	return false;
 
 #------- DESERIALIZATION ----------------------
 
-var IR = {};
-
-func deserialize(text):
+static func deserialize(text):
 	var obj = {};
 	deserialize_helper(text, obj);
 	return obj;
@@ -102,7 +147,7 @@ func deserialize(text):
 const AS_2D_APPEND = 2;
 const AS_1D_SET = 1;
 
-func deserialize_helper(text, obj):
+static func deserialize_helper(text, obj):
 	var lines = text.split("\n",false);
 	var path = [];
 	for line in lines:
@@ -129,7 +174,7 @@ func deserialize_helper(text, obj):
 	#print("parsed dict: ");
 	#print(obj);
 
-func dict_path_insert(obj:Dictionary, path:Array, words:Array, mode:int):
+static func dict_path_insert(obj:Dictionary, path:Array, words:Array, mode:int):
 	if len(path) == 1:
 		obj[path[0]] = words;
 	else:
@@ -140,12 +185,15 @@ func dict_path_insert(obj:Dictionary, path:Array, words:Array, mode:int):
 			if key not in node: node[key] = {};
 			node = node[key];
 		if mode == AS_1D_SET:
-			node[rhead] = words;
+			if len(words) == 1:
+				node[rhead] = words[0];
+			else:
+				node[rhead] = words;
 		if mode == AS_2D_APPEND:
 			if rhead not in node: node[rhead] = [];
 			node[rhead].append(words);
 
-func find_first_not_of(text:String, needle:String):
+static func find_first_not_of(text:String, needle:String):
 	var idx = 0;
 	for ch in text: 
 		if ch in needle:

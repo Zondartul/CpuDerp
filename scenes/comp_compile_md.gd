@@ -17,8 +17,8 @@ func compile(text):
 	var ast = parse(tokens);
 	if not ast: return;
 	var _IR = analyzer.analyze(ast);
-	codegen.parse_file("IR.txt");
-	#print(tokens);
+	var _assy = codegen.parse_file("IR.txt");
+	print(_assy);
 
 func _on_tokenizer_md_tokens_ready(tokens) -> void:
 	tokens_ready.emit(tokens);
