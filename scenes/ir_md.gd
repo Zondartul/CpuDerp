@@ -27,7 +27,7 @@ func new_val(): return {
 	"val_type":null, 	# what sort of object does this handle represent?
 	"ir_name":null, 	# what is a unique name of this handle?
 	"user_name":null, 	# how does the source code refer to the underlying object?
-	"type":null, 		# what is the data type of the underlying object?
+	"data_type":null, 		# what is the data type of the underlying object?
 	"value":null,		# what is the actual value of the underlying object?
 	"storage":null		# where is the object located?
 	};
@@ -49,7 +49,7 @@ func new_val_immediate(value, type):
 	var val = new_val();
 	val.val_type = "immediate";
 	val.value = value;
-	val.type = type;
+	val.data_type = type;
 	val.ir_name = make_unique_IR_name("imm");
 	return val;
 
@@ -86,21 +86,21 @@ func emit_IR(cmd:Array):
 	var cmd_translated = [];
 	assert(cmd[0] is String);
 	for i in range(len(cmd)):
-		cmd_translated.append(serialize_ir_arg(cmd[i]));
+		cmd_translated.append_array(serialize_ir_arg(cmd[i]));
 	cur_code_block.code.append(cmd_translated);
 
 func serialize_ir_arg(arg):
-	if arg is String: return arg;
+	if arg is String: return [arg];
 	elif arg is Dictionary:
 		assert(("ir_name" in arg) and (arg.ir_name is String));
-		return arg.ir_name;
+		return [arg.ir_name];
 	elif arg is Array:
-		var S = "";
-		S += "[" + " ";
+		var res = [];
+		res.append("[");
 		for sub_arg in arg:
-			S += serialize_ir_arg(sub_arg) + " ";
-		S += "]";
-		return S;
+			res.append_array(serialize_ir_arg(sub_arg));
+		res.append("]");
+		return res;
 	else:
 		push_error("can't serialize IR argument ["+str(arg)+"]");
 		return null;
@@ -178,65 +178,6 @@ func get_func(fun_name:String):
 			break;
 	return null;
 
-#func serialize_full():
-	#var text = "";
-	#text += serialize_code_blocks() + "\n";
-	#text += serialize_scopes() + "\n";
-	#return text;
-#
-#func remove_last_newline(text): 
-	#return text.substr(0,len(text)-1);
-#
-#func serialize_code_blocks():
-	#var text = "code:\n";
-	#for key in IR.code_blocks:
-		#var cb = IR.code_blocks[key];
-		#text += serialize_code_block(cb) + "\n";
-	#text = remove_last_newline(text);
-	#return text;
-#
-#func serialize_code_block(cb):
-	#var text:String = " "+cb.ir_name+":\n";
-	#for cmd in cb.code:
-		#text += "  " + serialize_cmd(cmd) + "\n";
-	#text = remove_last_newline(text);
-	#return text;
-#
-#func serialize_cmd(cmd):
-	#var text = "";
-	#for arg:String in cmd:
-		#text += arg + " ";
-	#return text;
-#
-#func serialize_scopes():
-	#var text = "scopes:\n";
-	#for key in IR.scopes:
-		#var sc = IR.scopes[key];
-		#text += serialize_scope(sc) + "\n";
-	#text = remove_last_newline(text);
-	#return text;
-#
-#func serialize_scope(sc):
-	#var text = " "+sc.ir_name + ":\n";
-	#text += "# ir_name: val_type, user_name, data_type, storage, value, scope, code\n";
-	#text += "  vars:\n";
-	#for val in sc.vars:
-		#text += "   "+serialize_val(val)+"\n";
-	#text += "  funcs:\n";
-	#for val in sc.funcs:
-		#text += "   "+serialize_val(val)+"\n";
-	#text = remove_last_newline(text);
-	#return text;
-#
-#func serialize_val(val):
-	#var text = val.ir_name+": ";
-	#for key in ["val_type", "user_name", "data_type", "storage", "value", "scope", "code"]:
-		#if (key in val) and (val[key] != null):
-			#text += val[key] + " ";
-		#else:
-			#text += "NULL ";
-	#return text;
-		
 func serialize_full()->String:
 	var sIR = IR.duplicate();
 	for key in sIR.scopes:
@@ -245,6 +186,9 @@ func serialize_full()->String:
 		if not len(scope.vars): scope.erase("vars");
 		serialize_vals(scope.funcs);
 		if not len(scope.funcs): scope.erase("funcs");
+	for key in sIR.code_blocks:
+		var cb = sIR.code_blocks[key];
+		if cb.code.is_empty(): cb.erase("code");
 	return uYaml.serialize(sIR);
 
 func serialize_vals(arr):
@@ -253,10 +197,46 @@ func serialize_vals(arr):
 			var new_var = [];
 			for key2 in ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code"]:
 				if (key2 in old_var) and (old_var[key2] != null):
-					new_var.append(old_var[key2]);
+					var val = old_var[key2];
+					val = escape_string(val);
+					new_var.append(val);
 				else:
 					new_var.append("NULL");
 			arr[i] = new_var;
+
+func escape_string(text):
+	var new_str = "";
+	for ch:String in text:
+		if ch in "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890.+-_":
+			new_str += ch;
+		else:
+			var buff = ch.to_ascii_buffer();
+			assert(len(buff) == 1);
+			ch = "%" + "%03d" % buff[0];
+			new_str += ch;
+	return new_str;
+
+func unescape_string(text):
+	var new_str:String = "";
+	var esc_step:int = 0;
+	var num_str:String = "";
+	for ch in text:
+		match esc_step:
+			0:
+				if(ch == "%"):
+					esc_step = 1;
+				else:
+					new_str += ch;
+			1:	num_str += ch; esc_step += 1;
+			2:	num_str += ch; esc_step += 1;
+			3:	
+				num_str += ch;
+				assert(num_str.is_valid_int());
+				var num = num_str.to_int();
+				var new_ch = PackedByteArray([num]).get_string_from_ascii();
+				new_str += new_ch;
+				esc_step = 0;;
+	return new_str;
 
 func to_file(filename):
 	var fp = FileAccess.open(filename, FileAccess.ModeFlags.WRITE);

@@ -182,7 +182,8 @@ class Cmd_flags:
 		deref_reg1 = arg.is_deref;
 	func set_arg2(arg:Cmd_arg):
 		reg2_im = arg.is_imm;
-		if reg1_im and reg2_im: push_error("can only have one immediate/offset value per command")
+		if reg1_im and reg2_im: 
+			push_error("can only have one immediate/offset value per command")
 		deref_reg2 = arg.is_deref;
 
 # ---------- Basic preprocess ---------------------------------
@@ -328,7 +329,8 @@ func process(tokens):
 
 func parse_label(iter):
 	var toks = [];
-	if match_tokens(iter, ["WORD", "\\:"], toks):
+	if (   match_tokens(iter, ["\\:", "WORD", "\\:"], toks) 
+		or match_tokens(iter, ["WORD", "\\:"], toks)		):
 		var lbl_name = toks[0]["text"];
 		labels[lbl_name] = write_pos;
 		print("Parsed [label:"+lbl_name+"]");
@@ -443,7 +445,8 @@ func match_tokens(iter, ref_toks, out=null):
 # mnemonic  | ... meaning ......... | reg | deref | offset
 # ---------------------------------------------------------
 #           | no argument           | no  |   no  | no
-#  eax		| register				| yes |   no  | no 
+#  eax		| register				| yes |   no  | no
+#  eax+1	| register+offset		| yes |	  no  | yes 
 # *eax		| reg-is-ptr			| yes |  yes  | no
 #  eax[9]	| reg-is-array			| yes |   no  | yes
 # *eax[9]	| reg-is-array-of-ptr	| yes |  yes  | yes
@@ -475,18 +478,35 @@ func parse_arg(iter)->Cmd_arg:
 			# register the reference for later,
 			# we will patch the command when linking
 			label_refs[write_pos+3] = lbl_name;
-	var toks_num = match_tokens(iter, ["NUMBER"]);
-	if toks_num:
-		arg.is_present = true;
-		var word = toks_num[0]["text"];
-		var num = str(word).to_int()
+	else:
+		var toks_num = match_tokens(iter, ["NUMBER"]);
+		if toks_num:
+			arg.is_present = true;
+			var word = toks_num[0]["text"];
+			var num = str(word).to_int()
+			arg.is_imm = true;
+			arg.offset = num;
+		
+	#+123 - offset
+	var pos_offs = match_tokens(iter, ["\\+", "NUMBER"]);
+	var neg_offs = match_tokens(iter, ["\\-", "NUMBER"]);
+	assert(not (pos_offs and neg_offs));
+	if pos_offs or neg_offs:
+		var num = 0;
+		if pos_offs: num = str(pos_offs[1]["text"]).to_int();
+		if neg_offs: num = - str(neg_offs[1]["text"]).to_int();
+		if arg.is_imm: push_error("Can't have offset on top of immediate");
 		arg.is_imm = true;
 		arg.offset = num;
-	
+		arg.is_deref = false;
 	#[123] - array access
-	var arr = match_tokens(iter, ["\\[", "NUMBER", "\\]"])
-	if arr:
-		var num = str(arr[1]["text"]).to_int()
+	var pos_arr = match_tokens(iter, ["\\[", "NUMBER", "\\]"]);
+	var neg_arr = match_tokens(iter, ["\\[", "\\-", "NUMBER", "\\]"]);
+	assert(not (pos_arr and neg_arr));
+	if pos_arr or neg_arr:
+		var num = 0;
+		if pos_arr: num = str(pos_arr[1]["text"]).to_int();
+		if neg_arr: num = - str(neg_arr[2]["text"]).to_int();
 		if arg.is_imm: push_error("Can't have array access on top of immediate")
 		arg.is_imm = true;
 		arg.offset = num;

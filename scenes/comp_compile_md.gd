@@ -10,15 +10,30 @@ signal tokens_ready;
 signal parse_ready;
 signal IR_ready;
 signal sig_user_error;
+signal open_file_request;
+var has_error = false;
 
 func compile(text):
+	has_error = false;
 	var tokens = tokenizer.tokenize(text);
 	if not tokens: return;
+	if has_error: return;
 	var ast = parse(tokens);
 	if not ast: return;
+	if has_error: return;
 	var _IR = analyzer.analyze(ast);
+	if has_error: return;
 	var _assy = codegen.parse_file("IR.txt");
-	print(_assy);
+	#print(_assy);
+	save_file(_assy, "a.zd");
+	if has_error: return;
+	open_file_request.emit("a.zd");
+
+func save_file(text:String, filename:String):
+	var fp = FileAccess.open(filename, FileAccess.WRITE);
+	if not fp: push_error("Can't save file ["+filename+"]"); has_error = true; return;
+	fp.store_string(text);
+	fp.close();
 
 func _on_tokenizer_md_tokens_ready(tokens) -> void:
 	tokens_ready.emit(tokens);
@@ -56,7 +71,7 @@ func parse(tokens:Array):
 		push_error("no input");
 		return false;
 	else:
-		push_error("syntax error");
+		sig_user_error.emit("syntax error");
 		return false;
 
 var run_i = 0;
@@ -129,3 +144,4 @@ func _on_analyzer_md_ir_ready(new_IR) -> void:
 
 func _on_analyzer_md_sig_user_error(msg) -> void:
 	sig_user_error.emit(msg);
+	has_error = true;

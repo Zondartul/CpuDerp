@@ -21,6 +21,7 @@ const rules = [
 	["stmt_list", "stmt", 			"*", "stmt_list"],
 	["stmt", 						"*", "stmt_list"],
 	["/{", "stmt_list", "/}", 		"*", "block"],
+	["/{", "/}",					"*", "block"],
 	# statements
 	["var_decl_stmt", "/;",			"*", "stmt"],
 	["assignment_stmt", "/;",		"*", "stmt"],
@@ -39,6 +40,7 @@ const rules = [
 	["/var", "IDENT",					"/;", "var_decl_stmt"],
 	#-- assignment_stmt
 	["IDENT", "/=", "expr", 			"/;", "assignment_stmt"],
+	["expr", "/=", "expr",				"/;", "assignment_stmt"],
 	#-- decl_assignment_stmt
 	["/var", "assignment_stmt", 		"*", "decl_assignment_stmt"],
 	#-- decl_extern_stmt
@@ -92,6 +94,8 @@ const rules = [
 	["expr", "/[", "expr", "/]",		"*", "expr_infix"],
 	# -- expr_call
 	["expr", "/,", "expr", 				"*", "expr_list"],
+	["expr_list", "/,", "expr", 		"*", "expr_list"],
+	["expr", "/(", "/)",				"*", "expr_call"],
 	["expr", "/(", "expr", "/)",		"*", "expr_call"],
 	["expr", "/(", "expr_list", "/)",	"*", "expr_call"],
 ];

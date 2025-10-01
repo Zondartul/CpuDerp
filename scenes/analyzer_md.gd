@@ -121,15 +121,30 @@ func analyze_expr_postfix_op(expr1, op):
 	expr_stack.push_back(res);
 
 func analyze_expr_call(ast):
+	# expr_call -> expr ( ) or expr ( expr ) or expr ( expr_list )
 	assert(ast.class == "expr_call");
 	var expr1 = ast.children[0];
 	assert(expr1.class == "expr");
-	var expr2 = ast.children[2];
-	assert(expr2.class == "expr");
 	analyze_expr(expr1);
 	var fun = expr_stack.pop_back();
-	analyze_expr(expr2);
-	var args = expr_stack.pop_back();
+	var args = [];
+	if(ast.children[2].text != ")"):
+		var expr = ast.children[2];
+		while true:
+			if expr.class == "expr_list":
+				# expr_list -> (expr_list, expr) or (expr, expr)
+				var expr_arg = expr.children[2];
+				assert(expr_arg.class == "expr");
+				analyze_expr(expr_arg);
+				args.append(expr_stack.pop_back());
+				expr = expr.children[0];
+			elif expr.class == "expr":
+				analyze_expr(expr);
+				args.append(expr_stack.pop_back());
+				break;
+			else:
+				push_error("analyzer: func_call: unexpected expr class");
+				break;
 	var res = IR.new_val_temp();
 	IR.save_variable(res);
 	IR.emit_IR(["CALL", fun, args, res]);
@@ -158,10 +173,18 @@ func analyze_var_decl_stmt(ast):
 
 func analyze_func_decl_stmt(ast):
 	assert(ast.class == "func_decl_stmt");
-	var tok_ident = ast.children[1];
+	var expr_call = ast.children[1];
+	assert(expr_call.class == "expr_call");
+	var expr = expr_call.children[0];
+	assert(expr.class == "expr");
+	var expr_ident = expr.children[0];
+	assert(expr_ident.class == "expr_ident");
+	var tok_ident = expr_ident.children[0];
 	assert(tok_ident.class == "IDENT");
 	var fun_name = tok_ident.text;
-	var fun_handle = IR.new_val_func(fun_name);
+	var fun_scp = IR.new_val_none();
+	var fun_cb = IR.new_val_none();
+	var fun_handle = IR.new_val_func(fun_name,fun_scp,fun_cb);
 	IR.save_function(fun_handle);
 
 func analyze_decl_extern_stmt(ast):
@@ -196,7 +219,7 @@ func analyze_decl_assignment(ast):
 	# assign part
 	analyze_one(stmt_ass);
 	var arg = expr_stack.pop_back();
-	var_handle.type = arg.type;
+	var_handle.data_type = arg.data_type;
 
 func analyze_while_stmt(ast):
 	assert(ast.class == "while_stmt");
@@ -224,15 +247,27 @@ func analyze_while_stmt(ast):
 
 func analyze_assignment_stmt(ast):
 	assert(ast.class == "assignment_stmt");
-	var tok_ident = ast.children[0];
-	assert(tok_ident.class == "IDENT");
-	var expr = ast.children[2];
-	assert(expr.class == "expr");
-	var var_name = tok_ident.text;
-	var var_handle = IR.get_var(var_name);
-	analyze_one(expr);
+	var LHS;
+	var RHS;
+	if ast.children[0].class == "IDENT":
+		var tok_ident = ast.children[0];
+		assert(tok_ident.class == "IDENT");
+		var var_name = tok_ident.text;
+		var var_handle = IR.get_var(var_name);
+		LHS = var_handle;
+	elif ast.children[0].class == "expr":
+		var lhs_expr = ast.children[0];
+		assert(lhs_expr.class == "expr");
+		analyze_expr(lhs_expr);
+		LHS = expr_stack.pop_back();
+	else:
+		assert(false);
+	var rhs_expr = ast.children[2];
+	assert(rhs_expr.class == "expr");
+	analyze_expr(rhs_expr);
 	var arg = expr_stack.pop_back();
-	IR.emit_IR(["MOV", var_handle, arg]);
+	RHS = arg;
+	IR.emit_IR(["MOV", LHS, RHS]);
 	expr_stack.push_back(arg);
 
 func analyze_expr_immediate(ast):
@@ -273,10 +308,12 @@ func analyze_expr_ident(ast):
 	expr_stack.push_back(var_handle);
 
 func analyze_block(ast):
+	# block -> { stmt_list } or { }
 	assert(ast.class == "block");
-	var stmt_list = ast.children[1];
-	assert(stmt_list.class == "stmt_list");
-	analyze_one(stmt_list);
+	if ast.children[1].text != "}":
+		var stmt_list = ast.children[1];
+		assert(stmt_list.class == "stmt_list");
+		analyze_one(stmt_list);
 
 func user_error(msg):
 	sig_user_error.emit(msg);
@@ -355,18 +392,22 @@ func analyze_func_def_stmt(ast):
 	var fun_name = tok_ident.text;
 	
 	var arg_names = [];
-	var expr = expr_call.children[2];
-	while true:
-		if expr.class == "expr_list":
-			var arg = expr.children[2].children[0].children[0];
-			assert(arg.class == "IDENT");
-			arg_names.push_front(arg.text);
-			expr = expr.children[0];
-		if expr.class == "expr":
-			var arg = expr.children[0].children[0];
-			assert(arg.class == "IDENT");
-			arg_names.push_front(arg.text);
-			break;
+	if expr_call.children[2].text != ")":
+		var expr = expr_call.children[2];
+		while true:
+			if expr.class == "expr_list":
+				var arg = expr.children[2].children[0].children[0];
+				assert(arg.class == "IDENT");
+				arg_names.push_front(arg.text);
+				expr = expr.children[0];
+			elif expr.class == "expr":
+				var arg = expr.children[0].children[0];
+				assert(arg.class == "IDENT");
+				arg_names.push_front(arg.text);
+				break;
+			else:
+				push_error("analyzer: func_def: unexpected expr class");
+				break;
 	var ocb = IR.push_code_block();
 	var osc = IR.push_scope();
 	for arg_name in arg_names:
@@ -376,8 +417,13 @@ func analyze_func_def_stmt(ast):
 	analyze_block(block);
 	var fun_scope = IR.pop_scope(osc);
 	var fun_code = IR.pop_code_block(ocb);
-	var fun_handle = IR.new_val_func(fun_name, fun_scope, fun_code);
-	IR.save_function(fun_handle);
+	var fun_handle = IR.get_func(fun_name);
+	if fun_handle:
+		fun_handle.code = fun_code.ir_name;
+		fun_handle.scope = fun_scope.ir_name;
+	else:
+		fun_handle = IR.new_val_func(fun_name, fun_scope, fun_code);
+		IR.save_function(fun_handle);
 	
 func analyze_flow_stmt(ast):
 	assert(ast.class == "flow_stmt");

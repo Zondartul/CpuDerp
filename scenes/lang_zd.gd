@@ -19,6 +19,7 @@ func get_syntax():
 	var col_purple = Color(0.8,0.4,0.7,	1);
 	var col_blue = 	 Color(0.0,0.3,1.0,	1);
 	var col_green =  Color(0.2,1.0,0.1,	1);
+	var col_cyan =	 Color(0.5, 0.8, 1.0, 1);
 	syn.member_variable_color = col_yellow;
 	syn.number_color = col_orange;
 	syn.symbol_color = col_yellow;
@@ -27,11 +28,13 @@ func get_syntax():
 	var register_color=col_red;
 	var comment_color =col_gray;
 	var string_color  =col_green;
+	var label_color = col_cyan;
 	add_keywords(syn, keywords, opcode_color);
 	add_keywords(syn, extra_keywords, opcode_color);
 	add_keywords(syn, registers, register_color);
 	syn.add_color_region("#","",comment_color,true);
 	syn.add_color_region("\"","\"",string_color,false);
+	syn.add_color_region(":",":",label_color,false);
 	return syn;
 
 func add_keywords(syn, kws, col):

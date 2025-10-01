@@ -53,7 +53,7 @@ func automate_compile_miniderp():
 	# Go to editor and open the file
 	autotab($Panel/TabContainer, "Editor");
 	automenu($Panel/TabContainer/Editor/V/MenuBar, ["File", "Load"]);
-	autofile($Panel/TabContainer/Editor/comp_file/fd_load, "res://res/data/miniderp.txt");#"C:/Stride/godot/CpuDerp/res/data/main.txt");
+	autofile($Panel/TabContainer/Editor/comp_file/fd_load, "res://res/data/hello.md");#"res://res/data/miniderp.txt");#"C:/Stride/godot/CpuDerp/res/data/main.txt");
 	# Compile it
 	automenu($Panel/TabContainer/Editor/V/MenuBar, ["Language", "miniderp"]);
 	automenu($Panel/TabContainer/Editor/V/MenuBar, ["Build", "compile"]);
@@ -157,3 +157,9 @@ func _on_btn_keyboard_toggled(toggled_on):
 		grab_focus();
 	else:
 		print("capture off");
+
+
+func _on_comp_compile_md_open_file_request(filename) -> void:
+	automenu($Panel/TabContainer/Editor/V/MenuBar, ["File", "Load"]);
+	autofile($Panel/TabContainer/Editor/comp_file/fd_load, filename);#"C:/Stride/godot/CpuDerp/res/data/main.txt");
+	
