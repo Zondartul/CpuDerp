@@ -114,6 +114,8 @@ mov *var_8__scr_I, EAX;
 ret;
 :var_6__adr_scr: db 0;
 :var_8__scr_I: db 0;
+:tmp_10: db 0;
+:tmp_11: db 0;
 :imm_17: db "Hello World!";
 :imm_55__0: db "0";
 :imm_56__0: db "0";

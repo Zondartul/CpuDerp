@@ -15,6 +15,9 @@ func clear_IR():
 	var global_code_block = new_code_block();
 	cur_code_block = global_code_block;#IR.code_blocks[0];
 
+func is_cur_scope_global():
+	return cur_scope.user_name == "global";
+
 var val_idx = 0;
 func make_unique_IR_name(type, text=null):
 	var val_name = type+"_"+str(val_idx);

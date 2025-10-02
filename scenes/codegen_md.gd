@@ -115,6 +115,9 @@ func generate_globals()->String:
 		if sym.val_type == "variable":
 			if sym.storage.type == "global":
 				text += ":%s: db 0;\n" % sym.ir_name;
+		if sym.val_type == "temporary":
+			if sym.storage.type == "global":
+				text += ":%s: db 0;\n" % sym.ir_name;
 		if sym.val_type == "immediate":
 			if sym.data_type == "string":
 				text += ":%s: db \"%s\";\n" % [sym.ir_name, sym.value];

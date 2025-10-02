@@ -38,7 +38,7 @@ const ERR_09 = "Error 09: Can't have array access on top of immediate";
 const ERR_10 = "Error 10: can't emit value, doesn't fit in byte: [%s]";
 const ERR_11 = "Error 11: can't emit value, doesn't fit in u32: [%s]";
 const ERR_12 = "Error 12: unexpected input";
-
+const ERR_13 = "Error 13: Unlinked reference to [%s]";
 
 class Iter:
 	var tokens:Array;
@@ -126,29 +126,43 @@ func clear()->void:
 func assemble(source:String)->Chunk:
 	clear();
 	output_tokens.clear();
-	lines = source.split("\n",false);
+	lines = source.split("\n",true);
 	print(lines);
 	for line in lines:
+		if line == "": cur_line_idx += 1; continue;
 		cur_line = line;
-		cur_line_idx += 1;
 		line = preproc(line);
 		cur_line = line;
 		var tokens = tokenize(line);
 		output_tokens.append_array(tokens);
 		if output_tokens.size():
 			output_tokens.back().set_meta("token_viewer_newline",true);
+		assign_line_pos(tokens);
 		process(tokens);
 		if error_code != "": return Chunk.null_val();
+		cur_line_idx += 1;
 	tokens_ready.emit(output_tokens);
 	var chunk:Chunk = output_chunk();
 	chunk = link_internally(chunk);
 	var unlinked = len(chunk.refs);
-	if unlinked: push_error(ERR_02 % str(unlinked))
+	if unlinked: 
+		for ref in chunk.refs:
+			var lbl_name = chunk.refs[ref];
+			var lbl_tok = chunk.label_toks[ref];
+			var erep = Error_reporter.new(self, lbl_tok);
+			erep.error(ERR_13 % lbl_name);
+		push_error(ERR_02 % str(unlinked))
 	print("Assembly done");
 	print("stats: ")
 	print("    "+str(len(chunk.code))+" bytes")
 	print("    "+str(len(chunk.labels))+" labels")
 	return chunk;
+
+func assign_line_pos(tokens:Array[Token])->void:
+	for tok:Token in tokens:
+		tok.line = cur_line;
+		tok.line_idx = cur_line_idx;
+
 
 func point_out_error(msg:String, line_text:String, line_idx:int, char_idx:int)->void:
 	cprint("error at line "+str(line_idx)+":\n");
@@ -215,7 +229,7 @@ func link_internally(in_chunk:Chunk)->Chunk:
 		var lbl_name = in_chunk.refs[ref];
 		if lbl_name in in_chunk.labels:
 			var lbl_pos = in_chunk.labels[lbl_name];
-			var lbl_tok = in_chunk.label_toks[lbl_name];
+			var lbl_tok = in_chunk.label_toks[ref];
 			patch_ref(out_chunk.code, ref, lbl_pos, out_chunk.shadow, lbl_tok);
 		else:
 			refs_remain[ref] = lbl_name;
@@ -445,6 +459,7 @@ func parse_label(iter:Iter)->bool:
 	if (   match_tokens(iter, ["\\:", "WORD", "\\:"], toks)
 		or match_tokens(iter, ["WORD", "\\:"], toks)		):
 		var lbl_name = toks[0]["text"];
+		if lbl_name == ":": lbl_name = toks[1]["text"];
 		labels[lbl_name] = write_pos;
 		print("Parsed [label:"+lbl_name+"]");
 		return true;
