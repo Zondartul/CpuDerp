@@ -1,7 +1,7 @@
 # cb_1
-mov EAX 67536;
+mov EAX, 67536;
 mov *var_6__adr_scr, EAX;
-mov EAX 0;
+mov EAX, 0;
 mov *var_8__scr_I, EAX;
 call func_2__main;
 add ESP, 0;
@@ -14,11 +14,12 @@ mov *tmp_11, eax;
 :lbl_58__while_next:
 # cb_60
 
-CMP 1,0;
-JZ lbl_59__while_end;
+mov EAX, imm_55__0;
+cmp 1, EAX;
+jz lbl_59__while_end;
 # cb_62
 
-JMP lbl_58__while_next
+jmp lbl_58__while_next;
 :lbl_59__while_end:
 ret;
 # cb_12
@@ -33,13 +34,14 @@ mov EBP[4], eax;
 ret;
 # cb_19
 :func_3__print:
-mov EAX 0;
+mov EAX, 0;
 mov EBP[0], EAX;
 :lbl_27__while_next:
 # cb_29
 
-CMP 1,0;
-JZ lbl_28__while_end;
+mov EAX, imm_56__0;
+cmp 1, EAX;
+jz lbl_28__while_end;
 # cb_31
 mov EAX, EBP+0;
 inc EAX;
@@ -48,7 +50,7 @@ mov EAX, EBP-2;
 mov EBX, EBP[4];
 add EAX, EBX;
 mov EBP[5], EAX;
-mov EAX EBP[5];
+mov EAX, EBP[5];
 mov EBP[3], EAX;
 push EBP[3];
 push EBP[-3];
@@ -58,7 +60,7 @@ call func_4__putch;
 add ESP, 4;
 mov EBP[6], eax;
 
-JMP lbl_27__while_next
+jmp lbl_27__while_next;
 :lbl_28__while_end:
 ret;
 # cb_36
@@ -71,7 +73,7 @@ mov EAX, var_6__adr_scr;
 mov EBX, EBP[1];
 add EAX, EBX;
 mov EBP[2], EAX;
-mov EAX EBP[-2];
+mov EAX, EBP[-2];
 mov EBP[2], EAX;
 mov EAX, var_8__scr_I;
 mov EBX, 1;
@@ -81,7 +83,7 @@ mov EAX, var_6__adr_scr;
 mov EBX, EBP[4];
 add EAX, EBX;
 mov EBP[5], EAX;
-mov EAX EBP[-3];
+mov EAX, EBP[-3];
 mov EBP[5], EAX;
 mov EAX, var_8__scr_I;
 mov EBX, 2;
@@ -91,7 +93,7 @@ mov EAX, var_6__adr_scr;
 mov EBX, EBP[7];
 add EAX, EBX;
 mov EBP[8], EAX;
-mov EAX EBP[-4];
+mov EAX, EBP[-4];
 mov EBP[8], EAX;
 mov EAX, var_8__scr_I;
 mov EBX, 3;
@@ -101,15 +103,17 @@ mov EAX, var_6__adr_scr;
 mov EBX, EBP[10];
 add EAX, EBX;
 mov EBP[11], EAX;
-mov EAX EBP[-5];
+mov EAX, EBP[-5];
 mov EBP[11], EAX;
 mov EAX, var_8__scr_I;
 mov EBX, 4;
 add EAX, EBX;
 mov EBP[13], EAX;
-mov EAX EBP[13];
+mov EAX, EBP[13];
 mov *var_8__scr_I, EAX;
 ret;
 :var_6__adr_scr: db 0;
 :var_8__scr_I: db 0;
 :imm_17: db "Hello World!";
+:imm_55__0: db "0";
+:imm_56__0: db "0";

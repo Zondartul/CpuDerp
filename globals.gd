@@ -9,7 +9,10 @@ func duplicate_val(obj)->Variant:
 
 ## Creates a deep copy of an object by duplicating each property
 func duplicate_deep(src, dest)->void:
+	const blacklist = ["RefCounted", "script", "Built-in script"];
 	for key in src.get_property_list():
+		if key.name in blacklist: continue;
+		#print("duplicate "+str(key));
 		var old_val = src.get(key.name);
 		var new_val = duplicate_val(old_val);
 		dest.set(key.name, new_val);

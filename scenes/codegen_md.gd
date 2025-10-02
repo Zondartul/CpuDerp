@@ -159,7 +159,7 @@ func generate_cmd_mov(cmd):
 	#MOV dest src
 	var dest = cmd[1];
 	var src = cmd[2];
-	emit("mov ^%s $%s;\n" % [dest, src]);
+	emit("mov ^%s, $%s;\n" % [dest, src]);
 
 const op_map = {
 	"ADD":"add %a, %b;\n",
@@ -210,6 +210,17 @@ func new_lbl(lbl_name):
 	all_syms[ir_name] = handle;
 	return handle;
 
+func new_imm(val):
+	val = str(val);
+	var ir_name = "imm_"+str(len(all_syms)+1)+"__"+str(val);
+	var handle = {"ir_name":ir_name, "val_type":"immediate", "value":val, "data_type":"error"};
+	if val is int:
+		handle["data_type"] = "int";
+	elif val is String:
+		handle["data_type"] = "string";
+	all_syms[ir_name] = handle;
+	return handle;
+
 func generate_cmd_if(cmd):
 	var cb_cond = cmd[1];
 	var res = cmd[2];
@@ -217,8 +228,8 @@ func generate_cmd_if(cmd):
 	var lbl_else = new_lbl("if_else").ir_name;
 	var lbl_end = new_lbl("if_end").ir_name;
 	emit("$%s\n" % cb_cond);
-	emit("CMP $%s, 0;\n" % res);
-	emit("JZ %s;\n" % lbl_else);
+	emit("cmp $%s, 0;\n" % res);
+	emit("jz %s;\n" % lbl_else);
 	emit("$%s\n" % cb_block);
 	emit(":%s:\n" % lbl_else);
 	if not if_block_continued:
@@ -234,8 +245,8 @@ func generate_cmd_else_if(cmd):
 	var lbl_else = new_lbl("if_else").ir_name;
 	var lbl_end = if_block_lbl_end;
 	emit("$%s\n" % cb_cond);
-	emit("CMP $%s, 0;\n" % res);
-	emit("JZ %s;\n" % lbl_else);
+	emit("cmp $%s, 0;\n" % res);
+	emit("jz %s;\n" % lbl_else);
 	emit("$%s\n" % cb_block);
 	emit(":%s:\n" % lbl_else);
 	if not if_block_continued:
@@ -256,12 +267,13 @@ func generate_cmd_while(cmd):
 	var cb_block = cmd[3];
 	var lbl_next = cmd[4];
 	var lbl_end = cmd[5];
+	var immediate_0 = new_imm(0);
 	emit(":%s:\n" % lbl_next);		# loop:
 	emit("$%s\n" % cb_cond);		#  (expr->cond)
-	emit("CMP $%s,0;\n" % res);		#  IF !cond 
-	emit("JZ %s;\n" % lbl_end);		#  THEN GOTO "end"
+	emit("cmp $%s, $%s;\n" % [res, immediate_0.ir_name]);		#  IF !cond 
+	emit("jz %s;\n" % lbl_end);		#  THEN GOTO "end"
 	emit("$%s\n" % cb_block);		#  (code block)
-	emit("JMP %s\n" % lbl_next);	#  GOTO "loop"
+	emit("jmp %s;\n" % lbl_next);	#  GOTO "loop"
 	emit(":%s:\n" % lbl_end);		# end:
 
 func generate_cmd_call(cmd):

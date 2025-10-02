@@ -46,7 +46,7 @@ class Iter:
 	func _init(new_tokens:Array, new_pos:int):
 		tokens = new_tokens;
 		pos = new_pos;
-	func duplicate():
+	func duplicate()->Iter:
 		return Iter.new(tokens,pos);
 
 class Token:
@@ -59,7 +59,7 @@ class Token:
 		if dict:
 			for key in dict:
 				set(key, dict[key]);
-	func duplicate():
+	func duplicate()->Token:
 		var tok2 = Token.new();
 		G.duplicate_shallow(self, tok2);
 		return tok2;
@@ -75,13 +75,22 @@ class Chunk:
 		if dict:
 			for key in dict:
 				set(key, dict[key]);
-	func to_bool(): return not error;
-	func duplicate():
-		var chunk2 = Chunk.new();
+	func to_bool()->bool: return not error;
+	func duplicate()->Chunk:
+		var chunk2:Chunk = Chunk.new();
 		G.duplicate_deep(self, chunk2);
 		return chunk2;
 	static func null_val():
 		return Chunk.new({"error":true});
+
+func new_chunk()->Chunk: 
+	var res:Chunk = Chunk.new();
+	return res;
+
+func duplicate_chunk(in_chunk:Chunk)->Chunk:
+	var out_chunk:Chunk = Chunk.new();
+	G.duplicate_deep(in_chunk, out_chunk);
+	return out_chunk;
 
 class Error_reporter:
 	var proxy;
@@ -176,10 +185,16 @@ func user_error(msg):
 	#return -1;
 
 func output_chunk()->Chunk:
-	var chunk = {"code":code.duplicate(), "labels":labels.duplicate(), "refs":label_refs.duplicate(), "shadow":shadow.duplicate()}
+	var chunk = Chunk.new(
+		{"code":code.duplicate(), 
+		"labels":labels.duplicate(), 
+		"refs":label_refs.duplicate(),
+		"label_toks":label_toks.duplicate(), 
+		"shadow":shadow.duplicate()});
 	code.clear();
 	labels.clear();
 	label_refs.clear();
+	label_toks.duplicate();
 	shadow.clear();
 	return chunk;
 
@@ -187,7 +202,7 @@ func output_chunk()->Chunk:
 ##  returns new code chunk
 ##  only unlinked references remain in the refs section
 func link_internally(in_chunk:Chunk)->Chunk:
-	var out_chunk:Chunk = in_chunk.duplicate();
+	var out_chunk = in_chunk.duplicate();
 	#var in_code = chunk.code;
 	#var in_labels = chunk.labels;
 	#var in_refs = chunk.refs;
@@ -438,7 +453,7 @@ func parse_label(iter:Iter)->bool:
 func parse_db(iter:Iter)->bool:
 	var old_iter = iter.duplicate();
 	if match_tokens(iter, ["\\db"]):
-		var items = [];
+		var items:Array[Token] = [];
 		while iter.pos != len(iter.tokens):
 			var toks = []
 			if match_tokens(iter, ["STRING"],toks) \
@@ -644,6 +659,8 @@ func emit_opcode(cmd:int, flags:Cmd_flags, erep:Error_reporter, reg1:int=0, reg2
 	emit8(0xFF, ISA.SHADOW_CMD_TAIL, erep); # pad
 
 func emit8(val:int, shadow_val:int, erep:Error_reporter):
+	if (val < 0):
+		val = 256 - val;
 	if (val < 0) or (val > 255): 
 		erep.error(ERR_10 % val);
 		return;
@@ -653,7 +670,9 @@ func emit8(val:int, shadow_val:int, erep:Error_reporter):
 	write_pos += 1;
 
 func emit32(val:int, shadow_val:int, erep:Error_reporter):
-	if (val < 0) or (val > (2**32-1)): 
+	if(val < 0):
+		val = (2**32)+val;
+	if (val < 0) or (val > ((2**32)-1)): 
 		erep.error(ERR_11 % val)
 		return;
 	emit8((val >> 8*0) & 0xFF, shadow_val, erep);
