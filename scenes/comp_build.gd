@@ -26,6 +26,7 @@ func setup(dict:Dictionary):
 			ch.setup(dict);
 		if "tokens_ready" in ch:
 			ch.tokens_ready.connect(on_tokens_ready);
+		
 
 #func setup(dict:Dictionary):
 #	pass
@@ -37,7 +38,7 @@ func setup(dict:Dictionary):
 func assemble_zderp():
 	n_assembler.cur_path = cur_efile.path;
 	var chunk = n_assembler.assemble(cur_efile.get_text());
-	if chunk:
+	if G.has(chunk):
 		assert("code" in chunk);
 		var res = {"code":chunk.code};
 		if "shadow" in chunk: res["shadow"] = chunk.shadow;

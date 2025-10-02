@@ -44,5 +44,12 @@ func _on_view_index_pressed(index: int) -> void:
 		1: $win_parse.popup();
 		2: $win_IR.popup();
 
-func _on_comp_compile_md_sig_user_error(msg) -> void:
+func _on_user_error(msg)->void:
 	print_console(msg, Color.RED);
+
+func _on_cprint(msg, col=null)->void:
+	if col == null: col = Color.GRAY;
+	print_console(msg,col);
+
+func _on_highlight_line(line_idx)->void:
+	$comp_file.highlight_line(line_idx);

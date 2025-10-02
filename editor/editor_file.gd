@@ -3,7 +3,7 @@ extends Control
 # for a single file, and stores metadata about that file
 # like path, language, etc.
 
-@onready var n_text = $TextEdit;
+@onready var n_text:TextEdit = $TextEdit;
 
 var path = "";
 var is_dirty = false; # has file been edited?
@@ -81,3 +81,9 @@ func get_text():
 
 func _on_text_edit_text_set():
 	update_line_numbers();
+
+func highlight_line(line_idx):
+	print("highlighting line %d" % line_idx)
+	n_text.select(line_idx,0,line_idx+1,0,0);
+	var spos = n_text.get_scroll_pos_for_line(line_idx);
+	n_text.scroll_vertical = spos;
