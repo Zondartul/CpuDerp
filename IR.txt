@@ -9,24 +9,30 @@ code_blocks:
  cb_12: 
   ir_name: cb_12
   code: 
+   ENTER scp_13__NULL
    CALL func_3__print [ imm_14 imm_15 imm_16 imm_17 ] tmp_18
+   LEAVE
  cb_19: 
   ir_name: cb_19
   code: 
+   ENTER scp_20__NULL
    MOV var_25__i imm_26
-   WHILE cb_29 imm_30 cb_31 lbl_27__while_next lbl_28__while_end
- cb_29: 
-  ir_name: cb_29
+   MOV var_27__c imm_28
+   WHILE cb_31 var_27__c cb_32 lbl_29__while_next lbl_30__while_end
+   LEAVE
  cb_31: 
   ir_name: cb_31
+ cb_32: 
+  ir_name: cb_32
   code: 
    OP INC var_25__i none tmp_33
    OP INDEX var_21__str tmp_33 tmp_34
-   MOV var_32__c tmp_34
-   CALL func_4__putch [ var_24__b var_23__g var_22__r var_32__c ] tmp_35
+   MOV var_27__c tmp_34
+   CALL func_4__putch [ var_24__b var_23__g var_22__r var_27__c ] tmp_35
  cb_36: 
   ir_name: cb_36
   code: 
+   ENTER scp_37__NULL
    OP ADD var_8__scr_I imm_42 tmp_43
    OP INDEX var_6__adr_scr tmp_43 tmp_44
    MOV tmp_44 var_38__c
@@ -41,10 +47,13 @@ code_blocks:
    MOV tmp_53 var_41__b
    OP ADD var_8__scr_I imm_54 tmp_55
    MOV var_8__scr_I tmp_55
+   LEAVE
  cb_56: 
   ir_name: cb_56
   code: 
+   ENTER scp_57__NULL
    WHILE cb_60 imm_61 cb_62 lbl_58__while_next lbl_59__while_end
+   LEAVE
  cb_60: 
   ir_name: cb_60
  cb_62: 
@@ -87,8 +96,8 @@ scopes:
    var_24__b variable b NULL arg NULL NULL NULL
    var_25__i variable i int NULL NULL NULL NULL
    imm_26 immediate NULL int NULL 0 NULL NULL
-   imm_30 immediate NULL int NULL 1 NULL NULL
-   var_32__c variable c NULL NULL NULL NULL NULL
+   var_27__c variable c int NULL NULL NULL NULL
+   imm_28 immediate NULL int NULL 0 NULL NULL
    tmp_33 temporary NULL NULL NULL NULL NULL NULL
    tmp_34 temporary NULL NULL NULL NULL NULL NULL
    tmp_35 temporary NULL NULL NULL NULL NULL NULL

@@ -85,10 +85,13 @@ func generate():
 	#	generate_code_block(cb);
 	var cb_global = IR.code_blocks[IR.code_blocks.keys()[0]];
 	referenced_cbs.push_back(cb_global);
+	var scp_global = IR.scopes[IR.scopes.keys()[0]];
+	enter_scope(scp_global);
 	var assy_full = "";
 	while not referenced_cbs.is_empty():
 		var cb = referenced_cbs.pop_back();
 		var ab = generate_code_block(cb);
+		fixup_enter_leave(ab);
 		assy_full += ab.code;
 	assy_full += generate_globals();
 	return assy_full;
@@ -123,6 +126,16 @@ func generate_globals()->String:
 				text += ":%s: db \"%s\";\n" % [sym.ir_name, sym.value];
 	return text;
 
+var entered_scopes = [];
+var cur_scope = null;
+func enter_scope(new_scope):
+	if cur_scope:
+		entered_scopes.push_back(cur_scope);
+	cur_scope = new_scope;
+func leave_scope():
+	cur_scope = entered_scopes.pop_back();
+
+
 func maybe_emit_func_label(ir_name:String):
 	var calling_func = is_referenced_by_func(ir_name);
 	if calling_func:	emit_raw(":%s:\n" % calling_func);
@@ -156,6 +169,8 @@ func generate_cmd(cmd:Array):
 		"WHILE": generate_cmd_while(cmd);
 		"CALL": generate_cmd_call(cmd);
 		"RETURN": generate_cmd_return(cmd);
+		"ENTER": generate_cmd_enter(cmd);
+		"LEAVE": generate_cmd_leave(cmd);
 		_: push_error("codegen: unknown IR command ["+str(cmd[0])+"]");
 
 func generate_cmd_mov(cmd):
@@ -417,8 +432,13 @@ func address_value(val:String):
 func alloc_temporary():
 	var res = alloc_register();
 	if not res:
-		res = "EBP[%d]" % cur_stack_size;
-		cur_stack_size += 1;
+		#res = "EBP[%d]" % cur_stack_size;
+		#cur_stack_size += 1;
+		var ir_name = "tmp_%d" % (len(all_syms)+1);
+		var handle = {"ir_name":ir_name, "val_type":"temporary", "storage":"NULL"};
+		allocate_value(handle, cur_scope);
+		all_syms[ir_name] = handle;
+		res = ir_name;
 	return res;
 
 func emit_raw(text:String):
@@ -457,23 +477,16 @@ func alloc_register():
 func allocate_vars():
 	for key in IR.scopes:
 		var scope = IR.scopes[key];
-		var stack_pos = 0; # we will be placing local vars on the stack
-		var arg_pos = 0; # args are placed on the stack in the other direction
+		#var stack_pos = 0; # we will be placing local vars on the stack
+		#var arg_pos = 0; # args are placed on the stack in the other direction
+		scope["local_vars_count"] = 0;
+		scope["local_vars_write_pos"] = 0;
+		scope["args_count"] = 0;
+		scope["args_write_pos"] = 0;
 		if "vars" in scope:
 			for handle in scope.vars:
-				if handle.storage == "NULL":
-					var storage_type = "stack";
-					if(scope.user_name == "global"): storage_type = "global";
-					handle.storage = {"type":storage_type, "pos":to_local_pos(stack_pos)};
-					stack_pos += 1;
-				elif handle.storage == "extern":
-					handle.storage = {"type":"extern", "pos":0};
-				elif handle.storage == "arg":
-					handle.storage = {"type":"stack", "pos":to_arg_pos(arg_pos)};
-					arg_pos += 1;
-				else:
-					push_error("codegen: allocate_vars: unknown storage type");
-			scope["local_var_stack_size"] = stack_pos;
+				allocate_value(handle, scope);
+			#scope["local_var_stack_size"] = stack_pos;
 		if "funcs" in scope:
 			for handle in scope.funcs:
 				if handle.storage == "NULL":
@@ -486,9 +499,36 @@ func allocate_vars():
 		var cb = IR.code_blocks[key];
 		cb["val_type"] = "code";
 
+func allocate_value(handle, scope):
+	var data_size = 4;
+	if handle.storage == "NULL":
+		var storage_type;
+		var pos;
+		if(scope.user_name == "global"): 
+			storage_type = "global";
+			pos = 0;
+		else:
+			storage_type = "stack";
+			var wp = scope.local_vars_write_pos;
+			pos = to_local_pos(wp);
+			scope.local_vars_write_pos += data_size;
+			scope.local_vars_count += 1;
+		handle.storage = {"type":storage_type, "pos":pos};
+	elif handle.storage == "extern":
+		handle.storage = {"type":"extern", "pos":0};
+	elif handle.storage == "arg":
+		var wp = scope.args_write_pos;
+		handle.storage = {"type":"stack", "pos":to_arg_pos(wp)};
+		scope.args_write_pos += data_size;
+		scope.args_count += 1;
+	else:
+		push_error("codegen: allocate_vars: unknown storage type");
+	
+	print("alloc %s to %s: result %s" % [handle.ir_name, scope.ir_name, handle.storage]);
+
 # defines a mapping between the input pos and stack pos for local vars of a function
 func to_local_pos(pos):
-	return pos;
+	return -pos;
 
 # defines a mapping between the input pos and stack pos for arguments of a function
 func to_arg_pos(pos):
@@ -496,3 +536,23 @@ func to_arg_pos(pos):
 
 func generate_cmd_return(_cmd):
 	emit("ret;\n");
+
+func generate_cmd_enter(cmd):
+	var scp_name = cmd[1];
+	enter_scope(IR.scopes[scp_name]);
+	emit("__ENTER_%s;\n" % scp_name);
+
+func generate_cmd_leave(_cmd):
+	var scp_name = cur_scope.ir_name;
+	emit("__LEAVE_%s;\n" % scp_name)
+	leave_scope();
+
+func fixup_enter_leave(assy_block):
+	for key in IR.scopes:
+		var scope = IR.scopes[key];
+		var scp_name = scope.ir_name;
+		var stack_bytes = scope.local_vars_write_pos;
+		var S:String = assy_block.code;
+		S = S.replace("__ENTER_%s" % scp_name, "sub ESP, %d" % stack_bytes);
+		S = S.replace("__LEAVE_%s" % scp_name, "sub ESP, -%d" % stack_bytes);
+		assy_block.code = S;

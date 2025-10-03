@@ -14,7 +14,7 @@ var labels = {};
 var label_refs = {};
 var label_toks = {};
 const ISA = preload("res://lang_zvm.gd");
-
+const USE_32BIT_BY_DEFAULT = true;
 # error reporting
 var lines:PackedStringArray;
 var cur_line:String = "";
@@ -512,7 +512,9 @@ func parse_command(iter:Iter)->bool:
 		if not op_code: 
 			push_error(ERR_07 % op_name); 
 			return false;
+		flags.is_32bit = USE_32BIT_BY_DEFAULT;
 		if match_tokens(iter, ["\\.", "\\32"]): flags.is_32bit = true;
+		elif match_tokens(iter, ["\\.", "\\8"]): flags.is_32bit = false;
 		var erep:Error_reporter = Error_reporter.new(self, iter);
 		var arg1:Cmd_arg = parse_arg(iter,erep);
 		match_tokens(iter, ["\\,"]);

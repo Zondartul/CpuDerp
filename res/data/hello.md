@@ -15,8 +15,9 @@ func main(){
 
 func print(str,r,g,b){
 	var i = 0;	
-	while(1){
-		var c = str[i++];
+	var c = 0;
+	while(c){
+		c = str[i++];
 		putch(c, r,g,b);
 	}
 }

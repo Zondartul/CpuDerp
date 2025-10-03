@@ -410,11 +410,13 @@ func analyze_func_def_stmt(ast):
 				break;
 	var ocb = IR.push_code_block();
 	var osc = IR.push_scope();
+	IR.emit_IR(["ENTER", IR.cur_scope.ir_name]);
 	for arg_name in arg_names:
 		var arg_handle = IR.new_val_var(arg_name);
 		arg_handle.storage = "arg";
 		IR.save_variable(arg_handle);
 	analyze_block(block);
+	IR.emit_IR(["LEAVE"]);
 	var fun_scope = IR.pop_scope(osc);
 	var fun_code = IR.pop_code_block(ocb);
 	var fun_handle = IR.get_func(fun_name);
