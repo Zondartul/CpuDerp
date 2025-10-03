@@ -492,7 +492,7 @@ func to_local_pos(pos):
 
 # defines a mapping between the input pos and stack pos for arguments of a function
 func to_arg_pos(pos):
-	return -(2+pos);
+	return 9+pos;
 
 func generate_cmd_return(_cmd):
 	emit("ret;\n");

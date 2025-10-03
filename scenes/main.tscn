@@ -276,9 +276,10 @@ script = ExtResource("14_vxglm")
 script = ExtResource("15_2f3dj")
 
 [node name="window_debug" type="Window" parent="Panel/TabContainer/Editor"]
+oversampling_override = 1.0
 title = "Debug"
 initial_position = 2
-size = Vector2i(250, 300)
+size = Vector2i(400, 500)
 visible = false
 
 [node name="debug_panel" parent="Panel/TabContainer/Editor/window_debug" instance=ExtResource("10_cypyl")]
@@ -362,4 +363,5 @@ script = ExtResource("19_a20q3")
 [connection signal="pressed" from="Panel/btn_debugger" to="Panel/TabContainer/Editor/window_debug" method="show"]
 [connection signal="cpu_step_done" from="VM/CPU_vm" to="Panel/TabContainer/Memory" method="_on_cpu_vm_cpu_step_done"]
 [connection signal="cpu_step_done" from="VM/CPU_vm" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="_on_cpu_vm_cpu_step_done"]
+[connection signal="mem_accessed" from="VM/CPU_vm" to="Panel/TabContainer/Memory" method="_on_cpu_vm_mem_accessed"]
 [connection signal="on_cpu_error" from="VM/CPU_vm" to="." method="_on_cpu_vm_on_cpu_error"]

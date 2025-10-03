@@ -37,14 +37,95 @@ size_flags_vertical = 3
 max_columns = 8
 same_column_width = true
 
-[node name="lbl_1" type="Label" parent="V"]
+[node name="TabContainer" type="TabContainer" parent="V"]
 layout_mode = 2
-text = "Stack"
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+current_tab = 1
 
-[node name="stack_view" type="ItemList" parent="V"]
+[node name="stack_view" type="ItemList" parent="V/TabContainer"]
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 same_column_width = true
+metadata/_tab_index = 0
+
+[node name="pointers" type="VBoxContainer" parent="V/TabContainer"]
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="slider_top" type="Control" parent="V/TabContainer/pointers"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="slider_mid" type="ItemList" parent="V/TabContainer/pointers"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+auto_width = true
+wraparound_items = false
+max_columns = 16
+same_column_width = true
+fixed_column_width = 24
+
+[node name="slider_bot" type="ItemList" parent="V/TabContainer/pointers"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="H" type="HBoxContainer" parent="V/TabContainer/pointers"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="V/TabContainer/pointers/H"]
+layout_mode = 2
+text = "Address"
+
+[node name="sb_addr" type="SpinBox" parent="V/TabContainer/pointers/H"]
+layout_mode = 2
+max_value = 9999999999.0
+value = 65536.0
+rounded = true
+allow_greater = true
+allow_lesser = true
+alignment = 1
+
+[node name="Control" type="Control" parent="V/TabContainer/pointers/H"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label3" type="Label" parent="V/TabContainer/pointers/H"]
+layout_mode = 2
+text = "View"
+
+[node name="ob_view" type="OptionButton" parent="V/TabContainer/pointers/H"]
+layout_mode = 2
+selected = 0
+item_count = 7
+popup/item_0/text = "char"
+popup/item_0/id = 0
+popup/item_1/text = "uint8"
+popup/item_1/id = 1
+popup/item_2/text = "sint8"
+popup/item_2/id = 2
+popup/item_3/text = "uint32"
+popup/item_3/id = 3
+popup/item_4/text = "sint32"
+popup/item_4/id = 4
+popup/item_5/text = "float32"
+popup/item_5/id = 5
+popup/item_6/text = "double"
+popup/item_6/id = 6
+
+[node name="Label2" type="Label" parent="V/TabContainer/pointers/H"]
+layout_mode = 2
+text = "Offset"
+
+[node name="sb_offs" type="SpinBox" parent="V/TabContainer/pointers/H"]
+layout_mode = 2
+max_value = 8.0
+rounded = true
+allow_greater = true
+allow_lesser = true
+alignment = 1
 
 [node name="lbl_line" type="Label" parent="V"]
 layout_mode = 2
@@ -97,6 +178,12 @@ layout_mode = 2
 tooltip_text = "Run to"
 icon = ExtResource("9_qp3qd")
 
+[node name="cb_hex" type="CheckButton" parent="V/H"]
+layout_mode = 2
+text = "hex"
+
+[connection signal="value_changed" from="V/TabContainer/pointers/H/sb_addr" to="." method="_on_sb_addr_value_changed"]
+[connection signal="value_changed" from="V/TabContainer/pointers/H/sb_offs" to="." method="_on_sb_addr_value_changed"]
 [connection signal="pressed" from="V/H/btn_run" to="." method="_on_btn_run_pressed"]
 [connection signal="pressed" from="V/H/btn_pause" to="." method="_on_btn_pause_pressed"]
 [connection signal="pressed" from="V/H/btn_stop" to="." method="_on_btn_stop_pressed"]
@@ -105,3 +192,4 @@ icon = ExtResource("9_qp3qd")
 [connection signal="pressed" from="V/H/btn_step_in" to="." method="_on_btn_step_in_pressed"]
 [connection signal="pressed" from="V/H/btn_step_out" to="." method="_on_btn_step_out_pressed"]
 [connection signal="pressed" from="V/H/btn_run_to_line" to="." method="_on_btn_run_to_line_pressed"]
+[connection signal="toggled" from="V/H/cb_hex" to="." method="_on_cb_hex_toggled"]

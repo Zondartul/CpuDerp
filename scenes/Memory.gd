@@ -32,7 +32,13 @@ func clear():
 	mem_handles = [];
 	handle_map = {};
 
+const step = 8;
+func align_addr(addr): return addr - addr % step;
+func align_size(s): return max(step, s + step-1 - ((s+step-1) % step));
+
 func add_memory_region(m_pos, m_size, m_name):
+	m_pos = align_addr(m_pos);
+	m_size = align_size(m_size);
 	var text = m_name + "\n"+str(m_size);
 	var idx = map.add_item(text)
 	var handle_info = {"pos":m_pos, "size":m_size, "name":m_name, "item_no":idx};
@@ -52,7 +58,6 @@ func update_mem_view():
 	var start = handle["pos"];
 	var end = start + handle["size"];
 	shadow_at = end;
-	var step = 8;
 	#var end_adj = end + (step-end%step); we maybe will need to think about unaligned end of region
 	var mode = "hex";
 	var n_addr_decimals = len(str(end));
@@ -181,3 +186,48 @@ func is_shadow_data(sbytes):
 
 func _on_cpu_vm_cpu_step_done(_cpu):
 	update_mem_view();
+
+
+func _on_cpu_vm_mem_accessed(addr: Variant, _val: Variant, _is_write: Variant) -> void:
+	var region = get_mem_region(addr);
+	if not region:
+		var next_up = get_mem_region(addr+1);
+		var next_down = get_mem_region(addr-1);
+		if next_up and next_down:
+			merge_mem_region(next_up, next_down);
+			print("mem region: merged")
+		elif next_up:
+			extend_mem_region(next_up, addr);
+			print("mem region: ext up")
+		elif next_down:
+			extend_mem_region(next_down, addr);
+			print("mem region: ext down")
+		else:
+			add_memory_region(addr, 1, "unk");
+			print("mem region: new")
+
+func get_mem_region(addr):
+	for handle in mem_handles:
+		if (handle.pos <= addr) and (handle.pos + handle.size > addr):
+			return handle;
+	return null;
+
+func extend_mem_region(handle, addr):
+	if handle.pos > addr: 
+		var diff = handle.pos - addr;
+		handle.pos = align_addr(addr);
+		handle.size = align_size(handle.size+diff);
+	elif handle.pos + handle.size < addr:
+		handle.size = align_size(addr - handle.pos + 1);
+
+func merge_mem_region(handle1, handle2):
+	var min_start = min(handle1.pos, handle2.pos);
+	var max_end = max(handle1.pos+handle1.size, handle2.pos+handle2.size);
+	remove_mem_region(handle2);
+	handle1.pos = align_addr(min_start);
+	handle1.size = align_size(max_end - min_start + 1);
+
+func remove_mem_region(handle):
+	map.remove_item(handle.idx);
+	mem_handles.erase(handle);
+	handle_map.erase(handle.idx);

@@ -8,6 +8,7 @@ var debug_vm = false;
 var freq = 1000;
 var errcode = 0;
 signal cpu_step_done(cpu);
+signal mem_accessed(addr, val, is_write);
 # for instruction set, preload the language
 const ISA = preload("res://lang_zvm.gd")
 
@@ -22,6 +23,8 @@ const ERR_INPUT = 5; # generic input wrongness
 # cpu's fault:
 const ERR_SANITY = 6; # sanity check assert, this probably never happens
 const ERR_INTERNAL = 7; # generic our-fault error
+
+
 var regs:PackedInt32Array;
 # command structure:
 # bytes	0		1		2		3	4	5	6	7 
@@ -87,7 +90,7 @@ func clearBit(Byte, bit): setBit(Byte, bit, 0);
 
 func fetchByte():
 	var byte = read8(regs[ISA.REG_IP]); #Bus.readCell(regs[REG_IP]);
-	regs[ISA.REG_IP] += 1;
+	regs[ISA.REG_IP] = to_U32(regs[ISA.REG_IP]+1);
 	return byte;
 
 var bus_setting = [];
@@ -262,8 +265,8 @@ func check_jmp_cond(cmd):
 
 func fetch_src(cmd):
 	var src_val:int = 0;
-	if(cmd.reg2_num): src_val += regs[cmd.reg2_num];
-	if(cmd.reg2_im): src_val += cmd.im;
+	if(cmd.reg2_num): src_val = to_U32(src_val+regs[cmd.reg2_num]);
+	if(cmd.reg2_im): src_val = to_U32(src_val+cmd.im);
 	if(cmd.flags.deref2): 
 		if(cmd.is_32bit):
 			src_val = read32(src_val);
@@ -273,8 +276,8 @@ func fetch_src(cmd):
 
 func fetch_dest(cmd):
 	var dst_val:int = 0;
-	if(cmd.reg1_num): dst_val += regs[cmd.reg1_num];
-	if(cmd.reg1_im): dst_val += cmd.im;
+	if(cmd.reg1_num): dst_val = to_U32(dst_val+regs[cmd.reg1_num]);
+	if(cmd.reg1_im): dst_val = to_U32(dst_val+cmd.im);
 	if(cmd.flags.deref1): 
 		if(cmd.is_32bit):
 			dst_val = read32(dst_val);
@@ -285,8 +288,8 @@ func fetch_dest(cmd):
 func store_dest(cmd, val):
 	var dest_adr = 0;
 	if(cmd.flags.deref1):
-		if(cmd.reg1_num): dest_adr += regs[cmd.reg1_num];
-		if(cmd.reg1_im): dest_adr += cmd.im;
+		if(cmd.reg1_num): dest_adr = to_U32(dest_adr+regs[cmd.reg1_num]);
+		if(cmd.reg1_im): dest_adr = to_U32(dest_adr+cmd.im);
 		if(cmd.is_32bit):
 			write32(dest_adr, val);
 		else:
@@ -324,13 +327,15 @@ func pop32():
 	var n = buff.decode_u32(0);
 	return n;
 
-
 func read8(adr): 
-	return Bus.readCell(adr);
+	var val = Bus.readCell(adr);
+	mem_accessed.emit(adr, val, false);
+	return val;
 func write8(adr, val): 
 	if(val > 255):
 		if(debug_vm):print("warning: write8("+str(val)+" > 255)");
 	Bus.writeCell(adr, val);
+	mem_accessed.emit(adr, val, true);
 func read32(adr):
 	var buff = PackedByteArray([0,0,0,0]);
 	for i in range(buff.size()):
@@ -642,3 +647,8 @@ func _process(delta):
 	for i in range(n_per_tick):
 		if(regs[ISA.REG_CTRL] & ISA.BIT_PWR):
 			step();
+
+const MAX_U8 = 256-1;
+const MAX_U32 = 2**32-1;
+func to_U8(x): return x & MAX_U8;
+func to_U32(x): return x & MAX_U32;
