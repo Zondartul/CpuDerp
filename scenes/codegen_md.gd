@@ -4,7 +4,8 @@ const uYaml = preload("res://scenes/uYaml.gd")
 
 var IR = {};
 var all_syms = {};
-
+const USE_WIDE_STRINGS = true; # true: expand each character into U32, false: normal strings
+const ADD_DEBUG_TRACE = true; # in emitted assembly, specify where it came from.
 #---------- IR ingestion -------------------
 
 func parse_file(filename)->String:
@@ -99,7 +100,7 @@ func generate():
 func generate_code_block(cb):
 	assy_block_stack.push_back(cur_assy_block);
 	cur_assy_block = {"code":""};
-	emit_raw("# %s\n" % cb.ir_name);
+	emit_raw("# %s\n" % cb.ir_name, "generate_code_block(%s)" % cb.ir_name);
 	maybe_emit_func_label(cb.ir_name);
 	if "code" in cb:
 		for i in range(len(cb.code)):
@@ -123,7 +124,20 @@ func generate_globals()->String:
 				text += ":%s: db 0;\n" % sym.ir_name;
 		if sym.val_type == "immediate":
 			if sym.data_type == "string":
-				text += ":%s: db \"%s\";\n" % [sym.ir_name, sym.value];
+				var S = sym.value;
+				S = format_db_string(S);
+				text += ":%s: db %s;\n" % [sym.ir_name, S];
+	return text;
+
+func format_db_string(S):
+	var text = "";
+	if USE_WIDE_STRINGS:
+		for ch:String in S:
+			text += "%d,0,0,0, " % ch.to_ascii_buffer()[0];
+		#text = text.erase(len(text)-2,2);
+		text += "0,0,0,0";
+	else:
+		text = "\"%s\", 0" % S;
 	return text;
 
 var entered_scopes = [];
@@ -138,11 +152,11 @@ func leave_scope():
 
 func maybe_emit_func_label(ir_name:String):
 	var calling_func = is_referenced_by_func(ir_name);
-	if calling_func:	emit_raw(":%s:\n" % calling_func);
+	if calling_func:	emit_raw(":%s:\n" % calling_func, "maybe_emit_func_label(%s)" % ir_name);
 
 func maybe_emit_func_ret(ir_name:String):
 	var calling_func = is_referenced_by_func(ir_name);
-	if calling_func:	emit_raw("ret;\n");
+	if calling_func:	emit_raw("ret;\n", "maybe_emit_func_ret(%s)" % ir_name);
 
 func is_referenced_by_func(ir_name:String):
 	for key in all_syms:
@@ -177,7 +191,7 @@ func generate_cmd_mov(cmd):
 	#MOV dest src
 	var dest = cmd[1];
 	var src = cmd[2];
-	emit("mov ^%s, $%s;\n" % [dest, src]);
+	emit("mov ^%s, $%s;\n" % [dest, src], "generate_cmd_mov");
 
 const op_map = {
 	"ADD":"add %a, %b;\n",
@@ -209,16 +223,16 @@ func generate_cmd_op(cmd):
 		op_str = op_str.replace("@%a", "%a");
 		arg1_by_addr = true;
 	if arg1_by_addr:
-		emit("mov %s, @%s;\n" % [tmpA, arg1]);
+		emit("mov %s, @%s;\n" % [tmpA, arg1], "generate_cmd_op.arg1_by_addr");
 	else:
-		emit("mov %s, $%s;\n" % [tmpA, arg1]);
+		emit("mov %s, $%s;\n" % [tmpA, arg1], "generate_cmd_op.arg1_by_addr.else");
 	op_str = op_str.replace("%a", tmpA);
 	if op_str.find("%b") != -1:
 		tmpB = alloc_temporary();
-		emit("mov %s, $%s;\n" % [tmpB, arg2]);
+		emit("mov %s, $%s;\n" % [tmpB, arg2], "generate_cmd_op.find_b");
 		op_str = op_str.replace("%b", tmpB);
-	emit(op_str);
-	emit("mov ^%s, %s;\n" % [res, tmpA]);
+	emit(op_str, "generate_cmd_op.op_str");
+	emit("mov ^%s, %s;\n" % [res, tmpA], "generate_cmd_op.result");
 	free_val(tmpA);
 	if(tmpB): free_val(tmpB);
 	
@@ -245,13 +259,13 @@ func generate_cmd_if(cmd):
 	var cb_block = cmd[3];
 	var lbl_else = new_lbl("if_else").ir_name;
 	var lbl_end = new_lbl("if_end").ir_name;
-	emit("$%s\n" % cb_cond);
-	emit("cmp $%s, 0;\n" % res);
-	emit("jz %s;\n" % lbl_else);
-	emit("$%s\n" % cb_block);
-	emit(":%s:\n" % lbl_else);
+	emit("$%s\n" % cb_cond, "generate_cmd_if.cb_cond");
+	emit("cmp $%s, 0;\n" % res, "generate_cmd_if.cmp");
+	emit("jz %s;\n" % lbl_else, "generate_cmd_if.jz_else");
+	emit("$%s\n" % cb_block, "generate_cmd_if.cb_block");
+	emit(":%s:\n" % lbl_else, "generate_cmd_if.lbl_else");
 	if not if_block_continued:
-		emit(":%s:\n" % [lbl_end]);
+		emit(":%s:\n" % [lbl_end], "generate_cmd_if.end_if");
 		if_block_lbl_end = null;
 	else:
 		if_block_lbl_end = lbl_end;
@@ -262,20 +276,20 @@ func generate_cmd_else_if(cmd):
 	var cb_block = cmd[3];
 	var lbl_else = new_lbl("if_else").ir_name;
 	var lbl_end = if_block_lbl_end;
-	emit("$%s\n" % cb_cond);
-	emit("cmp $%s, 0;\n" % res);
-	emit("jz %s;\n" % lbl_else);
-	emit("$%s\n" % cb_block);
-	emit(":%s:\n" % lbl_else);
+	emit("$%s\n" % cb_cond, "generate_cmd_else_if.cb_cond");
+	emit("cmp $%s, 0;\n" % res, "generate_cmd_else_if.cmp");
+	emit("jz %s;\n" % lbl_else, "generate_cmd_else_if.jz_else");
+	emit("$%s\n" % cb_block, "generate_cmd_else_if.cb_block");
+	emit(":%s:\n" % lbl_else, "generate_cmd_else_if.lbl_else");
 	if not if_block_continued:
-		emit(":%s:\n" % [lbl_end]);
+		emit(":%s:\n" % [lbl_end], "generate_cmd_else_if.end_if");
 		if_block_lbl_end = null;
 
 func generate_cmd_else(cmd):
 	var cb_block = cmd[1];
 	var lbl_end = if_block_lbl_end;
-	emit("$%s\n" % [cb_block]);
-	emit(":%s:\n" % [lbl_end]);
+	emit("$%s\n" % [cb_block], "generate_cmd_else.cb_block");
+	emit(":%s:\n" % [lbl_end], "generate_cmd_else.lbl_end");
 	if_block_lbl_end = null;
 
 func generate_cmd_while(cmd):
@@ -286,13 +300,14 @@ func generate_cmd_while(cmd):
 	var lbl_next = cmd[4];
 	var lbl_end = cmd[5];
 	var immediate_0 = new_imm(0);
-	emit(":%s:\n" % lbl_next);		# loop:
-	emit("$%s\n" % cb_cond);		#  (expr->cond)
-	emit("cmp $%s, $%s;\n" % [res, immediate_0.ir_name]);		#  IF !cond 
-	emit("jz %s;\n" % lbl_end);		#  THEN GOTO "end"
-	emit("$%s\n" % cb_block);		#  (code block)
-	emit("jmp %s;\n" % lbl_next);	#  GOTO "loop"
-	emit(":%s:\n" % lbl_end);		# end:
+	emit(":%s:\n" % lbl_next, "generate_cmd_while.lbl_next");		# loop:
+	emit("$%s\n" % cb_cond, "generate_cmd_while.cb_cond");		#  (expr->cond)
+	emit("cmp $%s, $%s;\n" % [res, immediate_0.ir_name], 
+							"generate_cmd_while.cmp");		#  IF !cond 
+	emit("jz %s;\n" % lbl_end, "generate_cmd_while.jz_end");		#  THEN GOTO "end"
+	emit("$%s\n" % cb_block, "generate_cmd_while.cb_block");		#  (code block)
+	emit("jmp %s;\n" % lbl_next, "generate_cmd_while.jmp_next");	#  GOTO "loop"
+	emit(":%s:\n" % lbl_end, "generate_cmd_while.lbl_end");		# end:
 
 func generate_cmd_call(cmd):
 	#CALL fun arg(s) res
@@ -312,10 +327,10 @@ func generate_cmd_call(cmd):
 	args.reverse();
 	var n_args = len(args);
 	for arg in args:
-		emit("push $%s;\n" % arg);
-	emit("call @%s;\n" % fun);
-	emit("add ESP, %s;\n" % n_args);
-	emit("mov ^%s, eax;\n" % res);
+		emit("push $%s;\n" % arg, "generate_cmd_call.args");
+	emit("call @%s;\n" % fun, "generate_cmd_call.call");
+	emit("add ESP, %s;\n" % n_args, "generate_cmd_call.stack");
+	emit("mov ^%s, eax;\n" % res, "generate_cmd_call.result");
 	
 	if fun_handle.storage.type != "extern":
 		var cb_name = fun_handle.code;
@@ -323,7 +338,7 @@ func generate_cmd_call(cmd):
 		var cb = all_syms[cb_name];
 		referenced_cbs.append(cb);
 
-func emit(text:String):
+func emit(text:String, dbg_trace:String):
 	var imm_flag = false;
 	var allocs = [];
 	while true:
@@ -353,12 +368,12 @@ func emit(text:String):
 		imm_flag = false;
 		#vars_to_store.append([res, ref_store.val]);
 		text = text.substr(0, ref_store.from) + res + text.substr(ref_store.to);
-	emit_raw(text);
+	emit_raw(text, dbg_trace + ":emit(%s)" % text);
 	for pair in vars_to_store:
 		#store_val(pair[0], pair[1]);
 		var val = pair[0];
 		var reg = pair[1];
-		emit("mov %s, %s;\n" % [val, reg]);
+		emit_raw("mov %s, %s;\n" % [val, reg], dbg_trace + ":emit(%s).store" % text);
 		free_val(reg);
 	for val in allocs:
 		free_val(val);
@@ -366,7 +381,7 @@ func emit(text:String):
 func promote(res:String, allocs:Array):
 	var reg = alloc_register();
 	allocs.append(reg);
-	emit("mov %s, %s;\n" % [reg, res]);
+	emit("mov %s, %s;\n" % [reg, res], "promote");
 	res = reg;
 	return res;
 
@@ -441,7 +456,8 @@ func alloc_temporary():
 		res = ir_name;
 	return res;
 
-func emit_raw(text:String):
+func emit_raw(text:String, dbg_trace:String):
+	if ADD_DEBUG_TRACE: cur_assy_block.code += "#%s\n" % dbg_trace.remove_chars("\n");
 	cur_assy_block.code += text;
 
 ## returns a CPU-addressable string that can be used to write into the value.
@@ -454,6 +470,7 @@ func store_val(val:String):
 			res = "*%s" % handle.ir_name; #handle.storage.pos;
 		"stack":
 			res = "EBP[%d]" % handle.storage.pos;
+			assert(handle.storage.pos != 0);
 		_: push_error("codegen: store_value: unkown storage type ["+handle.storage.type+"]");
 	print("store val [%s] is %s: res [%s]" % [val, handle.storage.type, res]);
 	#emit("mov %s, %s;\n" % [res, reg]);
@@ -480,9 +497,9 @@ func allocate_vars():
 		#var stack_pos = 0; # we will be placing local vars on the stack
 		#var arg_pos = 0; # args are placed on the stack in the other direction
 		scope["local_vars_count"] = 0;
-		scope["local_vars_write_pos"] = 0;
+		scope["local_vars_write_pos"] = to_local_pos(0);
 		scope["args_count"] = 0;
-		scope["args_write_pos"] = 0;
+		scope["args_write_pos"] = to_arg_pos(0);
 		if "vars" in scope:
 			for handle in scope.vars:
 				allocate_value(handle, scope);
@@ -528,23 +545,23 @@ func allocate_value(handle, scope):
 
 # defines a mapping between the input pos and stack pos for local vars of a function
 func to_local_pos(pos):
-	return -pos;
+	return -3-pos;
 
 # defines a mapping between the input pos and stack pos for arguments of a function
 func to_arg_pos(pos):
 	return 9+pos;
 
 func generate_cmd_return(_cmd):
-	emit("ret;\n");
+	emit("ret;\n", "generate_cmd_return");
 
 func generate_cmd_enter(cmd):
 	var scp_name = cmd[1];
 	enter_scope(IR.scopes[scp_name]);
-	emit("__ENTER_%s;\n" % scp_name);
+	emit("__ENTER_%s;\n" % scp_name, "generate_cmd_enter");
 
 func generate_cmd_leave(_cmd):
 	var scp_name = cur_scope.ir_name;
-	emit("__LEAVE_%s;\n" % scp_name)
+	emit("__LEAVE_%s;\n" % scp_name, "generate_cmd_leave")
 	leave_scope();
 
 func fixup_enter_leave(assy_block):
