@@ -528,14 +528,16 @@ func allocate_value(handle, scope):
 			storage_type = "stack";
 			var wp = scope.local_vars_write_pos;
 			pos = to_local_pos(wp);
-			scope.local_vars_write_pos += data_size;
+			scope.local_vars_write_pos -= data_size;
 			scope.local_vars_count += 1;
+			assert(pos != 0);
 		handle.storage = {"type":storage_type, "pos":pos};
 	elif handle.storage == "extern":
 		handle.storage = {"type":"extern", "pos":0};
 	elif handle.storage == "arg":
 		var wp = scope.args_write_pos;
 		handle.storage = {"type":"stack", "pos":to_arg_pos(wp)};
+		assert(handle.storage.pos != 0);
 		scope.args_write_pos += data_size;
 		scope.args_count += 1;
 	else:
@@ -545,7 +547,7 @@ func allocate_value(handle, scope):
 
 # defines a mapping between the input pos and stack pos for local vars of a function
 func to_local_pos(pos):
-	return -3-pos;
+	return -3+pos;
 
 # defines a mapping between the input pos and stack pos for arguments of a function
 func to_arg_pos(pos):
@@ -570,6 +572,6 @@ func fixup_enter_leave(assy_block):
 		var scp_name = scope.ir_name;
 		var stack_bytes = scope.local_vars_write_pos;
 		var S:String = assy_block.code;
-		S = S.replace("__ENTER_%s" % scp_name, "sub ESP, %d" % stack_bytes);
-		S = S.replace("__LEAVE_%s" % scp_name, "sub ESP, -%d" % stack_bytes);
+		S = S.replace("__ENTER_%s" % scp_name, "sub ESP, %d" % -stack_bytes);
+		S = S.replace("__LEAVE_%s" % scp_name, "sub ESP, %d" % stack_bytes);
 		assy_block.code = S;

@@ -2,7 +2,8 @@ extends Control
 # Debug Panel
 const ISA = preload("res://lang_zvm.gd")
 
-@onready var n_regview = $V/reg_view
+@onready var n_regview = $V/TabContainer/reg_view
+@onready var n_locals = $V/TabContainer/local_view/V/locals
 @onready var n_stackview = $V/TabContainer/stack_view
 
 var regnames = [
@@ -116,6 +117,7 @@ func update_cpu():
 	update_stack();
 	update_ip_highlight();
 	update_pointers();
+	update_locals();
 	
 func read32(adr):
 	var buff = PackedByteArray([0,0,0,0]);
@@ -141,8 +143,8 @@ var label_names = [];
 
 func update_labels():
 	label_inv_dict = {};
-	for k:String in assembler.labels.keys():
-		var v:int = assembler.labels[k];
+	for k:String in assembler.final_labels.keys():
+		var v:int = assembler.final_labels[k];
 		label_inv_dict[v] = k;
 
 	label_ips = [];
@@ -153,7 +155,7 @@ func update_labels():
 		label_ips.append(k);
 
 func decode_ip(ip):
-	if(not assembler or (assembler.labels.size() == 0)):
+	if(not assembler or (assembler.final_labels.size() == 0)):
 		return "(no data)";
 	else:
 		update_labels();
@@ -217,13 +219,22 @@ func _on_btn_step_out_pressed():
 
 func _on_btn_run_to_line_pressed():
 	print("unimplemented");
-
+	var cur_line = editor.get_cur_line_idx();
+	var best_oploc = op_locations[0];
+	for i in range(len(op_locations)):
+		var oploc = op_locations[i];
+		if (oploc.line <= cur_line) and (oploc.line > best_oploc.line):
+			best_oploc = oploc;
+	var target_ip = best_oploc.ip;
+	while(cpu.regs[cpu.ISA.REG_IP] != target_ip):
+		cpu.step();
+	update_cpu();
 
 func _on_cb_hex_toggled(toggled_on: bool) -> void:
 	mode_hex = toggled_on;
 	update_cpu();
 
-@onready var slider_top:Control = $V/TabContainer/pointers/slider_top
+@onready var slider_top:Control =  $V/TabContainer/pointers/slider_top
 @onready var slider_mid:ItemList = $V/TabContainer/pointers/slider_mid
 @onready var slider_bot:ItemList = $V/TabContainer/pointers/slider_bot
 @onready var n_sb_addr = $V/TabContainer/pointers/H/sb_addr
@@ -262,14 +273,11 @@ func update_mid():
 		var addr = slider_base_addr+i;
 		var val = bus.readCell(addr);
 		var text1 = "%02X" % val;
-		#var text2 = "%d" % val;
+		#var text1 = str(addr);
 		slider_mid.set_item_text(idx, text1);
-		#slider_mid.set_item_text(idx+16, text2);
 		slider_mid.set_item_tooltip(idx, get_pointer_tooltip(addr, val));
-		#slider_mid.set_item_tooltip(idx+16, get_pointer_tooltip(addr, val));
 		var item_col = calc_highlight_color(addr);
 		slider_mid.set_item_custom_bg_color(idx, item_col);
-		#slider_mid.set_item_custom_bg_color(idx+16, item2_col);
 		idx += 1;
 
 func calc_highlight_color(addr):
@@ -277,11 +285,11 @@ func calc_highlight_color(addr):
 	var item2_col = Color.BLACK;
 	for item in stack_items:
 		if addr == item.ip:
-			item2_col = Color.RED;
+			item2_col = Color(0.35, 0.0, 0.0, 1.0);
 		if is_in_range(addr, item.ebp+5, item.ebp+9):
 			item1_col = Color.RED;
 		if addr == item.ebp:
-			item2_col = Color.GREEN;
+			item2_col = Color(0.0, 0.23, 0.0, 1.0);
 		if is_in_range(addr, item.ebp+1, item.ebp+5):
 			item1_col = Color.GREEN;
 	if addr == cpu.regs[cpu.ISA.REG_ESP]:
@@ -312,32 +320,280 @@ func update_top():
 	var view_type = n_ob_view.get_item_text(n_ob_view.selected);
 	var top_offs = n_sb_offs.value;
 	var view_size = type_sizes[view_type];
-	const step_px = 24;
-	var offs_real = slider_base_addr % view_size + top_offs;
-	var first_is_blank = 0;
+	#const step_px = 24;
+	var offs_real = -(slider_base_addr % view_size) + top_offs;
+	#var first_is_blank = 0;
 	
-	var n_views = ((16-offs_real)/view_size);
+	var n_views = ((16-offs_real)/view_size)+1;
 
 	for i in range(n_views):
 		var first_item = offs_real + i*view_size;
 		var last_item = first_item + view_size - 1;
+		if (first_item < 0) or (last_item >= 16): continue;
 		var first_rect = slider_mid.get_item_rect(first_item);
 		var last_rect = slider_mid.get_item_rect(last_item);
 		var vec_from = first_rect.position;
 		var vec_to = last_rect.end;
+		#
+		#var view_panel:Panel = Panel.new();
+		#view_panel.set_position(vec_from);
+		#view_panel.set_size(vec_to-vec_from);
+		#slider_top.add_child(view_panel);
 		
-		var view_panel:Panel = Panel.new();
-		view_panel.set_position(vec_from);
-		view_panel.set_size(vec_to-vec_from);
-		slider_top.add_child(view_panel);
+		var col_odd = Color(0.176, 0.192, 0.22, 1.0);
+		var col_even = Color(0.114, 0.133, 0.161, 1.0);
+		
+		var view_box:ColorRect = ColorRect.new();
+		view_box.color = col_odd;
+		var pos = int(slider_base_addr+i*view_size+offs_real-8);
+		var is_even = (pos/view_size)%2 == 0;
+		if is_even: view_box.color = col_even;
+		view_box.set_position(vec_from);
+		view_box.set_size(vec_to-vec_from);
+		slider_top.add_child(view_box);
+		
+		var lbl:Label = Label.new();
+		lbl.text = get_slider_text(pos, view_type);
+		#lbl.text = str(int(pos));
+		view_box.add_child(lbl);
+		lbl.size = view_box.size;
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER;
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER;
 	#if offs_real:
 	#	first_is_blank = 1;
 	#	slider_top.set_item_text(0, pix_to_spaces(step_px*offs_real));
 	#for i in range(first_is_blank, 16):
 	#	slider_top.set_item_text(i, pix_to_spaces(step_px*view_size));
 	
-		
+func get_slider_text(pos, view_type):
+	var view_size = type_sizes[view_type];
+	var arr = [];
+	for i in range(view_size):
+		arr.append(bus.readCell(pos+i));
+	var data = PackedByteArray(arr);
+	var num = 0;
+	match view_type:
+		"char": num = data.get_string_from_ascii();
+		"sint8": num = data.decode_s8(0);
+		"uint8": num = data.decode_u8(0);
+		"sint32": num = data.decode_s32(0);
+		"uint32": num = data.decode_u32(0);
+		"float32": num = data.decode_float(0);
+		"double": num = data.decode_double(0);
+		_: push_error("debug_panel: unknown view type");
+	return str(num);
+
 func _on_sb_addr_value_changed(_value: float) -> void:
 	update_pointers();
 
+var always_update_locals = true;
+
+@onready var n_locals_view = $V/TabContainer/local_view/V/H/ob_view;
+
+var local_is_lbl = false;
+var locals = [];
+
+func update_locals():
+	if not always_update_locals: return;
+	n_locals.clear();
+	var cur_func = get_cur_func_name();
+	n_locals.add_item(cur_func);
+	complete_line();
+	
+	if always_update_locals:
+		locals = find_locals();
+	
+	var col_main = Color(0.74, 0.666, 0.0, 1.0);
+	var col_acc = col_main.darkened(0.5);
+	
+	var view_type = n_locals_view.get_item_text(n_locals_view.get_selected_id());
+	if view_type == "storage pos":
+		var grouped_locals = group_locals(locals, "by_pos");
+		# BLUEPRINT
+		# <stuff @ pos> value ...
+		# <access> 		...  <ip>
+		# <access> 		...  <ip>
+		#
+		
+		n_locals.add_item("type");
+		n_locals.add_item("val");
+		n_locals.add_item("ip");
+		for group in grouped_locals:
+			var local =group[0];
+			format_local_main_word(local, col_main);
+			format_local_val_word(local, col_main);
+			complete_line();
+			# other lines
+			for local2 in group:
+				format_local_access_word(local, col_acc);
+				n_locals.add_item(" ");
+				format_local_ip_word(local, col_acc);
+				complete_line();
+	elif view_type == "access ip":
+		var grouped_locals = group_locals(locals, "by_ip");
+		n_locals.add_item("ip");
+		n_locals.add_item("access");
+		n_locals.add_item("val");
+		var cur_ip = cpu.regs[cpu.ISA.REG_IP];
+		for local in grouped_locals:
+			var col = col_main;
+			if local.ip < cur_ip: col = col_acc;
+			format_local_ip_word(local, col);
+			format_local_access_word(local, col);
+			format_local_val_word(local, col);
+
+func format_local_main_word(local, col):
+	var text = "";
+	if local.type in ["lbl", "imm"]:
+		if local.pos in label_inv_dict:
+			var lbl_name = label_inv_dict[local.pos];
+			text += "%s" % lbl_name;
+			local_is_lbl = true;
+		else:
+			text += "<imm>"# %d" % local.pos;
+	#elif local.type == "imm":
+	#	text += "<imm>";# % local.pos;
+	elif local.type == "stack":
+		text += "ebp[%d]" % local.pos;
+	else:
+		text += "error @ %d" % local.pos;
+	#text += " @ %d" % local.ip;
+	var idx = n_locals.add_item(text);
+	n_locals.set_item_custom_fg_color(idx, col);
+
+func format_local_val_word(local, col):
+	var val = 0;
+	var EBP = cpu.regs[cpu.ISA.REG_EBP];
+	if local.type == "stack":
+		val = read32(EBP+local.pos);
+	elif local_is_lbl:
+		val = "%d -> %d" % [local.pos, read32(local.pos)];
+	elif local.type in ["lbl", "imm"]:
+		val = local.pos;
+	else:
+		val = -404;
+	var idx = n_locals.add_item(str(val));
+	n_locals.set_item_custom_fg_color(idx, col);
+
+func format_local_access_word(local, col):
+	var idx = n_locals.add_item(local.access);
+	n_locals.set_item_custom_fg_color(idx, col);
+
+func format_local_ip_word(local, col):
+	var idx = n_locals.add_item(str(local.ip));
+	n_locals.set_item_custom_fg_color(idx, col);
+
+func complete_line():
+	var n = n_locals.max_columns-1 - ((n_locals.item_count-1) % n_locals.max_columns);
+	for i in range(n): n_locals.add_item(" ");
+
+func get_cur_func_name():
+	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
+	var cur_func = decode_ip(cur_ip);
+	return cur_func;
+
+func find_locals():
+	var locals = [];
+	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
+	var next_ret = find_ret(cur_ip);
+	print("next_ret = %d" % next_ret);
+	if not next_ret: return locals;
+	while(cur_ip < next_ret):
+		var cmd = get_cmd(cur_ip);
+		var rcmd = cmd.duplicate();
+		rcmd.reverse();
+		#var cmd_op = rcmd.decode_u32(4);
+		var cmd_offs = cmd.decode_s32(3);
+		#var local_pos = 0;
+		var access_type = "error";
+		var local_type = "error";
+		var is_valid = false;
+		var decoded = cpu.decode_pure(cmd);
+		if not decoded: break;
+		if decoded.op_num == 0x09: # MOV
+			if decoded.reg1_im:
+				if decoded.reg1_num == 0:
+					if decoded.flags.deref1: #none
+						local_type = "lbl";
+						access_type = "*lbl/w";
+						is_valid = true;
+					else:
+						local_type = "imm";
+						access_type = "imm/w";
+						is_valid = true;
+				elif decoded.reg1_num == 9: #EBP
+					if decoded.flags.deref1:
+						local_type = "stack";
+						access_type = "ebp[x]/w";
+						is_valid = true;
+					else:
+						local_type = "stack";
+						access_type = "ebp+x/w";
+						is_valid = true;
+			elif decoded.reg2_im:
+				if decoded.reg2_num == 0: #none
+					if decoded.flags.deref2:
+						local_type = "lbl";
+						access_type = "*lbl/r";
+						is_valid = true;
+					else:
+						local_type = "imm";
+						access_type = "imm/r";
+						is_valid = true;
+				elif decoded.reg2_num == 9: #EBP
+					if decoded.flags.deref2:
+						local_type = "stack";
+						access_type = "ebp[x]/r";
+						is_valid = true;
+					else:
+						local_type = "stack";
+						access_type = "ebp+x/r";
+						is_valid = true;
+		if is_valid: 
+			locals.append(
+			{"pos":cmd_offs, "type":local_type, 
+			"ip":cur_ip, "access":access_type});
+		cur_ip += cmd_size;
+	return locals;
+
+func group_locals(locals, mode:String):
+	var new_locals:Array = [];
+	if mode == "by_ip":
+		new_locals = locals.duplicate();
+		new_locals.sort_custom(func(a,b): 
+			return a.cur_ip < b.cur_ip;
+		)
+	elif mode == "by_pos":
+		var pos_dict = {};
+		for local in locals:
+			var key = local.pos;
+			if key not in pos_dict: pos_dict[key] = [];
+			pos_dict[key].append(local);
+		for key in pos_dict:
+			new_locals.append(pos_dict[key]);
+			new_locals.sort_custom(func(a,b):
+				return a[0].pos < b[0].pos;
+			)
+	return new_locals;
+
+const cmd_size = 8;
+# returns the ip of the next "ret" instruction
+func find_ret(cur_ip):
+	for i in range(100):
+		var pos = i*cmd_size+cur_ip;
+		if get_cmd(pos).decode_u8(0) == 0x05:
+			return pos;
+	return 0;
+	
+func get_cmd(pos):
+	var arr = [];
+	for j in range(cmd_size):
+		arr.append(bus.readCell(pos+j));
+	print("got cmd: %s" % str(arr));
+	var cmd = PackedByteArray(arr);
+	return cmd;
 #ADD UNCOMPUTE BUTTON step back\
+
+func _on_cb_update_toggled(toggled_on):
+	always_update_locals = toggled_on;
+	update_locals();

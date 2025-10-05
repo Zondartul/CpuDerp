@@ -11,6 +11,7 @@ var code:Array[int] = [];
 var shadow:Array[int] = [];
 var write_pos:int = 0;
 var labels = {};
+var final_labels = {};
 var label_refs = {};
 var label_toks = {};
 const ISA = preload("res://lang_zvm.gd");
@@ -206,6 +207,7 @@ func output_chunk()->Chunk:
 		"label_toks":label_toks.duplicate(), 
 		"shadow":shadow.duplicate()});
 	code.clear();
+	final_labels = labels.duplicate();
 	labels.clear();
 	label_refs.clear();
 	label_toks.duplicate();

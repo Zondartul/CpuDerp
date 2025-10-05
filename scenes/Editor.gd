@@ -53,3 +53,6 @@ func _on_cprint(msg, col=null)->void:
 
 func _on_highlight_line(line_idx)->void:
 	$comp_file.highlight_line(line_idx);
+
+func get_cur_line_idx()->int:
+	return $comp_file.get_cur_line_idx();

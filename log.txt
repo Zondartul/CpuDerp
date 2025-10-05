@@ -166300,4 +166300,230 @@ Rule matches? (test 18998)
 	vs
 		[decl_assignment_stmt]
 		[/;]
-	. { "c
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 18999)
+		[stmt_list:]
+		[func_def_stmt:]
+	vs
+		[decl_extern_stmt]
+		[/;]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19000)
+		[stmt_list:]
+		[func_def_stmt:]
+	vs
+		[func_decl_stmt]
+		[/;]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19001)
+		[func_def_stmt:]
+	vs
+		[func_def_stmt]
+	. { "class": "EOF", "text": "" } vs *
+	YES
+
+REDUCE { "class": "stmt", "text": "" }
+
+Rule matches? (test 19002)
+		[stmt:]
+	vs
+		[stmt_list]
+	. { "class": "EOF", "text": "" } vs EOF
+	No
+
+Rule matches? (test 19003)
+		[stmt_list:]
+		[stmt:]
+	vs
+		[stmt_list]
+		[stmt]
+	. { "class": "EOF", "text": "" } vs *
+	YES
+
+REDUCE { "class": "stmt_list", "text": "" }
+
+Rule matches? (test 19004)
+		[stmt_list:]
+	vs
+		[stmt_list]
+	. { "class": "EOF", "text": "" } vs EOF
+	YES
+
+REDUCE { "class": "start", "text": "" }
+
+Rule matches? (test 19005)
+		[start:]
+	vs
+		[stmt_list]
+	. { "class": "EOF", "text": "" } vs EOF
+	No
+
+Rule matches? (test 19006)
+		[start:]
+	vs
+		[stmt]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19007)
+		[start:]
+	vs
+		[func_def_stmt]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19008)
+		[start:]
+	vs
+		[while_stmt]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19009)
+		[start:]
+	vs
+		[if_stmt]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19010)
+		[start:]
+	vs
+		[preproc_stmt]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19011)
+		[start:]
+	vs
+		[expr_call]
+	. { "class": "EOF", "text": "" } vs /{
+	No
+
+Rule matches? (test 19012)
+		[start:]
+	vs
+		[if_block]
+	. { "class": "EOF", "text": "" } vs /else
+	No
+
+Rule matches? (test 19013)
+		[start:]
+	vs
+		[if_block]
+	. { "class": "EOF", "text": "" } vs /elif
+	No
+
+Rule matches? (test 19014)
+		[start:]
+	vs
+		[if_block]
+	. { "class": "EOF", "text": "" } vs /else
+	No
+
+Rule matches? (test 19015)
+		[start:]
+	vs
+		[if_block]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19016)
+		[start:]
+	vs
+		[if_else_block]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19017)
+		[start:]
+	vs
+		[/break]
+	. { "class": "EOF", "text": "" } vs /;
+	No
+
+Rule matches? (test 19018)
+		[start:]
+	vs
+		[/continue]
+	. { "class": "EOF", "text": "" } vs /;
+	No
+
+Rule matches? (test 19019)
+		[start:]
+	vs
+		[/return]
+	. { "class": "EOF", "text": "" } vs /;
+	No
+
+Rule matches? (test 19020)
+		[start:]
+	vs
+		[expr_immediate]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19021)
+		[start:]
+	vs
+		[expr_ident]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19022)
+		[start:]
+	vs
+		[expr_postfix]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19023)
+		[start:]
+	vs
+		[expr_infix]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19024)
+		[start:]
+	vs
+		[expr_call]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19025)
+		[start:]
+	vs
+		[NUMBER]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19026)
+		[start:]
+	vs
+		[STRING]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+Rule matches? (test 19027)
+		[start:]
+	vs
+		[IDENT]
+	. { "class": "EOF", "text": "" } vs /=
+	No
+
+Rule matches? (test 19028)
+		[start:]
+	vs
+		[IDENT]
+	. { "class": "EOF", "text": "" } vs *
+	No
+
+SHIFT { "class": "EOF", "text": "" }
+

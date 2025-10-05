@@ -86,4 +86,7 @@ func highlight_line(line_idx):
 	print("highlighting line %d" % line_idx)
 	n_text.select(line_idx,0,line_idx+1,0,0);
 	var spos = n_text.get_scroll_pos_for_line(line_idx);
-	n_text.scroll_vertical = spos;
+	n_text.scroll_vertical = spos-5;
+
+func get_cur_line_idx():
+	return n_text.get_caret_line(0);

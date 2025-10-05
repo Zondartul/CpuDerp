@@ -214,3 +214,6 @@ func _on_efile_update_my_tab(efile):
 
 func highlight_line(line_idx):
 	cur_efile.highlight_line(line_idx);
+
+func get_cur_line_idx():
+	return cur_efile.get_cur_line_idx();

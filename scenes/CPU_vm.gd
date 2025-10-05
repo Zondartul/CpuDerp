@@ -122,6 +122,13 @@ func disasm_pure(cmd:PackedByteArray):
 	no_side_effects = false;
 	return text;
 
+func decode_pure(cmd:PackedByteArray):
+	no_side_effects = true;
+	var decoded = decodeCmd(cmd);
+	no_side_effects = false;
+	return decoded;
+
+
 func decodeCmd(cmd:PackedByteArray):
 	var op:int = cmd[0];
 	var flags:int = cmd[1];

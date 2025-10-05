@@ -24,8 +24,8 @@ mov *tmp_11, eax;
 # cb_56
 #maybe_emit_func_label(cb_56)
 :func_5__infloop:
-#generate_cmd_enter:emit(sub ESP, 1;)
-sub ESP, 1;
+#generate_cmd_enter:emit(sub ESP, 7;)
+sub ESP, 7;
 #generate_cmd_while.lbl_next:emit(:lbl_58__while_next:)
 :lbl_58__while_next:
 #generate_cmd_while.cb_cond:emit(#generate_code_block(cb_60)# cb_60)
@@ -46,16 +46,16 @@ jz lbl_59__while_end;
 jmp lbl_58__while_next;
 #generate_cmd_while.lbl_end:emit(:lbl_59__while_end:)
 :lbl_59__while_end:
-#generate_cmd_leave:emit(sub ESP, -1;)
-sub ESP, -1;
+#generate_cmd_leave:emit(sub ESP, -7;)
+sub ESP, -7;
 #maybe_emit_func_ret(cb_56)
 ret;
 #generate_code_block(cb_12)
 # cb_12
 #maybe_emit_func_label(cb_12)
 :func_2__main:
-#generate_cmd_enter:emit(sub ESP, 17;)
-sub ESP, 17;
+#generate_cmd_enter:emit(sub ESP, 23;)
+sub ESP, 23;
 #generate_cmd_call.args:emit(push imm_17;)
 push imm_17;
 #generate_cmd_call.args:emit(push 128;)
@@ -68,26 +68,26 @@ push 0;
 call func_3__print;
 #generate_cmd_call.stack:emit(add ESP, 4;)
 add ESP, 4;
-#generate_cmd_call.result:emit(mov EBP[-16], eax;)
-mov EBP[-16], eax;
-#generate_cmd_leave:emit(sub ESP, -17;)
-sub ESP, -17;
+#generate_cmd_call.result:emit(mov EBP[-22], eax;)
+mov EBP[-22], eax;
+#generate_cmd_leave:emit(sub ESP, -23;)
+sub ESP, -23;
 #maybe_emit_func_ret(cb_12)
 ret;
 #generate_code_block(cb_19)
 # cb_19
 #maybe_emit_func_label(cb_19)
 :func_3__print:
-#generate_cmd_enter:emit(sub ESP, 25;)
-sub ESP, 25;
+#generate_cmd_enter:emit(sub ESP, 31;)
+sub ESP, 31;
 #generate_cmd_mov:emit(mov EAX, 0;)
 mov EAX, 0;
 #generate_cmd_mov:emit(mov EAX, 0;).store
-mov EBP[0], EAX;
+mov EBP[-6], EAX;
 #generate_cmd_mov:emit(mov EAX, 0;)
 mov EAX, 0;
 #generate_cmd_mov:emit(mov EAX, 0;).store
-mov EBP[-8], EAX;
+mov EBP[-14], EAX;
 #generate_cmd_while.lbl_next:emit(:lbl_29__while_next:)
 :lbl_29__while_next:
 #generate_cmd_while.cb_cond:emit(#generate_code_block(cb_31)# cb_31)
@@ -96,33 +96,33 @@ mov EBP[-8], EAX;
 
 #promote:emit(mov EAX, imm_56__0;)
 mov EAX, imm_56__0;
-#generate_cmd_while.cmp:emit(cmp EBP[-8], EAX;)
-cmp EBP[-8], EAX;
+#generate_cmd_while.cmp:emit(cmp EBP[-14], EAX;)
+cmp EBP[-14], EAX;
 #generate_cmd_while.jz_end:emit(jz lbl_30__while_end;)
 jz lbl_30__while_end;
-#generate_cmd_while.cb_block:emit(#generate_code_block(cb_32)# cb_32#generate_cmd_op.arg1_by_addr:emit(mov EAX, EBP+0;)mov EAX, EBP+0;#generate_cmd_op.op_str:emit(inc EAX;)inc EAX;#generate_cmd_op.result:emit(mov EBP[-16], EAX;)mov EBP[-16], EAX;#generate_cmd_op.arg1_by_addr:emit(mov EAX, EBP+18;)mov EAX, EBP+18;#generate_cmd_op.find_b:emit(mov EBX, EBP[-16];)mov EBX, EBP[-16];#generate_cmd_op.op_str:emit(add EAX, EBX;)add EAX, EBX;#generate_cmd_op.result:emit(mov EBP[-20], EAX;)mov EBP[-20], EAX;#generate_cmd_mov:emit(mov EAX, EBP[-20];)mov EAX, EBP[-20];#generate_cmd_mov:emit(mov EAX, EBP[-20];).storemov EBP[-8], EAX;#generate_cmd_call.args:emit(push EBP[-8];)push EBP[-8];#generate_cmd_call.args:emit(push EBP[22];)push EBP[22];#generate_cmd_call.args:emit(push EBP[26];)push EBP[26];#generate_cmd_call.args:emit(push EBP[30];)push EBP[30];#generate_cmd_call.call:emit(call func_4__putch;)call func_4__putch;#generate_cmd_call.stack:emit(add ESP, 4;)add ESP, 4;#generate_cmd_call.result:emit(mov EBP[-24], eax;)mov EBP[-24], eax;)
+#generate_cmd_while.cb_block:emit(#generate_code_block(cb_32)# cb_32#generate_cmd_op.arg1_by_addr:emit(mov EAX, EBP-6;)mov EAX, EBP-6;#generate_cmd_op.op_str:emit(inc EAX;)inc EAX;#generate_cmd_op.result:emit(mov EBP[-22], EAX;)mov EBP[-22], EAX;#generate_cmd_op.arg1_by_addr:emit(mov EAX, EBP+18;)mov EAX, EBP+18;#generate_cmd_op.find_b:emit(mov EBX, EBP[-22];)mov EBX, EBP[-22];#generate_cmd_op.op_str:emit(add EAX, EBX;)add EAX, EBX;#generate_cmd_op.result:emit(mov EBP[-26], EAX;)mov EBP[-26], EAX;#generate_cmd_mov:emit(mov EAX, EBP[-26];)mov EAX, EBP[-26];#generate_cmd_mov:emit(mov EAX, EBP[-26];).storemov EBP[-14], EAX;#generate_cmd_call.args:emit(push EBP[-14];)push EBP[-14];#generate_cmd_call.args:emit(push EBP[22];)push EBP[22];#generate_cmd_call.args:emit(push EBP[26];)push EBP[26];#generate_cmd_call.args:emit(push EBP[30];)push EBP[30];#generate_cmd_call.call:emit(call func_4__putch;)call func_4__putch;#generate_cmd_call.stack:emit(add ESP, 4;)add ESP, 4;#generate_cmd_call.result:emit(mov EBP[-30], eax;)mov EBP[-30], eax;)
 #generate_code_block(cb_32)
 # cb_32
-#generate_cmd_op.arg1_by_addr:emit(mov EAX, EBP+0;)
-mov EAX, EBP+0;
+#generate_cmd_op.arg1_by_addr:emit(mov EAX, EBP-6;)
+mov EAX, EBP-6;
 #generate_cmd_op.op_str:emit(inc EAX;)
 inc EAX;
-#generate_cmd_op.result:emit(mov EBP[-16], EAX;)
-mov EBP[-16], EAX;
+#generate_cmd_op.result:emit(mov EBP[-22], EAX;)
+mov EBP[-22], EAX;
 #generate_cmd_op.arg1_by_addr:emit(mov EAX, EBP+18;)
 mov EAX, EBP+18;
-#generate_cmd_op.find_b:emit(mov EBX, EBP[-16];)
-mov EBX, EBP[-16];
+#generate_cmd_op.find_b:emit(mov EBX, EBP[-22];)
+mov EBX, EBP[-22];
 #generate_cmd_op.op_str:emit(add EAX, EBX;)
 add EAX, EBX;
-#generate_cmd_op.result:emit(mov EBP[-20], EAX;)
-mov EBP[-20], EAX;
-#generate_cmd_mov:emit(mov EAX, EBP[-20];)
-mov EAX, EBP[-20];
-#generate_cmd_mov:emit(mov EAX, EBP[-20];).store
-mov EBP[-8], EAX;
-#generate_cmd_call.args:emit(push EBP[-8];)
-push EBP[-8];
+#generate_cmd_op.result:emit(mov EBP[-26], EAX;)
+mov EBP[-26], EAX;
+#generate_cmd_mov:emit(mov EAX, EBP[-26];)
+mov EAX, EBP[-26];
+#generate_cmd_mov:emit(mov EAX, EBP[-26];).store
+mov EBP[-14], EAX;
+#generate_cmd_call.args:emit(push EBP[-14];)
+push EBP[-14];
 #generate_cmd_call.args:emit(push EBP[22];)
 push EBP[22];
 #generate_cmd_call.args:emit(push EBP[26];)
@@ -133,117 +133,117 @@ push EBP[30];
 call func_4__putch;
 #generate_cmd_call.stack:emit(add ESP, 4;)
 add ESP, 4;
-#generate_cmd_call.result:emit(mov EBP[-24], eax;)
-mov EBP[-24], eax;
+#generate_cmd_call.result:emit(mov EBP[-30], eax;)
+mov EBP[-30], eax;
 
 #generate_cmd_while.jmp_next:emit(jmp lbl_29__while_next;)
 jmp lbl_29__while_next;
 #generate_cmd_while.lbl_end:emit(:lbl_30__while_end:)
 :lbl_30__while_end:
-#generate_cmd_leave:emit(sub ESP, -25;)
-sub ESP, -25;
+#generate_cmd_leave:emit(sub ESP, -31;)
+sub ESP, -31;
 #maybe_emit_func_ret(cb_19)
 ret;
 #generate_code_block(cb_36)
 # cb_36
 #maybe_emit_func_label(cb_36)
 :func_4__putch:
-#generate_cmd_enter:emit(sub ESP, 53;)
-sub ESP, 53;
+#generate_cmd_enter:emit(sub ESP, 59;)
+sub ESP, 59;
 #generate_cmd_op.arg1_by_addr:emit(mov EAX, var_8__scr_I;)
 mov EAX, var_8__scr_I;
 #generate_cmd_op.find_b:emit(mov EBX, 0;)
 mov EBX, 0;
 #generate_cmd_op.op_str:emit(add EAX, EBX;)
 add EAX, EBX;
-#generate_cmd_op.result:emit(mov EBP[-4], EAX;)
-mov EBP[-4], EAX;
+#generate_cmd_op.result:emit(mov EBP[-10], EAX;)
+mov EBP[-10], EAX;
 #generate_cmd_op.arg1_by_addr:emit(mov EAX, var_6__adr_scr;)
 mov EAX, var_6__adr_scr;
-#generate_cmd_op.find_b:emit(mov EBX, EBP[-4];)
-mov EBX, EBP[-4];
+#generate_cmd_op.find_b:emit(mov EBX, EBP[-10];)
+mov EBX, EBP[-10];
 #generate_cmd_op.op_str:emit(add EAX, EBX;)
 add EAX, EBX;
-#generate_cmd_op.result:emit(mov EBP[-8], EAX;)
-mov EBP[-8], EAX;
+#generate_cmd_op.result:emit(mov EBP[-14], EAX;)
+mov EBP[-14], EAX;
 #generate_cmd_mov:emit(mov EAX, EBP[18];)
 mov EAX, EBP[18];
 #generate_cmd_mov:emit(mov EAX, EBP[18];).store
-mov EBP[-8], EAX;
+mov EBP[-14], EAX;
 #generate_cmd_op.arg1_by_addr:emit(mov EAX, var_8__scr_I;)
 mov EAX, var_8__scr_I;
 #generate_cmd_op.find_b:emit(mov EBX, 1;)
 mov EBX, 1;
 #generate_cmd_op.op_str:emit(add EAX, EBX;)
 add EAX, EBX;
-#generate_cmd_op.result:emit(mov EBP[-16], EAX;)
-mov EBP[-16], EAX;
+#generate_cmd_op.result:emit(mov EBP[-22], EAX;)
+mov EBP[-22], EAX;
 #generate_cmd_op.arg1_by_addr:emit(mov EAX, var_6__adr_scr;)
 mov EAX, var_6__adr_scr;
-#generate_cmd_op.find_b:emit(mov EBX, EBP[-16];)
-mov EBX, EBP[-16];
+#generate_cmd_op.find_b:emit(mov EBX, EBP[-22];)
+mov EBX, EBP[-22];
 #generate_cmd_op.op_str:emit(add EAX, EBX;)
 add EAX, EBX;
-#generate_cmd_op.result:emit(mov EBP[-20], EAX;)
-mov EBP[-20], EAX;
+#generate_cmd_op.result:emit(mov EBP[-26], EAX;)
+mov EBP[-26], EAX;
 #generate_cmd_mov:emit(mov EAX, EBP[22];)
 mov EAX, EBP[22];
 #generate_cmd_mov:emit(mov EAX, EBP[22];).store
-mov EBP[-20], EAX;
+mov EBP[-26], EAX;
 #generate_cmd_op.arg1_by_addr:emit(mov EAX, var_8__scr_I;)
 mov EAX, var_8__scr_I;
 #generate_cmd_op.find_b:emit(mov EBX, 2;)
 mov EBX, 2;
 #generate_cmd_op.op_str:emit(add EAX, EBX;)
 add EAX, EBX;
-#generate_cmd_op.result:emit(mov EBP[-28], EAX;)
-mov EBP[-28], EAX;
+#generate_cmd_op.result:emit(mov EBP[-34], EAX;)
+mov EBP[-34], EAX;
 #generate_cmd_op.arg1_by_addr:emit(mov EAX, var_6__adr_scr;)
 mov EAX, var_6__adr_scr;
-#generate_cmd_op.find_b:emit(mov EBX, EBP[-28];)
-mov EBX, EBP[-28];
+#generate_cmd_op.find_b:emit(mov EBX, EBP[-34];)
+mov EBX, EBP[-34];
 #generate_cmd_op.op_str:emit(add EAX, EBX;)
 add EAX, EBX;
-#generate_cmd_op.result:emit(mov EBP[-32], EAX;)
-mov EBP[-32], EAX;
+#generate_cmd_op.result:emit(mov EBP[-38], EAX;)
+mov EBP[-38], EAX;
 #generate_cmd_mov:emit(mov EAX, EBP[26];)
 mov EAX, EBP[26];
 #generate_cmd_mov:emit(mov EAX, EBP[26];).store
-mov EBP[-32], EAX;
+mov EBP[-38], EAX;
 #generate_cmd_op.arg1_by_addr:emit(mov EAX, var_8__scr_I;)
 mov EAX, var_8__scr_I;
 #generate_cmd_op.find_b:emit(mov EBX, 3;)
 mov EBX, 3;
 #generate_cmd_op.op_str:emit(add EAX, EBX;)
 add EAX, EBX;
-#generate_cmd_op.result:emit(mov EBP[-40], EAX;)
-mov EBP[-40], EAX;
+#generate_cmd_op.result:emit(mov EBP[-46], EAX;)
+mov EBP[-46], EAX;
 #generate_cmd_op.arg1_by_addr:emit(mov EAX, var_6__adr_scr;)
 mov EAX, var_6__adr_scr;
-#generate_cmd_op.find_b:emit(mov EBX, EBP[-40];)
-mov EBX, EBP[-40];
+#generate_cmd_op.find_b:emit(mov EBX, EBP[-46];)
+mov EBX, EBP[-46];
 #generate_cmd_op.op_str:emit(add EAX, EBX;)
 add EAX, EBX;
-#generate_cmd_op.result:emit(mov EBP[-44], EAX;)
-mov EBP[-44], EAX;
+#generate_cmd_op.result:emit(mov EBP[-50], EAX;)
+mov EBP[-50], EAX;
 #generate_cmd_mov:emit(mov EAX, EBP[30];)
 mov EAX, EBP[30];
 #generate_cmd_mov:emit(mov EAX, EBP[30];).store
-mov EBP[-44], EAX;
+mov EBP[-50], EAX;
 #generate_cmd_op.arg1_by_addr:emit(mov EAX, var_8__scr_I;)
 mov EAX, var_8__scr_I;
 #generate_cmd_op.find_b:emit(mov EBX, 4;)
 mov EBX, 4;
 #generate_cmd_op.op_str:emit(add EAX, EBX;)
 add EAX, EBX;
-#generate_cmd_op.result:emit(mov EBP[-52], EAX;)
-mov EBP[-52], EAX;
-#generate_cmd_mov:emit(mov EAX, EBP[-52];)
-mov EAX, EBP[-52];
-#generate_cmd_mov:emit(mov EAX, EBP[-52];).store
+#generate_cmd_op.result:emit(mov EBP[-58], EAX;)
+mov EBP[-58], EAX;
+#generate_cmd_mov:emit(mov EAX, EBP[-58];)
+mov EAX, EBP[-58];
+#generate_cmd_mov:emit(mov EAX, EBP[-58];).store
 mov *var_8__scr_I, EAX;
-#generate_cmd_leave:emit(sub ESP, -53;)
-sub ESP, -53;
+#generate_cmd_leave:emit(sub ESP, -59;)
+sub ESP, -59;
 #maybe_emit_func_ret(cb_36)
 ret;
 :var_6__adr_scr: db 0;
