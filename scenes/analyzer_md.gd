@@ -234,7 +234,7 @@ func analyze_while_stmt(ast):
 	var label_end = IR.new_val_lbl("while_end");
 	control_flow_stack.push_back({"type":"while", "next":label_next, "end":label_end});
 	var ocb = IR.push_code_block();
-	analyze_one(expr_cond);
+	analyze_expr(expr_cond);
 	var arg = expr_stack.pop_back();
 	var code_condition = IR.pop_code_block(ocb);
 	

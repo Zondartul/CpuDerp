@@ -5,7 +5,8 @@ const uYaml = preload("res://scenes/uYaml.gd")
 var IR = {};
 var all_syms = {};
 const USE_WIDE_STRINGS = true; # true: expand each character into U32, false: normal strings
-const ADD_DEBUG_TRACE = true; # in emitted assembly, specify where it came from.
+const ADD_DEBUG_TRACE = false; # in emitted assembly, specify where it came from.
+const ADD_IR_TRACE = true; # print the IR commands that are being generated
 #---------- IR ingestion -------------------
 
 func parse_file(filename)->String:
@@ -100,7 +101,7 @@ func generate():
 func generate_code_block(cb):
 	assy_block_stack.push_back(cur_assy_block);
 	cur_assy_block = {"code":""};
-	emit_raw("# %s\n" % cb.ir_name, "generate_code_block(%s)" % cb.ir_name);
+	emit_raw("# Begin code block %s\n" % cb.ir_name, "generate_code_block.intro");
 	maybe_emit_func_label(cb.ir_name);
 	if "code" in cb:
 		for i in range(len(cb.code)):
@@ -108,6 +109,7 @@ func generate_code_block(cb):
 			generate_cmd(cmd);
 			check_if_block_continued(i, cb.code);
 	maybe_emit_func_ret(cb.ir_name);
+	emit_raw("# End code block %s\n" % cb.ir_name, "generate_code_block.exit");
 	var res = cur_assy_block;
 	cur_assy_block = assy_block_stack.pop_back();
 	return res;
@@ -174,6 +176,7 @@ func check_if_block_continued(i, code):
 			if_block_continued = true;
 
 func generate_cmd(cmd:Array):
+	if ADD_IR_TRACE: emit_raw("# IR: %s\n" % " ".join(PackedStringArray(cmd)), "generate_cmd.trace");
 	match cmd[0]:
 		"MOV": generate_cmd_mov(cmd);
 		"OP": generate_cmd_op(cmd);
@@ -200,7 +203,7 @@ const op_map = {
 	"DIV":"div %a, %b;\n",
 	"GREATER":"sub %a, %b; sgn %a;\n",
 	"LESS":"sub %a, %b; neg %a; sgn %a;\n",
-	"INDEX":"add @%a, %b;\n",
+	"INDEX":"add %a, %b;\n", #deref separately?
 	"DEC":"dec %a;\n",
 	"INC":"inc %a;\n",
 	"EQUAL":"sub %a, %b; sub %a;\n",
@@ -217,15 +220,16 @@ func generate_cmd_op(cmd):
 	
 	var tmpA = null;
 	var tmpB = null;
-	var arg1_by_addr = false;
+	#var arg1_by_addr = false;
 	tmpA = alloc_temporary();
-	if op_str.find("@%a"):
-		op_str = op_str.replace("@%a", "%a");
-		arg1_by_addr = true;
-	if arg1_by_addr:
-		emit("mov %s, @%s;\n" % [tmpA, arg1], "generate_cmd_op.arg1_by_addr");
-	else:
-		emit("mov %s, $%s;\n" % [tmpA, arg1], "generate_cmd_op.arg1_by_addr.else");
+	#if op_str.find("@%a"):
+	#	op_str = op_str.replace("@%a", "%a");
+	#	arg1_by_addr = true;
+	#if arg1_by_addr:
+	#	emit("mov %s, @%s;\n" % [tmpA, arg1], "generate_cmd_op.arg1_by_addr");
+	#else:
+	#	emit("mov %s, $%s;\n" % [tmpA, arg1], "generate_cmd_op.arg1_by_addr.else");
+	emit("mov %s, $%s;\n" % [tmpA, arg1], "generate_cmd_op.arg1_by_addr.else");
 	op_str = op_str.replace("%a", tmpA);
 	if op_str.find("%b") != -1:
 		tmpB = alloc_temporary();
@@ -233,6 +237,8 @@ func generate_cmd_op(cmd):
 		op_str = op_str.replace("%b", tmpB);
 	emit(op_str, "generate_cmd_op.op_str");
 	emit("mov ^%s, %s;\n" % [res, tmpA], "generate_cmd_op.result");
+	var res_handle = all_syms[res];
+	res_handle.needs_deref = true;
 	free_val(tmpA);
 	if(tmpB): free_val(tmpB);
 	
@@ -243,9 +249,8 @@ func new_lbl(lbl_name):
 	return handle;
 
 func new_imm(val):
-	val = str(val);
 	var ir_name = "imm_"+str(len(all_syms)+1)+"__"+str(val);
-	var handle = {"ir_name":ir_name, "val_type":"immediate", "value":val, "data_type":"error"};
+	var handle = {"ir_name":ir_name, "val_type":"immediate", "value":str(val), "data_type":"error", "storage":"NULL"};
 	if val is int:
 		handle["data_type"] = "int";
 	elif val is String:
@@ -300,6 +305,7 @@ func generate_cmd_while(cmd):
 	var lbl_next = cmd[4];
 	var lbl_end = cmd[5];
 	var immediate_0 = new_imm(0);
+	allocate_value(immediate_0, cur_scope);
 	emit(":%s:\n" % lbl_next, "generate_cmd_while.lbl_next");		# loop:
 	emit("$%s\n" % cb_cond, "generate_cmd_while.cb_cond");		#  (expr->cond)
 	emit("cmp $%s, $%s;\n" % [res, immediate_0.ir_name], 
@@ -345,9 +351,18 @@ func emit(text:String, dbg_trace:String):
 		var ref_load = find_reference(text, "$");
 		if not ref_load: break;
 		var res = load_value(ref_load.val);
-		#allocs.append(res);
-		if imm_flag: res = promote(res, allocs);
-		imm_flag = true;
+		var handle = all_syms[ref_load.val];
+		if ("needs_deref" in handle) and handle.needs_deref:
+			var reg = alloc_register();
+			allocs.push_back(reg);
+			assert(reg != null);
+			emit_raw("mov %s, %s;\n" % [reg, res], "emit.needs_deref_1");
+			emit_raw("mov %s, *%s;\n" % [reg, reg], "emit.needs_deref_2");
+			res = reg;
+			#note: imm_flag = false or imm_flag;
+		else:
+			if imm_flag: res = promote(res, allocs);
+			imm_flag = true;
 		text = text.substr(0, ref_load.from) + res + text.substr(ref_load.to);
 	while true:
 		var ref_addr = find_reference(text, "@");
@@ -360,20 +375,31 @@ func emit(text:String, dbg_trace:String):
 	while true:
 		var ref_store = find_reference(text, "^");
 		if not ref_store: break;
-		var res = store_val(ref_store.val);#alloc_temporary();
-		if imm_flag: 
+		var handle = all_syms[ref_store.val];
+		var res_load = load_value(ref_store.val);
+		var res_store = store_val(ref_store.val);#alloc_temporary();
+		var res = res_store;
+		if imm_flag or (("needs_deref" in handle) and handle.needs_deref): 
 			var reg = alloc_register();
-			vars_to_store.append([res, reg])
+			vars_to_store.append([reg, handle.needs_deref, res_load, res_store]);			
 			res = reg;
 		imm_flag = false;
 		#vars_to_store.append([res, ref_store.val]);
 		text = text.substr(0, ref_store.from) + res + text.substr(ref_store.to);
 	emit_raw(text, dbg_trace + ":emit(%s)" % text);
-	for pair in vars_to_store:
+	for touple in vars_to_store:
 		#store_val(pair[0], pair[1]);
-		var val = pair[0];
-		var reg = pair[1];
-		emit_raw("mov %s, %s;\n" % [val, reg], dbg_trace + ":emit(%s).store" % text);
+		var reg = touple[0];
+		var needs_deref = touple[1];
+		var res_load = touple[2];
+		var res_store = touple[3];
+		if needs_deref:
+			var reg2 = alloc_register();
+			emit_raw("mov %s, %s;\n" % [reg2, res_load], dbg_trace+":emit(%s).store_deref_1" % text);
+			emit_raw("mov *%s, %s;\n" % [reg2, reg], dbg_trace+":emit(%s).store_deref_2" % text);
+			free_val(reg2);
+		else:
+			emit_raw("mov %s, %s;\n" % [res_store, reg], dbg_trace + ":emit(%s).store" % text);
 		free_val(reg);
 	for val in allocs:
 		free_val(val);
@@ -527,7 +553,8 @@ func allocate_value(handle, scope):
 		else:
 			storage_type = "stack";
 			var wp = scope.local_vars_write_pos;
-			pos = to_local_pos(wp);
+			#pos = to_local_pos(wp);
+			pos = wp;
 			scope.local_vars_write_pos -= data_size;
 			scope.local_vars_count += 1;
 			assert(pos != 0);
@@ -536,13 +563,14 @@ func allocate_value(handle, scope):
 		handle.storage = {"type":"extern", "pos":0};
 	elif handle.storage == "arg":
 		var wp = scope.args_write_pos;
-		handle.storage = {"type":"stack", "pos":to_arg_pos(wp)};
+		var pos = wp;
+		handle.storage = {"type":"stack", "pos":pos};
 		assert(handle.storage.pos != 0);
 		scope.args_write_pos += data_size;
 		scope.args_count += 1;
 	else:
 		push_error("codegen: allocate_vars: unknown storage type");
-	
+	handle["needs_deref"] = false;
 	print("alloc %s to %s: result %s" % [handle.ir_name, scope.ir_name, handle.storage]);
 
 # defines a mapping between the input pos and stack pos for local vars of a function
@@ -551,7 +579,7 @@ func to_local_pos(pos):
 
 # defines a mapping between the input pos and stack pos for arguments of a function
 func to_arg_pos(pos):
-	return 9+pos;
+	return 21+pos;
 
 func generate_cmd_return(_cmd):
 	emit("ret;\n", "generate_cmd_return");

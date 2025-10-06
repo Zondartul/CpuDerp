@@ -37,6 +37,9 @@ func print_console(text, col=Color.GRAY):
 	#scroll to bottom
 	#console.scroll_vertical = console.get_line_count();
 
+func _process(_delta):
+	if Input.is_action_just_pressed("action_save"):
+		await $comp_file.async_save_file();
 
 func _on_view_index_pressed(index: int) -> void:
 	match index:

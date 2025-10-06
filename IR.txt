@@ -17,7 +17,8 @@ code_blocks:
   code: 
    ENTER scp_20__NULL
    MOV var_25__i imm_26
-   MOV var_27__c imm_28
+   OP INDEX var_21__str var_25__i tmp_28
+   MOV var_27__c tmp_28
    WHILE cb_31 var_27__c cb_32 lbl_29__while_next lbl_30__while_end
    LEAVE
  cb_31: 
@@ -96,8 +97,8 @@ scopes:
    var_24__b variable b NULL arg NULL NULL NULL
    var_25__i variable i int NULL NULL NULL NULL
    imm_26 immediate NULL int NULL 0 NULL NULL
-   var_27__c variable c int NULL NULL NULL NULL
-   imm_28 immediate NULL int NULL 0 NULL NULL
+   var_27__c variable c NULL NULL NULL NULL NULL
+   tmp_28 temporary NULL NULL NULL NULL NULL NULL
    tmp_33 temporary NULL NULL NULL NULL NULL NULL
    tmp_34 temporary NULL NULL NULL NULL NULL NULL
    tmp_35 temporary NULL NULL NULL NULL NULL NULL

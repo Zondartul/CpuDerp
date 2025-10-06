@@ -5,7 +5,7 @@ var Bus;
 #var KB;
 var is_setup = false;
 var debug_vm = false;
-var freq = 1000;
+var freq = 1;
 var errcode = 0;
 signal cpu_step_done(cpu);
 signal mem_accessed(addr, val, is_write);
@@ -634,8 +634,8 @@ func step():
 	var decode = decodeCmd(cmd);
 	if not decode: return;
 	run_single_command(decode);
-	if(regs[ISA.REG_CTRL] & ISA.BIT_STEP):
-		regs[ISA.REG_CTRL] &= ~ISA.BIT_PWR;
+	#if(regs[ISA.REG_CTRL] & ISA.BIT_STEP):
+	#	regs[ISA.REG_CTRL] &= ~ISA.BIT_PWR;
 	cpu_step_done.emit(self);
 
 func setup(dict:Dictionary):
@@ -649,11 +649,18 @@ func _ready():
 	pass # Replace with function body.
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
+
+var tick_debt = 0.0;
+
 func _process(delta):
-	var n_per_tick = int(freq*delta);
-	for i in range(n_per_tick):
+	if not (regs[ISA.REG_CTRL] & ISA.BIT_PWR): return;
+	tick_debt += freq*delta;
+	while tick_debt >= 1.0:
 		if(regs[ISA.REG_CTRL] & ISA.BIT_PWR):
 			step();
+		tick_debt -= 1.0;
+
+		
 
 const MAX_U8 = 256-1;
 const MAX_U32 = 2**32-1;

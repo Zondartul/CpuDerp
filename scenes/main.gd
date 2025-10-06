@@ -139,7 +139,9 @@ func _gui_input(event):
 	#else:
 		#print("some event.");
 
-func _on_cb_on_toggled(toggled_on): n_VM.set_on(toggled_on);
+func _on_cb_on_toggled(toggled_on): 
+	n_VM._on_sb_freq_value_changed($Panel/TabContainer/Screen/V/Control/GridContainer/sb_freq.value);
+	n_VM.set_on(toggled_on);
 
 func _on_btn_reset_pressed(): 
 	n_VM.reset();

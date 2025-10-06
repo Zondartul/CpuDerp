@@ -5,6 +5,7 @@ const ISA = preload("res://lang_zvm.gd")
 @onready var n_regview = $V/TabContainer/reg_view
 @onready var n_locals = $V/TabContainer/local_view/V/locals
 @onready var n_stackview = $V/TabContainer/stack_view
+@onready var n_indicator = $V/TabContainer/local_view/V/H/indicator
 
 var regnames = [
 	"NONE",
@@ -189,8 +190,9 @@ func update_stack():
 
 func _on_cpu_vm_cpu_step_done(_vm_cpu):
 	assert(is_setup);
-	if(cpu.regs[cpu.ISA.REG_CTRL] & cpu.ISA.BIT_STEP):
-		update_cpu();
+	#if(cpu.regs[cpu.ISA.REG_CTRL] & cpu.ISA.BIT_STEP):
+	#	update_cpu();
+	update_cpu();
 
 
 func _on_btn_run_pressed():
@@ -201,12 +203,13 @@ func _on_btn_pause_pressed():
 	cpu.regs[cpu.ISA.REG_CTRL] ^= cpu.ISA.BIT_PWR;
 
 func _on_btn_stop_pressed():
-	cpu.regs[cpu.ISA.REG_CTRL] &= ~cpu.ISA.BIT_STEP;
+	cpu.regs[cpu.ISA.REG_CTRL] &= ~cpu.ISA.BIT_PWR; #~cpu.ISA.BIT_STEP;
 	cpu.reset();
 	update_cpu();
 
 func _on_btn_step_pressed():
-	cpu.regs[cpu.ISA.REG_CTRL] |= (cpu.ISA.BIT_STEP | cpu.ISA.BIT_PWR);
+	#cpu.regs[cpu.ISA.REG_CTRL] |= (cpu.ISA.BIT_STEP | cpu.ISA.BIT_PWR);
+	cpu.step();
 
 func _on_btn_next_line_pressed():
 	print("unimplemented");
@@ -215,7 +218,10 @@ func _on_btn_step_in_pressed():
 	print("unimplemented");
 
 func _on_btn_step_out_pressed():
-	print("unimplemented");
+	var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
+	for i in range(1000):
+		if(cpu.regs[cpu.ISA.REG_EBP] != cur_ebp): break;
+		cpu.step();
 
 func _on_btn_run_to_line_pressed():
 	print("unimplemented");
@@ -392,22 +398,27 @@ var always_update_locals = true;
 
 var local_is_lbl = false;
 var locals = [];
+var locals_func = "";
+var locals_ebp = 0;
 
 func update_locals():
-	if not always_update_locals: return;
+	n_indicator.color = Color.GREEN;
 	n_locals.clear();
 	var cur_func = get_cur_func_name();
-	n_locals.add_item(cur_func);
-	complete_line();
-	
+	var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
 	if always_update_locals:
-		locals = find_locals();
+		if cur_ebp != locals_ebp:
+			locals = find_locals();
+			locals_func = cur_func;
+			locals_ebp = cur_ebp;
 	
 	var col_main = Color(0.74, 0.666, 0.0, 1.0);
 	var col_acc = col_main.darkened(0.5);
 	
 	var view_type = n_locals_view.get_item_text(n_locals_view.get_selected_id());
 	if view_type == "storage pos":
+		n_locals.max_columns = 3;
+		format_intro_line(cur_func);
 		var grouped_locals = group_locals(locals, "by_pos");
 		# BLUEPRINT
 		# <stuff @ pos> value ...
@@ -430,8 +441,11 @@ func update_locals():
 				format_local_ip_word(local, col_acc);
 				complete_line();
 	elif view_type == "access ip":
+		n_locals.max_columns = 4;
+		format_intro_line(cur_func);
 		var grouped_locals = group_locals(locals, "by_ip");
 		n_locals.add_item("ip");
+		n_locals.add_item("type");
 		n_locals.add_item("access");
 		n_locals.add_item("val");
 		var cur_ip = cpu.regs[cpu.ISA.REG_IP];
@@ -439,6 +453,7 @@ func update_locals():
 			var col = col_main;
 			if local.ip < cur_ip: col = col_acc;
 			format_local_ip_word(local, col);
+			format_local_main_word(local, col);
 			format_local_access_word(local, col);
 			format_local_val_word(local, col);
 
@@ -461,9 +476,17 @@ func format_local_main_word(local, col):
 	var idx = n_locals.add_item(text);
 	n_locals.set_item_custom_fg_color(idx, col);
 
+func format_intro_line(cur_func:String):
+	n_locals.add_item("Showing:");
+	n_locals.add_item(locals_func);
+	if cur_func != locals_func:
+		n_locals.add_item("Current:");
+		n_locals.add_item(cur_func);
+	complete_line();
+
 func format_local_val_word(local, col):
 	var val = 0;
-	var EBP = cpu.regs[cpu.ISA.REG_EBP];
+	var EBP = locals_ebp;
 	if local.type == "stack":
 		val = read32(EBP+local.pos);
 	elif local_is_lbl:
@@ -510,44 +533,51 @@ func find_locals():
 		var is_valid = false;
 		var decoded = cpu.decode_pure(cmd);
 		if not decoded: break;
-		if decoded.op_num == 0x09: # MOV
+		const access_types = {
+			0x09: ["w", "r"],
+			0x0A: ["push", "push"],
+			0x06: ["cmp", "cmp"],
+		};
+		if decoded.op_num in [0x09, 0x0A, 0x06]: # MOV, PUSH, CMP
+			var acc_w = access_types[decoded.op_num][0];
+			var acc_r = access_types[decoded.op_num][1];
 			if decoded.reg1_im:
 				if decoded.reg1_num == 0:
 					if decoded.flags.deref1: #none
 						local_type = "lbl";
-						access_type = "*lbl/w";
+						access_type = "*lbl/"+acc_w;
 						is_valid = true;
 					else:
 						local_type = "imm";
-						access_type = "imm/w";
+						access_type = "imm/"+acc_w;
 						is_valid = true;
 				elif decoded.reg1_num == 9: #EBP
 					if decoded.flags.deref1:
 						local_type = "stack";
-						access_type = "ebp[x]/w";
+						access_type = "ebp[x]/"+acc_w;
 						is_valid = true;
 					else:
 						local_type = "stack";
-						access_type = "ebp+x/w";
+						access_type = "ebp+x/"+acc_w;
 						is_valid = true;
 			elif decoded.reg2_im:
 				if decoded.reg2_num == 0: #none
 					if decoded.flags.deref2:
 						local_type = "lbl";
-						access_type = "*lbl/r";
+						access_type = "*lbl/"+acc_r;
 						is_valid = true;
 					else:
 						local_type = "imm";
-						access_type = "imm/r";
+						access_type = "imm/"+acc_r;
 						is_valid = true;
 				elif decoded.reg2_num == 9: #EBP
 					if decoded.flags.deref2:
 						local_type = "stack";
-						access_type = "ebp[x]/r";
+						access_type = "ebp[x]/"+acc_r;
 						is_valid = true;
 					else:
 						local_type = "stack";
-						access_type = "ebp+x/r";
+						access_type = "ebp+x/"+acc_r;
 						is_valid = true;
 		if is_valid: 
 			locals.append(
@@ -561,7 +591,7 @@ func group_locals(locals, mode:String):
 	if mode == "by_ip":
 		new_locals = locals.duplicate();
 		new_locals.sort_custom(func(a,b): 
-			return a.cur_ip < b.cur_ip;
+			return a.ip < b.ip;
 		)
 	elif mode == "by_pos":
 		var pos_dict = {};
@@ -596,4 +626,8 @@ func get_cmd(pos):
 
 func _on_cb_update_toggled(toggled_on):
 	always_update_locals = toggled_on;
+	if toggled_on: locals_ebp = -1;
+	update_locals();
+
+func _on_ob_view_item_selected(_index: int) -> void:
 	update_locals();

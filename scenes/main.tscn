@@ -129,9 +129,9 @@ text = "error"
 
 [node name="sb_freq" type="SpinBox" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
 layout_mode = 2
-min_value = 100.0
+min_value = 1.0
 max_value = 100000.0
-value = 1000.0
+value = 10.0
 suffix = "Hz"
 
 [node name="Memory" type="Control" parent="Panel/TabContainer"]
@@ -279,7 +279,7 @@ script = ExtResource("15_2f3dj")
 oversampling_override = 1.0
 title = "Debug"
 initial_position = 2
-size = Vector2i(400, 500)
+size = Vector2i(490, 500)
 visible = false
 
 [node name="debug_panel" parent="Panel/TabContainer/Editor/window_debug" instance=ExtResource("10_cypyl")]

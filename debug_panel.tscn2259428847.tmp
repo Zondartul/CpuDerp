@@ -161,7 +161,6 @@ size_flags_horizontal = 3
 
 [node name="cb_update" type="CheckButton" parent="V/TabContainer/local_view/V/H"]
 layout_mode = 2
-button_pressed = true
 text = "Auto update"
 
 [node name="indicator" type="ColorRect" parent="V/TabContainer/local_view/V/H"]
