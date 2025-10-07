@@ -136,11 +136,11 @@ func analyze_expr_call(ast):
 				var expr_arg = expr.children[2];
 				assert(expr_arg.class == "expr");
 				analyze_expr(expr_arg);
-				args.append(expr_stack.pop_back());
+				args.push_front(expr_stack.pop_back());
 				expr = expr.children[0];
 			elif expr.class == "expr":
 				analyze_expr(expr);
-				args.append(expr_stack.pop_back());
+				args.push_front(expr_stack.pop_back());
 				break;
 			else:
 				push_error("analyzer: func_call: unexpected expr class");

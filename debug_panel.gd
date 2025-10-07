@@ -7,6 +7,28 @@ const ISA = preload("res://lang_zvm.gd")
 @onready var n_stackview = $V/TabContainer/stack_view
 @onready var n_indicator = $V/TabContainer/local_view/V/H/indicator
 
+var perf_limiter = {"freq":1, "credit":0.0, "updates":{
+	"all":false,
+	"regs":false,
+	"stack":false,
+	"ip":false,
+	"pointers":false,
+	"locals":false,
+	}};
+func run_perf_limiter(delta:float):
+	perf_limiter.credit += delta;
+	var cost = 1.0/float(perf_limiter.freq);
+	if perf_limiter.credit >= cost:
+		perf_limiter.credit -= cost;
+		return true;
+	return false;
+func perf_limiter_update(category:String):
+	assert(category in perf_limiter.updates);
+	if perf_limiter.updates.all or perf_limiter.updates[category]:
+		if category != "all": perf_limiter.updates[category] = false;
+		return true;
+	return false;
+
 var regnames = [
 	"NONE",
 	"EAX", "EBX", "ECX", "EDX",
@@ -87,6 +109,7 @@ func format_val(val):
 		return "%d" % val;
 
 func update_registers():
+	if not perf_limiter_update("regs"): return;
 	for i in range(regnames.size()):
 		var val = cpu.regs[i];
 		val = format_val(val);
@@ -102,6 +125,7 @@ func cache_op_locations():
 		op_ips.append(op.ip);
 
 func update_ip_highlight():
+	if not perf_limiter_update("ip"): return;
 	if assembler and assembler.op_locations.size():
 		cache_op_locations();
 		var ip = cpu.regs[cpu.ISA.REG_IP];
@@ -113,7 +137,14 @@ func update_ip_highlight():
 		else:
 			set_highlight.emit(0,0,0,0);
 
+func _process(delta):
+	while run_perf_limiter(delta):
+		perf_limiter.updates.all = true;
+		update_cpu();
+		perf_limiter.updates.all = false;
+
 func update_cpu():
+	if not perf_limiter_update("all"): return;
 	update_registers();
 	update_stack();
 	update_ip_highlight();
@@ -166,6 +197,7 @@ func decode_ip(ip):
 	#return "(no data)";
 
 func update_stack():
+	if not perf_limiter_update("stack"): return;
 	n_stackview.clear();
 	n_stackview.max_columns = 3;
 	n_stackview.add_item("IP");
@@ -192,7 +224,7 @@ func _on_cpu_vm_cpu_step_done(_vm_cpu):
 	assert(is_setup);
 	#if(cpu.regs[cpu.ISA.REG_CTRL] & cpu.ISA.BIT_STEP):
 	#	update_cpu();
-	update_cpu();
+	#update_cpu();
 
 
 func _on_btn_run_pressed():
@@ -205,11 +237,12 @@ func _on_btn_pause_pressed():
 func _on_btn_stop_pressed():
 	cpu.regs[cpu.ISA.REG_CTRL] &= ~cpu.ISA.BIT_PWR; #~cpu.ISA.BIT_STEP;
 	cpu.reset();
-	update_cpu();
+	perf_limiter.updates.all = true;#update_cpu();
 
 func _on_btn_step_pressed():
 	#cpu.regs[cpu.ISA.REG_CTRL] |= (cpu.ISA.BIT_STEP | cpu.ISA.BIT_PWR);
 	cpu.step();
+	perf_limiter.updates.all = true;
 
 func _on_btn_next_line_pressed():
 	print("unimplemented");
@@ -222,6 +255,7 @@ func _on_btn_step_out_pressed():
 	for i in range(1000):
 		if(cpu.regs[cpu.ISA.REG_EBP] != cur_ebp): break;
 		cpu.step();
+	perf_limiter.updates.all = true;
 
 func _on_btn_run_to_line_pressed():
 	print("unimplemented");
@@ -234,11 +268,11 @@ func _on_btn_run_to_line_pressed():
 	var target_ip = best_oploc.ip;
 	while(cpu.regs[cpu.ISA.REG_IP] != target_ip):
 		cpu.step();
-	update_cpu();
+	perf_limiter.updates.all = true; #update_cpu();
 
 func _on_cb_hex_toggled(toggled_on: bool) -> void:
 	mode_hex = toggled_on;
-	update_cpu();
+	perf_limiter.updates.all = true; #update_cpu();
 
 @onready var slider_top:Control =  $V/TabContainer/pointers/slider_top
 @onready var slider_mid:ItemList = $V/TabContainer/pointers/slider_mid
@@ -249,7 +283,8 @@ func _on_cb_hex_toggled(toggled_on: bool) -> void:
 var slider_base_addr:int = 0;
 
 func get_pointer_tooltip(addr, val)->String:
-	return "byte %02X (%d) at address %02X (%d)" % [val, val, addr, addr];
+	var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
+	return "byte %02X (%d) at address %02X (%d)\n(EBP + %d)" % [val, val, addr, addr, (addr-cur_ebp)];
 
 func init_sliders():
 	slider_base_addr = int(n_sb_addr.value);
@@ -269,6 +304,7 @@ func init_sliders():
 	#	slider_top.add_item("-"); 
 	
 func update_pointers():
+	if not perf_limiter_update("pointers"): return;
 	update_mid();
 	update_top();
 
@@ -365,6 +401,9 @@ func update_top():
 		lbl.size = view_box.size;
 		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER;
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER;
+		
+		var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
+		view_box.tooltip_text = "Value at %d+%d (EBP%+d)" % [pos, view_size, pos-cur_ebp];
 	#if offs_real:
 	#	first_is_blank = 1;
 	#	slider_top.set_item_text(0, pix_to_spaces(step_px*offs_real));
@@ -390,7 +429,7 @@ func get_slider_text(pos, view_type):
 	return str(num);
 
 func _on_sb_addr_value_changed(_value: float) -> void:
-	update_pointers();
+	perf_limiter.updates.pointers = true; #update_pointers();
 
 var always_update_locals = true;
 
@@ -402,6 +441,7 @@ var locals_func = "";
 var locals_ebp = 0;
 
 func update_locals():
+	if not perf_limiter_update("locals"): return;
 	n_indicator.color = Color.GREEN;
 	n_locals.clear();
 	var cur_func = get_cur_func_name();
@@ -436,9 +476,9 @@ func update_locals():
 			complete_line();
 			# other lines
 			for local2 in group:
-				format_local_access_word(local, col_acc);
+				format_local_access_word(local2, col_acc);
 				n_locals.add_item(" ");
-				format_local_ip_word(local, col_acc);
+				format_local_ip_word(local2, col_acc);
 				complete_line();
 	elif view_type == "access ip":
 		n_locals.max_columns = 4;
@@ -627,7 +667,7 @@ func get_cmd(pos):
 func _on_cb_update_toggled(toggled_on):
 	always_update_locals = toggled_on;
 	if toggled_on: locals_ebp = -1;
-	update_locals();
+	perf_limiter.updates.locals = true; #update_locals();
 
 func _on_ob_view_item_selected(_index: int) -> void:
-	update_locals();
+	perf_limiter.updates.locals = true; #update_locals();

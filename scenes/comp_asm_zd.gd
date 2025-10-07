@@ -16,6 +16,7 @@ var label_refs = {};
 var label_toks = {};
 const ISA = preload("res://lang_zvm.gd");
 const USE_32BIT_BY_DEFAULT = true;
+const USE_WIDE_STRINGS = true;
 # error reporting
 var lines:PackedStringArray;
 var cur_line:String = "";
@@ -462,6 +463,9 @@ func parse_label(iter:Iter)->bool:
 		or match_tokens(iter, ["WORD", "\\:"], toks)		):
 		var lbl_name = toks[0]["text"];
 		if lbl_name == ":": lbl_name = toks[1]["text"];
+		if lbl_name in labels:
+			user_error("Label already defined: "+lbl_name);
+			return false;
 		labels[lbl_name] = write_pos;
 		print("Parsed [label:"+lbl_name+"]");
 		return true;
@@ -713,8 +717,14 @@ func emit_db_items(items:Array[Token])->void: #maybe we could use the .32 specif
 			"STRING": # a bunch of text
 				var text = str(item["text"]).to_ascii_buffer()
 				for ch in text:
-					emit8(ch, ISA.SHADOW_DATA,erep);
-				emit8(0, ISA.SHADOW_DATA,erep);
+					if USE_WIDE_STRINGS:
+						emit32(ch, ISA.SHADOW_DATA, erep);
+					else:
+						emit8(ch, ISA.SHADOW_DATA,erep);
+				#if USE_WIDE_STRINGS:
+				#	emit32(0, ISA.SHADOW_DATA, erep);
+				#else:
+				#	emit8(0, ISA.SHADOW_DATA,erep);
 			_:
 				erep.error(ERR_06);
 				return;

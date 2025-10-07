@@ -4,7 +4,7 @@ const uYaml = preload("res://scenes/uYaml.gd")
 
 var IR = {};
 var all_syms = {};
-const USE_WIDE_STRINGS = true; # true: expand each character into U32, false: normal strings
+#Wide strings handled in assembler now // const USE_WIDE_STRINGS = true; # true: expand each character into U32, false: normal strings
 const ADD_DEBUG_TRACE = false; # in emitted assembly, specify where it came from.
 const ADD_IR_TRACE = true; # print the IR commands that are being generated
 #---------- IR ingestion -------------------
@@ -78,7 +78,7 @@ var cur_stack_size = 0; # number of bytes in the current frame used for local va
 const regs = ["EAX", "EBX", "ECX", "EDX"];
 var regs_in_use = {};
 
-var referenced_cbs = [];
+var referenced_cbs = {};
 
 func generate():
 	allocate_vars();
@@ -86,15 +86,17 @@ func generate():
 	#	var cb = IR.code_blocks[key];
 	#	generate_code_block(cb);
 	var cb_global = IR.code_blocks[IR.code_blocks.keys()[0]];
-	referenced_cbs.push_back(cb_global);
+	referenced_cbs[cb_global] = true;
+	#referenced_cbs.push_back(cb_global);
 	var scp_global = IR.scopes[IR.scopes.keys()[0]];
 	enter_scope(scp_global);
 	var assy_full = "";
-	while not referenced_cbs.is_empty():
-		var cb = referenced_cbs.pop_back();
+	while not referenced_cbs.is_empty(): #we're using the dictionary as a Set.
+		var cb = referenced_cbs.keys().pop_front();
 		var ab = generate_code_block(cb);
 		fixup_enter_leave(ab);
 		assy_full += ab.code;
+		referenced_cbs.erase(cb);
 	assy_full += generate_globals();
 	return assy_full;
 	
@@ -133,13 +135,13 @@ func generate_globals()->String:
 
 func format_db_string(S):
 	var text = "";
-	if USE_WIDE_STRINGS:
-		for ch:String in S:
-			text += "%d,0,0,0, " % ch.to_ascii_buffer()[0];
-		#text = text.erase(len(text)-2,2);
-		text += "0,0,0,0";
-	else:
-		text = "\"%s\", 0" % S;
+	#if USE_WIDE_STRINGS:
+	#	for ch:String in S:
+	#		text += "%d,0,0,0, " % ch.to_ascii_buffer()[0];
+	#	#text = text.erase(len(text)-2,2);
+	#	text += "0,0,0,0";
+	#else:
+	text = "\"%s\", 0" % S;
 	return text;
 
 var entered_scopes = [];
@@ -221,24 +223,23 @@ func generate_cmd_op(cmd):
 	var tmpA = null;
 	var tmpB = null;
 	#var arg1_by_addr = false;
-	tmpA = alloc_temporary();
-	#if op_str.find("@%a"):
-	#	op_str = op_str.replace("@%a", "%a");
-	#	arg1_by_addr = true;
-	#if arg1_by_addr:
-	#	emit("mov %s, @%s;\n" % [tmpA, arg1], "generate_cmd_op.arg1_by_addr");
-	#else:
-	#	emit("mov %s, $%s;\n" % [tmpA, arg1], "generate_cmd_op.arg1_by_addr.else");
-	emit("mov %s, $%s;\n" % [tmpA, arg1], "generate_cmd_op.arg1_by_addr.else");
+	const mono_ops = ["INC", "DEC"];
+	if op in mono_ops:
+		tmpA = "^%s" % arg1;
+		emit("mov ^%s, $%s;\n" % [res, arg1], "generate_cmd_op.result2");
+	else:
+		tmpA = alloc_temporary();
+		emit("mov %s, $%s;\n" % [tmpA, arg1], "generate_cmd_op.arg1");
+	
 	op_str = op_str.replace("%a", tmpA);
 	if op_str.find("%b") != -1:
 		tmpB = alloc_temporary();
 		emit("mov %s, $%s;\n" % [tmpB, arg2], "generate_cmd_op.find_b");
 		op_str = op_str.replace("%b", tmpB);
 	emit(op_str, "generate_cmd_op.op_str");
-	emit("mov ^%s, %s;\n" % [res, tmpA], "generate_cmd_op.result");
+	if op not in mono_ops: emit("mov ^%s, %s;\n" % [res, tmpA], "generate_cmd_op.result1");
 	var res_handle = all_syms[res];
-	res_handle.needs_deref = true;
+	if op == "INDEX": res_handle.needs_deref = true;
 	free_val(tmpA);
 	if(tmpB): free_val(tmpB);
 	
@@ -332,17 +333,18 @@ func generate_cmd_call(cmd):
 	var res = cmd[-1];
 	args.reverse();
 	var n_args = len(args);
+	var pushed_stack_size = 4*n_args;
 	for arg in args:
 		emit("push $%s;\n" % arg, "generate_cmd_call.args");
 	emit("call @%s;\n" % fun, "generate_cmd_call.call");
-	emit("add ESP, %s;\n" % n_args, "generate_cmd_call.stack");
+	emit("add ESP, %s;\n" % pushed_stack_size, "generate_cmd_call.stack");
 	emit("mov ^%s, eax;\n" % res, "generate_cmd_call.result");
 	
 	if fun_handle.storage.type != "extern":
 		var cb_name = fun_handle.code;
 		assert(cb_name in all_syms);
 		var cb = all_syms[cb_name];
-		referenced_cbs.append(cb);
+		referenced_cbs[cb] = true;
 
 func emit(text:String, dbg_trace:String):
 	var imm_flag = false;
@@ -356,8 +358,8 @@ func emit(text:String, dbg_trace:String):
 			var reg = alloc_register();
 			allocs.push_back(reg);
 			assert(reg != null);
-			emit_raw("mov %s, %s;\n" % [reg, res], "emit.needs_deref_1");
-			emit_raw("mov %s, *%s;\n" % [reg, reg], "emit.needs_deref_2");
+			emit_raw("mov %s, %s;\n" % [reg, res], "emit.needs_deref_1(%s)" % ref_load.val);
+			emit_raw("mov %s, *%s;\n" % [reg, reg], "emit.needs_deref_2(%s)" % ref_load.val);
 			res = reg;
 			#note: imm_flag = false or imm_flag;
 		else:
@@ -395,8 +397,8 @@ func emit(text:String, dbg_trace:String):
 		var res_store = touple[3];
 		if needs_deref:
 			var reg2 = alloc_register();
-			emit_raw("mov %s, %s;\n" % [reg2, res_load], dbg_trace+":emit(%s).store_deref_1" % text);
-			emit_raw("mov *%s, %s;\n" % [reg2, reg], dbg_trace+":emit(%s).store_deref_2" % text);
+			emit_raw("mov %s, %s;\n" % [reg2, res_load], dbg_trace+":emit(%s).store_deref_3" % text);
+			emit_raw("mov *%s, %s;\n" % [reg2, reg], dbg_trace+":emit(%s).store_deref_4" % text);
 			free_val(reg2);
 		else:
 			emit_raw("mov %s, %s;\n" % [res_store, reg], dbg_trace + ":emit(%s).store" % text);
@@ -579,7 +581,7 @@ func to_local_pos(pos):
 
 # defines a mapping between the input pos and stack pos for arguments of a function
 func to_arg_pos(pos):
-	return 21+pos;
+	return 9+pos;
 
 func generate_cmd_return(_cmd):
 	emit("ret;\n", "generate_cmd_return");

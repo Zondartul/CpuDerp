@@ -11,6 +11,14 @@ var Memory;
 var cpu_vm;
 var is_setup = false;
 #var mvhl:CodeHighlighter = CodeHighlighter.new();
+var perf_limiter = {"freq":1, "credit":0.0, "updates":{"mem":true, "color":true, "disasm":true}};
+func run_perf_limiter(delta:float):
+	perf_limiter.credit += delta;
+	var cost = 1.0/float(perf_limiter.freq);
+	if perf_limiter.credit >= cost:
+		perf_limiter.credit -= cost;
+		return true;
+	return false;
 
 #func _ready():
 #	mvhl.add_keyword_color("00", Color.GRAY);
@@ -48,7 +56,13 @@ func add_memory_region(m_pos, m_size, m_name):
 var color_fixups = [];
 var shadow_at = 0;
 
+func _process(delta):
+	while run_perf_limiter(delta):
+		update_mem_view();
+
 func update_mem_view():
+	if not perf_limiter.updates.mem: return;
+	perf_limiter.updates.mem = false;
 	color_fixups = [];
 	var selected = map.get_selected_items();
 	if not len(selected): memview.clear(); return;
@@ -95,6 +109,7 @@ func read_cell(idx):
 	return Memory.readCell(idx);
 
 func _on_mem_map_item_selected(_index):
+	perf_limiter.updates.mem = true;
 	update_mem_view();
 
 func to_hex(num:int):
@@ -185,7 +200,7 @@ func is_shadow_data(sbytes):
 
 
 func _on_cpu_vm_cpu_step_done(_cpu):
-	update_mem_view();
+	perf_limiter.updates.mem = true; #update_mem_view();
 
 
 func _on_cpu_vm_mem_accessed(addr: Variant, _val: Variant, _is_write: Variant) -> void:

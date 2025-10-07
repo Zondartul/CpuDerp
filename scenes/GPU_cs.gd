@@ -16,9 +16,12 @@ var n_tiles_x = 56;
 var n_tiles_y = 36;
 var update_queued = false;
 const n_tile_params = 1+3+3; # char, color, color
+const READ_RETURNS_BUFFER = true;
+var mem:Array[int] = [];
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	mem.resize(getSize());
 	pass # Replace with function body.
 
 func getSize():
@@ -130,6 +133,7 @@ func writeCell(adr:int, val:int):
 	if(debug_gpu):print("GPU: writeCell("+str(adr)+") <- "+str(val));
 	#print("writeCell("+str(adr)+", "+str(val)+")");
 	if adr >= 2000:
+		mem[adr] = val;
 		# write framebuffer or textbuffer data
 		var ref = _calc_tile_addr(adr);
 		if ref == null: return;
@@ -140,16 +144,20 @@ func writeCell(adr:int, val:int):
 		scr_text.setTileData(ref.pos, tile_data);
 		update_queued = true;
 
+
 func readCell(adr:int):
 	if adr >= 2000:
-		# read framebuffer or textbuffer
-		var ref = _calc_tile_addr(adr);
-		if ref == null: return;
-		
-		var tile_data = scr_text.getTileData(ref.pos);
-		var val = _get_tile_param(tile_data, ref.sub_addr);
-		if val == null: val = 0;
-		return val;
+		if READ_RETURNS_BUFFER:
+			return mem[adr];
+		else:
+			# read framebuffer or textbuffer
+			var ref = _calc_tile_addr(adr);
+			if ref == null: return;
+			
+			var tile_data = scr_text.getTileData(ref.pos);
+			var val = _get_tile_param(tile_data, ref.sub_addr);
+			if val == null: val = 0;
+			return val;
 	return 0;
 
 func _process(_delta):

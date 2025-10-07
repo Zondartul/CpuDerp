@@ -81,6 +81,17 @@ func upload_shadow(bytes):
 		idx += 1;
 	print("shadow memory uploaded");
 
+func add_stack_region():
+	var stack_end = 65536;
+	var stack_size = 1024;
+	var stack_pos = stack_end - stack_size;
+	view_Memory.add_memory_region(stack_pos, stack_size, "stack");
+
+func add_screen_region():
+	var screen_start = 67536;
+	var screen_size = 64*64*7;
+	view_Memory.add_memory_region(screen_start, screen_size, "screen");
+
 func _on_build_index_pressed(index):
 	if index == 0: # "compile"
 		var res = compile();
@@ -89,6 +100,8 @@ func _on_build_index_pressed(index):
 			Editor.print_console("Compiled successfully");
 			upload(res.code);
 			upload_shadow(res.shadow);
+			add_stack_region();
+			add_screen_region();
 			Editor.print_console("Code uploaded to memory");
 		else: 
 			Editor.print_console("Failed to compile");
