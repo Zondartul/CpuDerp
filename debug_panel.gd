@@ -7,27 +7,18 @@ const ISA = preload("res://lang_zvm.gd")
 @onready var n_stackview = $V/TabContainer/stack_view
 @onready var n_indicator = $V/TabContainer/local_view/V/H/indicator
 
-var perf_limiter = {"freq":1, "credit":0.0, "updates":{
-	"all":false,
-	"regs":false,
-	"stack":false,
-	"ip":false,
-	"pointers":false,
-	"locals":false,
-	}};
-func run_perf_limiter(delta:float):
-	perf_limiter.credit += delta;
-	var cost = 1.0/float(perf_limiter.freq);
-	if perf_limiter.credit >= cost:
-		perf_limiter.credit -= cost;
-		return true;
-	return false;
-func perf_limiter_update(category:String):
-	assert(category in perf_limiter.updates);
-	if perf_limiter.updates.all or perf_limiter.updates[category]:
-		if category != "all": perf_limiter.updates[category] = false;
-		return true;
-	return false;
+const class_PerfLimitDirectory = preload("res://PerfLimitDirectory.gd");
+
+var perf = PerfLimitDirectory.new({
+	"all":1.0,
+	"regs":0.1,
+	"stack":0.1,
+	"ip":0.5,
+	"pointers":1.0,
+	"locals":1.0,
+	});
+
+var perf_always_on = ["all", "regs", "stack", "ip"];
 
 var regnames = [
 	"NONE",
@@ -92,6 +83,7 @@ func setup(dict:Dictionary):
 	editor = dict.editor;
 	is_setup = true;
 	init_sliders();
+	reset_cpu_history();
 
 func init_reg_view():
 	for reg in regnames:
@@ -109,7 +101,8 @@ func format_val(val):
 		return "%d" % val;
 
 func update_registers():
-	if not perf_limiter_update("regs"): return;
+	if not perf.regs.run(0): return;
+	
 	for i in range(regnames.size()):
 		var val = cpu.regs[i];
 		val = format_val(val);
@@ -125,7 +118,8 @@ func cache_op_locations():
 		op_ips.append(op.ip);
 
 func update_ip_highlight():
-	if not perf_limiter_update("ip"): return;
+	if not perf.ip.run(0): return;
+	
 	if assembler and assembler.op_locations.size():
 		cache_op_locations();
 		var ip = cpu.regs[cpu.ISA.REG_IP];
@@ -138,13 +132,11 @@ func update_ip_highlight():
 			set_highlight.emit(0,0,0,0);
 
 func _process(delta):
-	while run_perf_limiter(delta):
-		perf_limiter.updates.all = true;
-		update_cpu();
-		perf_limiter.updates.all = false;
+	perf.credit_all(delta);
+	update_cpu();
+	$V/H2/lbl_history.text = "steps recorded: "+str(cpu_n_steps);
 
 func update_cpu():
-	if not perf_limiter_update("all"): return;
 	update_registers();
 	update_stack();
 	update_ip_highlight();
@@ -197,7 +189,8 @@ func decode_ip(ip):
 	#return "(no data)";
 
 func update_stack():
-	if not perf_limiter_update("stack"): return;
+	if not perf.stack.run(0): return;
+	
 	n_stackview.clear();
 	n_stackview.max_columns = 3;
 	n_stackview.add_item("IP");
@@ -225,7 +218,7 @@ func _on_cpu_vm_cpu_step_done(_vm_cpu):
 	#if(cpu.regs[cpu.ISA.REG_CTRL] & cpu.ISA.BIT_STEP):
 	#	update_cpu();
 	#update_cpu();
-
+	save_cpu_state();
 
 func _on_btn_run_pressed():
 	cpu.regs[cpu.ISA.REG_CTRL] &= ~cpu.ISA.BIT_STEP;
@@ -237,12 +230,13 @@ func _on_btn_pause_pressed():
 func _on_btn_stop_pressed():
 	cpu.regs[cpu.ISA.REG_CTRL] &= ~cpu.ISA.BIT_PWR; #~cpu.ISA.BIT_STEP;
 	cpu.reset();
-	perf_limiter.updates.all = true;#update_cpu();
+	reset_cpu_history();
+	perf.all.prime();
 
 func _on_btn_step_pressed():
 	#cpu.regs[cpu.ISA.REG_CTRL] |= (cpu.ISA.BIT_STEP | cpu.ISA.BIT_PWR);
 	cpu.step();
-	perf_limiter.updates.all = true;
+	perf.all.prime();
 
 func _on_btn_next_line_pressed():
 	print("unimplemented");
@@ -255,7 +249,7 @@ func _on_btn_step_out_pressed():
 	for i in range(1000):
 		if(cpu.regs[cpu.ISA.REG_EBP] != cur_ebp): break;
 		cpu.step();
-	perf_limiter.updates.all = true;
+	perf.all.prime();
 
 func _on_btn_run_to_line_pressed():
 	print("unimplemented");
@@ -268,11 +262,11 @@ func _on_btn_run_to_line_pressed():
 	var target_ip = best_oploc.ip;
 	while(cpu.regs[cpu.ISA.REG_IP] != target_ip):
 		cpu.step();
-	perf_limiter.updates.all = true; #update_cpu();
+	perf.all.prime();
 
 func _on_cb_hex_toggled(toggled_on: bool) -> void:
 	mode_hex = toggled_on;
-	perf_limiter.updates.all = true; #update_cpu();
+	perf.all.prime();
 
 @onready var slider_top:Control =  $V/TabContainer/pointers/slider_top
 @onready var slider_mid:ItemList = $V/TabContainer/pointers/slider_mid
@@ -304,7 +298,7 @@ func init_sliders():
 	#	slider_top.add_item("-"); 
 	
 func update_pointers():
-	if not perf_limiter_update("pointers"): return;
+	if not perf.pointers.run(0): return;
 	update_mid();
 	update_top();
 
@@ -429,9 +423,9 @@ func get_slider_text(pos, view_type):
 	return str(num);
 
 func _on_sb_addr_value_changed(_value: float) -> void:
-	perf_limiter.updates.pointers = true; #update_pointers();
+	perf.pointers.prime();
 
-var always_update_locals = true;
+var always_update_locals = false;
 
 @onready var n_locals_view = $V/TabContainer/local_view/V/H/ob_view;
 
@@ -441,7 +435,8 @@ var locals_func = "";
 var locals_ebp = 0;
 
 func update_locals():
-	if not perf_limiter_update("locals"): return;
+	if not perf.locals.run(0): return;
+	
 	n_indicator.color = Color.GREEN;
 	n_locals.clear();
 	var cur_func = get_cur_func_name();
@@ -667,7 +662,128 @@ func get_cmd(pos):
 func _on_cb_update_toggled(toggled_on):
 	always_update_locals = toggled_on;
 	if toggled_on: locals_ebp = -1;
-	perf_limiter.updates.locals = true; #update_locals();
+	perf.locals.prime();
 
 func _on_ob_view_item_selected(_index: int) -> void:
-	perf_limiter.updates.locals = true; #update_locals();
+	perf.locals.prime();
+
+func _on_btn_unstep_pressed() -> void:
+	unstep();
+	perf.all.prime();
+
+func _on_cpu_vm_mem_accessed(addr: Variant, val: Variant, is_write: Variant) -> void:
+	save_mem_access(addr,val,is_write);
+
+const max_cpu_history = 1000;
+var cpu_history = [];
+var cpu_n_steps = 0;
+
+func reset_cpu_history():
+	cpu_history.clear();
+	cpu_n_steps = 0;
+	save_cpu_state();
+
+func save_cpu_state():
+	#print("--- + Step + ---");
+	var state = {"regs":cpu.regs.duplicate()};
+	var event = {"type":"cpu", "state":state};
+	if len(cpu_history) >= max_cpu_history: 
+		var old_event = cpu_history.pop_front();
+		if(old_event.type == "cpu"):
+			cpu_n_steps -= 1;
+	cpu_history.push_back(event);
+	cpu_n_steps += 1;
+
+func save_mem_access(addr, val, is_write):
+	if not is_write: return;
+	var access = {"addr":addr, "old":bus.readCell(addr), "new":val};
+	var event = {"type":"mem", "access":access};
+	if len(cpu_history) >= max_cpu_history: 
+		var old_event = cpu_history.pop_front();
+		if(old_event.type == "cpu"):
+			cpu_n_steps -= 1;
+	cpu_history.push_back(event);
+
+func unstep():
+	#print("---- UNSTEP BEFORE ---");
+	#print_cpu_hist(10);
+	#print("---- UNSTEP ----");
+	if cpu_history.is_empty(): 
+		#print("<empty>"); 
+		return;
+	var event = cpu_history.pop_back();
+	while(event.type == "mem"):
+		#print("<got mem>");
+		undo_mem(event);
+		if cpu_history.is_empty(): 
+			cpu_history.push_back(event); 
+			#print("<pb 1>"); 
+			break;
+		event = cpu_history.pop_back();
+	while(event.type == "cpu"):
+		#print("<got cpu>");
+		cpu_n_steps -= 1;
+		if undo_cpu(event):
+			# we are at previous CPU state, after that CPU state was completed.
+			# our current CPU state and our current mem stuff has been undone.
+			if cpu_history.is_empty(): 
+				cpu_history.push_back(event); 
+				cpu_n_steps += 1; 
+				#print("<pb 2>"); 
+				break;
+			#print("<ok>");
+			break;
+		else:
+			#print("<same ip>");
+			if cpu_history.is_empty(): 
+				cpu_history.push_back(event); 
+				cpu_n_steps += 1; 
+				#print("<pb 3>"); 
+				break;
+			event = cpu_history.pop_back();
+			while(event.type == "mem"):
+				#print("<got mem>");
+				# if we are here, we are still undoing the current CPU state,
+				# and we need to remove the mem stuff we did.
+				undo_mem(event);
+				if cpu_history.is_empty(): 
+					cpu_history.push_back(event); 
+					#print("<pb 4>");
+					break;
+				event = cpu_history.pop_back();
+			continue;
+		if cpu_history.is_empty():
+			cpu_history.push_back(event);
+			cpu_n_steps += 1; 
+			#print("<pb 3>"); 
+			break;
+		event = cpu_history.pop_back();
+	#cpu_history.push_back(event);
+	#print("<next>");
+	#print_cpu_hist(10);
+
+func undo_mem(event):
+	bus.writeCell(event.access.addr, event.access.old);
+	print("undo mem %d -> %d" % [event.access.old, event.access.addr]);
+	
+func undo_cpu(event):
+	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
+	var old_ip = event.state.regs[cpu.ISA.REG_IP];
+	event.state.regs[cpu.ISA.REG_CTRL] &= ~cpu.ISA.BIT_PWR;
+	cpu.regs = event.state.regs.duplicate();
+	if cur_ip == old_ip:
+		return false;
+	else:
+		print("undo cpu ip %d -> ip %d" % [cur_ip, old_ip]);
+		return true;
+
+func print_cpu_hist(n_events):
+	print("cpu history:");
+	for i in range(n_events):
+		if i >= len(cpu_history): return;
+		var idx = len(cpu_history)-i-1;
+		var event = cpu_history[idx];
+		var S = "%d: %s" % [idx, event.type];
+		if event.type == "cpu":
+			S += " %d" % event.state.regs[cpu.ISA.REG_IP];
+		print(S);

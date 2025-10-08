@@ -364,4 +364,5 @@ script = ExtResource("19_a20q3")
 [connection signal="cpu_step_done" from="VM/CPU_vm" to="Panel/TabContainer/Memory" method="_on_cpu_vm_cpu_step_done"]
 [connection signal="cpu_step_done" from="VM/CPU_vm" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="_on_cpu_vm_cpu_step_done"]
 [connection signal="mem_accessed" from="VM/CPU_vm" to="Panel/TabContainer/Memory" method="_on_cpu_vm_mem_accessed"]
+[connection signal="mem_accessed" from="VM/CPU_vm" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="_on_cpu_vm_mem_accessed"]
 [connection signal="on_cpu_error" from="VM/CPU_vm" to="." method="_on_cpu_vm_on_cpu_error"]

@@ -20,4 +20,5 @@ extends Node
 # [automation] for debug, set a list of UI interactions 
 #			that should happen automatically when starting
 # [enhancement] infer language from file extension
-# 
+# [bug] I suspect that multiple array access has a landmine as it produces a needs_deref value
+#

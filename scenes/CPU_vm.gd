@@ -341,8 +341,8 @@ func read8(adr):
 func write8(adr, val): 
 	if(val > 255):
 		if(debug_vm):print("warning: write8("+str(val)+" > 255)");
-	Bus.writeCell(adr, val);
 	mem_accessed.emit(adr, val, true);
+	Bus.writeCell(adr, val);
 func read32(adr):
 	var buff = PackedByteArray([0,0,0,0]);
 	for i in range(buff.size()):
