@@ -18,6 +18,7 @@ config/icon="res://CpuDerp_preview.png"
 [autoload]
 
 G="*res://globals.gd"
+E="*res://error_list.gd"
 
 [display]
 

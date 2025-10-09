@@ -28,62 +28,48 @@ var op_locations = []
 signal tokens_ready;
 var output_tokens = [];
 
-const ERR_01 = "Error 01: Error_reporter: unknown context";
-const ERR_02 = "Error 02: Unlinked references remain (count %s)";
-const ERR_03 = "Error 03: patch_ref: reference not marked in shadows";
-const ERR_04 = "Error 04: can only have one immediate/offset value per command";
-const ERR_05 = "Error 05: unrecognized DB item";
-const ERR_06 = "Error 06: unknown DB item";
-const ERR_07 = "Error 07: Invalid op [%s]";
-const ERR_08 = "Error 08: Can't have offset on top of immediate";
-const ERR_09 = "Error 09: Can't have array access on top of immediate";
-const ERR_10 = "Error 10: can't emit value, doesn't fit in byte: [%s]";
-const ERR_11 = "Error 11: can't emit value, doesn't fit in u32: [%s]";
-const ERR_12 = "Error 12: unexpected input";
-const ERR_13 = "Error 13: Unlinked reference to [%s]";
+#class Iter:
+	#var tokens:Array;
+	#var pos:int;
+	#func _init(new_tokens:Array, new_pos:int):
+		#tokens = new_tokens;
+		#pos = new_pos;
+	#func duplicate()->Iter:
+		#return Iter.new(tokens,pos);
 
-class Iter:
-	var tokens:Array;
-	var pos:int;
-	func _init(new_tokens:Array, new_pos:int):
-		tokens = new_tokens;
-		pos = new_pos;
-	func duplicate()->Iter:
-		return Iter.new(tokens,pos);
+#class Token:
+	#var tok_class:String;
+	#var text:String;
+	#var line:String;
+	#var line_idx:int;
+	#var col:int;
+	#func _init(dict=null):
+		#if dict:
+			#for key in dict:
+				#set(key, dict[key]);
+	#func duplicate()->Token:
+		#var tok2 = Token.new();
+		#G.duplicate_shallow(self, tok2);
+		#return tok2;
 
-class Token:
-	var tok_class:String;
-	var text:String;
-	var line:String;
-	var line_idx:int;
-	var col:int;
-	func _init(dict=null):
-		if dict:
-			for key in dict:
-				set(key, dict[key]);
-	func duplicate()->Token:
-		var tok2 = Token.new();
-		G.duplicate_shallow(self, tok2);
-		return tok2;
-
-class Chunk:
-	var code:Array[int];
-	var shadow:Array[int];
-	var labels:Dictionary;
-	var refs:Dictionary;
-	var label_toks:Dictionary;
-	var error:bool;
-	func _init(dict=null):
-		if dict:
-			for key in dict:
-				set(key, dict[key]);
-	func to_bool()->bool: return not error;
-	func duplicate()->Chunk:
-		var chunk2:Chunk = Chunk.new();
-		G.duplicate_deep(self, chunk2);
-		return chunk2;
-	static func null_val():
-		return Chunk.new({"error":true});
+#class Chunk:
+	#var code:Array[int];
+	#var shadow:Array[int];
+	#var labels:Dictionary;
+	#var refs:Dictionary;
+	#var label_toks:Dictionary;
+	#var error:bool;
+	#func _init(dict=null):
+		#if dict:
+			#for key in dict:
+				#set(key, dict[key]);
+	#func to_bool()->bool: return not error;
+	#func duplicate()->Chunk:
+		#var chunk2:Chunk = Chunk.new();
+		#G.duplicate_deep(self, chunk2);
+		#return chunk2;
+	#static func null_val():
+		#return Chunk.new({"error":true});
 
 func new_chunk()->Chunk: 
 	var res:Chunk = Chunk.new();
@@ -94,24 +80,7 @@ func duplicate_chunk(in_chunk:Chunk)->Chunk:
 	G.duplicate_deep(in_chunk, out_chunk);
 	return out_chunk;
 
-class Error_reporter:
-	var proxy;
-	var context;
-	func _init(new_proxy, new_context=null):
-		proxy = new_proxy;
-		context = new_context;
-	func error(msg):
-		push_error(msg);
-		if proxy.error_code != "": return; ## suppress cascading errors
-		proxy.user_error(msg);
-		proxy.error_code = msg;
-		if context != null:
-			if context is Token:
-				proxy.point_out_error_tok("", context);
-			elif context is Iter:
-				proxy.point_out_error_iter("", context);
-			else:
-				push_error(ERR_01);
+
 
 func clear()->void:
 	cur_filename = "";
@@ -151,9 +120,9 @@ func assemble(source:String)->Chunk:
 		for ref in chunk.refs:
 			var lbl_name = chunk.refs[ref];
 			var lbl_tok = chunk.label_toks[ref];
-			var erep = Error_reporter.new(self, lbl_tok);
-			erep.error(ERR_13 % lbl_name);
-		push_error(ERR_02 % str(unlinked))
+			var erep = ErrorReporter.new(self, lbl_tok);
+			erep.error(E.ERR_13 % lbl_name);
+		push_error(E.ERR_02 % str(unlinked))
 	print("Assembly done");
 	print("stats: ")
 	print("    "+str(len(chunk.code))+" bytes")
@@ -164,25 +133,6 @@ func assign_line_pos(tokens:Array[Token])->void:
 	for tok:Token in tokens:
 		tok.line = cur_line;
 		tok.line_idx = cur_line_idx;
-
-
-func point_out_error(msg:String, line_text:String, line_idx:int, char_idx:int)->void:
-	cprint("error at line "+str(line_idx)+":\n");
-	cprint(line_text);
-	cprint(" ".repeat(char_idx)+"^");
-	cprint(msg);
-	sig_highlight_line.emit(line_idx);
-
-func point_out_error_iter(msg:String, iter:Iter)->void:
-	#var char_idx = iter.tokens[iter.pos]["col"]; #iter[0][iter[1]]["col"];#iter_count_chars(iter);
-	#point_out_error(msg, cur_line, cur_line_idx, char_idx)
-	if(iter.pos >= len(iter.tokens)): iter.pos = len(iter.tokens)-1;
-	var tok = iter.tokens[iter.pos];
-	tok["line"] = cur_line; tok["line_idx"] = cur_line_idx;
-	point_out_error_tok(msg, iter.tokens[iter.pos]);
-
-func point_out_error_tok(msg:String, tok:Token)->void:
-	point_out_error(msg, tok.line, tok.line_idx, tok.col);	
 
 func cprint(msg):
 	sig_cprint.emit(msg);
@@ -256,8 +206,8 @@ func patch_ref(out_code:Array, ref:int, lbl_pos:int, out_shadow:Array, lbl_tok:T
 	match prev_mark:
 		ISA.SHADOW_DATA_UNRESOLVED: shadow_flag = ISA.SHADOW_DATA_RESOLVED;
 		ISA.SHADOW_CMD_UNRESOLVED: shadow_flag = ISA.SHADOW_CMD_RESOLVED;
-		_: push_error(ERR_03); assert(false);
-	var erep:Error_reporter = Error_reporter.new(self, lbl_tok);
+		_: push_error(E.ERR_03); assert(false);
+	var erep:ErrorReporter = ErrorReporter.new(self, lbl_tok);
 	emit32(lbl_pos, shadow_flag, erep);
 	code = old_code;
 	write_pos = old_wp;
@@ -283,37 +233,37 @@ const cmd_size = 8;
 	#var spec_flags = (flags >> 4) & 0b111;
 	
 
-class Cmd_arg:
-	var is_present:bool = false; #did we get supplied with this arg in assembly?
-	var reg_name:String = "";
-	var reg_idx:int = 0;
-	var offset:int = 0;
-	var is_deref:bool = false;
-	var is_imm:bool = false;
-	var is_32bit:bool = false; # is this even arg-level?
-	var is_unresolved:bool = false; #is this a label that needs to be resolved by linker?
+#class Cmd_arg:
+	#var is_present:bool = false; #did we get supplied with this arg in assembly?
+	#var reg_name:String = "";
+	#var reg_idx:int = 0;
+	#var offset:int = 0;
+	#var is_deref:bool = false;
+	#var is_imm:bool = false;
+	#var is_32bit:bool = false; # is this even arg-level?
+	#var is_unresolved:bool = false; #is this a label that needs to be resolved by linker?
 
-class Cmd_flags:
-	var deref_reg1:bool = false;
-	var deref_reg2:bool = false;
-	var reg1_im:bool = false;
-	var reg2_im:bool = false; # not encoded
-	var is_32bit:bool = false;
-	var spec_flags:int = 0;
-	func to_byte()->int:
-		return  (int(deref_reg1) << 0) | \
-				(int(deref_reg2) << 1) | \
-				(int(reg1_im) << 2) | \
-				(int(is_32bit) << 3) | \
-				((spec_flags & 0b111) << 4);
-	func set_arg1(arg:Cmd_arg)->void:
-		reg1_im = arg.is_imm;
-		deref_reg1 = arg.is_deref;
-	func set_arg2(arg:Cmd_arg, erep:Error_reporter)->void:
-		reg2_im = arg.is_imm;
-		if reg1_im and reg2_im: 
-			erep.error(ERR_04);
-		deref_reg2 = arg.is_deref;
+#class Cmd_flags:
+	#var deref_reg1:bool = false;
+	#var deref_reg2:bool = false;
+	#var reg1_im:bool = false;
+	#var reg2_im:bool = false; # not encoded
+	#var is_32bit:bool = false;
+	#var spec_flags:int = 0;
+	#func to_byte()->int:
+		#return  (int(deref_reg1) << 0) | \
+				#(int(deref_reg2) << 1) | \
+				#(int(reg1_im) << 2) | \
+				#(int(is_32bit) << 3) | \
+				#((spec_flags & 0b111) << 4);
+	#func set_arg1(arg:Cmd_arg)->void:
+		#reg1_im = arg.is_imm;
+		#deref_reg1 = arg.is_deref;
+	#func set_arg2(arg:Cmd_arg, erep:Error_reporter)->void:
+		#reg2_im = arg.is_imm;
+		#if reg1_im and reg2_im: 
+			#erep.error(ERR_04);
+		#deref_reg2 = arg.is_deref;
 
 # ---------- Basic preprocess ---------------------------------
 # preprocess the line: remove comments, trim whitespace, etc
@@ -443,7 +393,7 @@ func tok_ch_class(ch:String)->String:
 
 func process(tokens:Array[Token])->bool:
 	var iter = Iter.new(tokens, 0);
-	var erep:Error_reporter = Error_reporter.new(self, iter);
+	var erep:ErrorReporter = ErrorReporter.new(self, iter);
 	while iter.pos != len(iter.tokens):
 		if parse_label(iter) \
 		or parse_db(iter) \
@@ -451,7 +401,7 @@ func process(tokens:Array[Token])->bool:
 			pass # all ok, continue to next command
 		else:
 			erep.context = iter;
-			erep.error(ERR_12);
+			erep.error(E.ERR_12);
 			print("current tokens: ");
 			print_tokens(tokens);
 			return false;
@@ -482,7 +432,7 @@ func parse_db(iter:Iter)->bool:
 			or (match_tokens(iter, ["WORD"],toks) and is_label(toks[0]["text"])):
 				items.append(toks[0]);
 			else:
-				push_error(ERR_05);
+				push_error(E.ERR_05);
 				return false;
 			match_tokens(iter, ["\\,"]);
 			if match_tokens(iter, ["\\;"]):
@@ -516,12 +466,12 @@ func parse_command(iter:Iter)->bool:
 		else:
 			op_code = ISA.opcodes.find_key(op_name);
 		if not op_code: 
-			push_error(ERR_07 % op_name); 
+			push_error(E.ERR_07 % op_name); 
 			return false;
 		flags.is_32bit = USE_32BIT_BY_DEFAULT;
 		if match_tokens(iter, ["\\.", "\\32"]): flags.is_32bit = true;
 		elif match_tokens(iter, ["\\.", "\\8"]): flags.is_32bit = false;
-		var erep:Error_reporter = Error_reporter.new(self, iter);
+		var erep:ErrorReporter = ErrorReporter.new(self, iter);
 		var arg1:Cmd_arg = parse_arg(iter,erep);
 		match_tokens(iter, ["\\,"]);
 		var arg2:Cmd_arg = parse_arg(iter,erep);
@@ -597,7 +547,7 @@ func match_tokens(iter:Iter, ref_toks:Array[String], out=null)->bool:
 # w.r.t. dereference + offset order
 # syntax: (cmd)[.32] [[*](reg|num|label)['['num']']]x2 [;]
 
-func parse_arg(iter, erep:Error_reporter)->Cmd_arg:
+func parse_arg(iter, erep:ErrorReporter)->Cmd_arg:
 	var arg:Cmd_arg = Cmd_arg.new()
 	# * - deref star
 	if match_tokens(iter, ["\\*"]): arg.is_deref = true;
@@ -640,7 +590,7 @@ func parse_arg(iter, erep:Error_reporter)->Cmd_arg:
 		if has_pos_offs: num = str(pos_offs[1]["text"]).to_int();
 		if has_neg_offs: num = - str(neg_offs[1]["text"]).to_int();
 		if arg.is_imm: 
-			erep.error(ERR_08);
+			erep.error(E.ERR_08);
 		arg.is_imm = true;
 		arg.offset = num;
 		arg.is_deref = false;
@@ -655,7 +605,7 @@ func parse_arg(iter, erep:Error_reporter)->Cmd_arg:
 		if has_pos_arr: num = str(pos_arr[1]["text"]).to_int();
 		if has_neg_arr: num = - str(neg_arr[2]["text"]).to_int();
 		if arg.is_imm: 
-			erep.error(ERR_09);
+			erep.error(E.ERR_09);
 		arg.is_imm = true;
 		arg.offset = num;
 		arg.is_deref = true;
@@ -671,7 +621,7 @@ func get_reg(rname:String)->Dictionary:
 #------------- CODE GEN -----------
 
 
-func emit_opcode(cmd:int, flags:Cmd_flags, erep:Error_reporter, reg1:int=0, reg2:int=0, imm_u32:int=0, shadow_flags={})->void:
+func emit_opcode(cmd:int, flags:Cmd_flags, erep:ErrorReporter, reg1:int=0, reg2:int=0, imm_u32:int=0, shadow_flags={})->void:
 	assert(write_pos % cmd_size == 0);
 	emit8(cmd, ISA.SHADOW_CMD_HEAD, erep);
 	emit8(flags.to_byte(), ISA.SHADOW_CMD_TAIL, erep);
@@ -681,22 +631,22 @@ func emit_opcode(cmd:int, flags:Cmd_flags, erep:Error_reporter, reg1:int=0, reg2
 	emit32(imm_u32, tail_flag, erep);
 	emit8(0xFF, ISA.SHADOW_CMD_TAIL, erep); # pad
 
-func emit8(val:int, shadow_val:int, erep:Error_reporter):
+func emit8(val:int, shadow_val:int, erep:ErrorReporter):
 	if (val < 0):
 		val = 256 - val;
 	if (val < 0) or (val > 255): 
-		erep.error(ERR_10 % val);
+		erep.error(E.ERR_10 % val);
 		return;
 	if len(code) <= write_pos: code.resize(write_pos+1); shadow.resize(write_pos+1);
 	code[write_pos] = val;
 	shadow[write_pos] = shadow_val;
 	write_pos += 1;
 
-func emit32(val:int, shadow_val:int, erep:Error_reporter):
+func emit32(val:int, shadow_val:int, erep:ErrorReporter):
 	if(val < 0):
 		val = (2**32)+val;
 	if (val < 0) or (val > ((2**32)-1)): 
-		erep.error(ERR_11 % val)
+		erep.error(E.ERR_11 % val)
 		return;
 	emit8((val >> 8*0) & 0xFF, shadow_val, erep);
 	emit8((val >> 8*1) & 0xFF, shadow_val, erep);
@@ -704,7 +654,7 @@ func emit32(val:int, shadow_val:int, erep:Error_reporter):
 	emit8((val >> 8*3) & 0xFF, shadow_val, erep);	
 	
 func emit_db_items(items:Array[Token])->void: #maybe we could use the .32 specifier with db too
-	var erep:Error_reporter = Error_reporter.new(self, Token.new());
+	var erep:ErrorReporter = ErrorReporter.new(self, Token.new());
 	for item:Token in items:
 		erep.context = item;
 		match item.tok_class:
@@ -726,7 +676,7 @@ func emit_db_items(items:Array[Token])->void: #maybe we could use the .32 specif
 				#else:
 				#	emit8(0, ISA.SHADOW_DATA,erep);
 			_:
-				erep.error(ERR_06);
+				erep.error(E.ERR_06);
 				return;
 	#if (write_pos % cmd_size): # if not aligned
 	#	write_pos += (cmd_size - (write_pos % cmd_size)); # pad until alignement is reached

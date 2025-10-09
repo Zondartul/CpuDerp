@@ -2,11 +2,12 @@ extends Node
 # this tokenizer was grabbed from comp_asm_zd
 
 #------------ Tokenization ----------------------------------
-func tokenize(line:String):
-	var tokens = [];
+func tokenize(line:String)->Array[Token]:
+	var tokens:Array[Token] = [];
 	var tok_class = "";
 	var cur_tok = "";
 	var col = 0;
+	
 	for ch in line:
 		var new_tok_class = tok_ch_class(ch);
 		if should_split_on_transition(new_tok_class, tok_class):
@@ -14,18 +15,18 @@ func tokenize(line:String):
 				new_tok_class = "ENDSTRING";
 				cur_tok = cur_tok.substr(1); #remove the leading \"
 			if cur_tok != "":
-				tokens.append({"class":tok_class, "text":cur_tok, "col":col-1});
+				tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "col":col-1}));
 				cur_tok = "";
 			tok_class = new_tok_class;
 		cur_tok += ch;
 		col += 1;
 	if cur_tok != "":
-		tokens.append({"class":tok_class, "text":cur_tok, "col":col-1});
+		tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "col":col-1}));
 		cur_tok = "";
 	#tokens = tokens.filter(filter_tokens);
 	return tokens;
 
-func should_split_on_transition(new_tok_class, old_tok_class):
+func should_split_on_transition(new_tok_class:String, old_tok_class:String):
 	#if (new_tok_class != tok_class) or (tok_class == "PUNCT"):
 	if old_tok_class == "PUNCT": return true; # punctuation tokens are always one-by-one.
 	elif old_tok_class == "WORD" and new_tok_class == "NUMBER": return false; #allow numbers to be included in names
@@ -42,9 +43,9 @@ var ch_punct = ".,:[]+;";
 const ch_alphabet = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_";
 const ch_digits = "1234567890";
 
-func tok_is_punct(ch:String): return ch in ch_punct;
-func tok_is_word(ch:String): return ch in ch_alphabet;
-func tok_is_num(ch:String): return ch in ch_digits;
+func tok_is_punct(ch:String)->bool: return ch in ch_punct;
+func tok_is_word(ch:String)->bool: return ch in ch_alphabet;
+func tok_is_num(ch:String)->bool: return ch in ch_digits;
 
 # character class for tokenizer:
 #const TOK_ERROR = 0

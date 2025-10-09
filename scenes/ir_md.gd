@@ -106,7 +106,7 @@ func serialize_ir_arg(arg):
 		return res;
 	else:
 		push_error("can't serialize IR argument ["+str(arg)+"]");
-		return null;
+		return [];
 
 
 func save_variable(var_handle):

@@ -15,9 +15,11 @@ func _ready():
 	tokenizer = script_tokenizer.new();
 	tokenizer.ch_punct = lang.get_all_punct();
 
-func tokenize(text):
+func tokenize(text:String)->Array[Token]:
 	output_tokens.clear();
-	var tokens = basic_tokenize(text);
+	cur_line = "";
+	cur_line_idx = 0;
+	var tokens:Array[Token] = basic_tokenize(text);
 	#tokens_ready.emit(tokens);
 	recombine_tokens(tokens);
 	reclassify_tokens(tokens);
@@ -28,21 +30,27 @@ func tokenize(text):
 	tokens_ready.emit(output_tokens);	
 	return output_tokens;
 
-func basic_tokenize(text):
-	var tokens = [];
-	var lines = text.split("\n",false);
+func basic_tokenize(text:String)->Array[Token]:
+	var tokens:Array[Token] = [];
+	var lines:PackedStringArray = text.split("\n",true);
 	print(lines);
-	for line in lines:
+	for line:String in lines:
 		cur_line = line;
-		cur_line_idx += 1;
+		if line == "": 
+			cur_line_idx += 1;
+			continue;
 		line = preproc(line);
-		cur_line = line;
-		var line_tokens = tokenizer.tokenize(line);
-		for tok in line_tokens:
-			tok["token_viewer_line"] = cur_line_idx;
+		#cur_line = line;
+		var line_tokens:Array[Token] = tokenizer.tokenize(line);
+		for tok:Token in line_tokens:
+			#tok["token_viewer_line"] = cur_line_idx;
+			tok.set_meta("token_viewer_line", cur_line_idx)
+			tok.line = line;
+			tok.line_idx = cur_line_idx;
 		tokens.append_array(line_tokens);
 		#process(tokens);
-		if error_code: return false;
+		cur_line_idx += 1;
+		if error_code: return [];
 	return tokens;
 # ---------- Basic preprocess ---------------------------------
 # preprocess the line: remove comments, trim whitespace, etc
@@ -105,75 +113,71 @@ const recombinations = [
 	["/WORD", "/NUMBER"], ["/NUMBER", ".", "/NUMBER"],
 ];
 
-func recombine_tokens(tokens):
+func recombine_tokens(tokens:Array[Token]):
 	var i = 0;
-	var prev_toks = [];
+	var prev_toks:Array[Token] = [];
 	var prev_count = 2;
 	while(i < len(tokens)):
-		var tok = tokens[i];
+		var tok:Token = tokens[i];
 		prev_toks.append(tok);
 		if(len(prev_toks) > prev_count):
 			prev_toks.remove_at(0);
-		for recomb in recombinations:
-			if recombine_pattern_match(prev_toks, recomb):
-				recombine_n(tokens, i, len(recomb));
+		for recomb:Array in recombinations:
+			var t_recomb:Array[String]; t_recomb.assign(recomb); #type conv
+			if recombine_pattern_match(prev_toks, t_recomb):
+				recombine_n(tokens, i, len(t_recomb));
 				prev_toks.clear();
 				continue;
 		i += 1;
 	return tokens;
 
 # returns true if the 
-func recombine_pattern_match(toks:Array, pattern:Array):
+func recombine_pattern_match(toks:Array[Token], pattern:Array[String]):
 	for i in range(len(pattern)):
-		var p = pattern[rev_idx(pattern, i)];
-		var t = maybe_idx(toks, rev_idx(toks,i));
+		var p = pattern[G.rev_idx(pattern, i)];
+		var t = G.maybe_idx(toks, G.rev_idx(toks,i));
 		if not t: return false;
 		if p == "/*": continue;
-		if p == "/WORD" and t.class == "WORD": continue;
-		if p == "/NUMBER" and t.class == "NUMBER": continue;
+		if p == "/WORD" and t.tok_class == "WORD": continue;
+		if p == "/NUMBER" and t.tok_class == "NUMBER": continue;
 		if t and t.text == p: continue;
 		return false;
 	return true;
 
-# returns an index of "idx from the end".
-func rev_idx(arr:Array, idx:int):
-	return len(arr)-1-idx;
 
 # replaces in-place tokens idx-len ... idx with a single token.
-func recombine_n(toks:Array, idx:int, length:int):
+func recombine_n(toks:Array[Token], idx:int, length:int):
 	var from = idx-length+1;
 	for i in range(length-1):
 		toks[from].text += toks[from+1].text;
 		toks.remove_at(from+1);
 
-# returns N'th array element or null if there isn't one.
-func maybe_idx(arr:Array, idx:int):
-	if (idx >= 0) and (idx < len(arr)): return arr[idx];
-	else: return null;
 
 # adjusts the token class based on a dictionary
-func reclassify_tokens(tokens:Array):
-	for tok in tokens:
-		if tok.class == "WORD":
+func reclassify_tokens(tokens:Array[Token]):
+	for tok:Token in tokens:
+		if tok.tok_class == "WORD":
 			if tok.text in lang.keywords:
-				tok.class = "KEYWORD";
+				tok.tok_class = "KEYWORD";
 			else:
-				tok.class = "IDENT";
-		if tok.class == "PUNCT":
+				tok.tok_class = "IDENT";
+		if tok.tok_class == "PUNCT":
 			if tok.text in lang.ops:
-				tok.class = "OP";
+				tok.tok_class = "OP";
 			if tok.text[0] == "#":
-				tok.class = "PREPROC";
+				tok.tok_class = "PREPROC";
 
 # removes unneded tokens
-func filter_tokens(tokens:Array)->Array:
-	return tokens.filter(
-		func(tok): 
-			return not (
-						(tok.class == "SPACE") or
-						(tok.class == "ENDSTRING")
-					)
-	);
+func filter_tokens(tokens:Array[Token])->Array[Token]:
+	var filtered = ["SPACE", "ENDSTRING"];
+	return tokens.filter(func(tok:Token): return tok.tok_class not in filtered);
+#	return tokens.filter(
+#		func(tok:Token): 
+#			return not (
+#						(tok.tok_class == "SPACE") or
+#						(tok.tok_class == "ENDSTRING")
+#					)
+#	);
 
 const token_colors = {
 	"PREPROC":Color(0.91, 0.576, 0.109, 1.0),
@@ -187,5 +191,6 @@ const token_colors = {
 
 func colorize_tokens(toks:Array):
 	for tok in toks:
-		if tok.class in token_colors:
-			tok["token_viewer_color"] = token_colors[tok.class];
+		if tok.tok_class in token_colors:
+			#tok["token_viewer_color"] = token_colors[tok.class];
+			tok.set_meta("token_viewer_color", token_colors[tok.tok_class]);
