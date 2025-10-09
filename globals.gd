@@ -49,3 +49,29 @@ func rev_idx(arr:Array, idx:int):
 func maybe_idx(arr:Array, idx:int):
 	if (idx >= 0) and (idx < len(arr)): return arr[idx];
 	else: return null;
+
+#------ string stuff
+
+## removes space characters from the beginning and the end of a string
+func trim_spaces(line:String)->String:
+	var idx_first = first_non_space(line)
+	var idx_last = last_non_space(line)
+	var nsp_len = idx_last - idx_first+1;
+	line = line.substr(idx_first, nsp_len);
+	return line;
+
+## returns the index of the first character in a string that is not some space character
+func first_non_space(line:String)->int:
+	var idx = 0;
+	for ch in line:
+		if ch in " \n\r\t":
+			idx = idx+1;
+		else:
+			return idx;
+	return -1;
+
+## returns the index of the last character in a string that is not some space character
+func last_non_space(line:String)->int:
+	var idx = first_non_space(line.reverse())
+	if idx == -1: return -1;
+	else: return line.length() - idx - 1;

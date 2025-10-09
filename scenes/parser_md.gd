@@ -28,6 +28,9 @@ func parse(in_tokens:Array[Token]):
 					break;
 		dbg_print("PARSE","SHIFT "+str(tok)+"\n");
 		if tok.tok_class != "EOF": stack.push_back(tok);
+	
+	for i in range(len(stack)):
+		linearize_ast(stack[i]);
 	sig_parse_ready.emit(stack);
 	# parsed all tokens
 	if len(stack) == 1:
@@ -78,6 +81,43 @@ func apply_rule(stack:Array[AST], rule:Array[String])->void:
 	new_tok.children = toks;
 	stack.append(new_tok);
 
+const list_types = {
+	"stmt_list":"stmt",
+	"expr_list":"expr",
+	};
+
+func linearize_ast(ast:AST)->void:
+	for ch:AST in ast.children:
+		linearize_ast(ch);
+	if ast.tok_class in list_types:
+		print("linearize: visit "+ast.tok_class);
+		var base_type = list_types[ast.tok_class];
+		print("before gather: ch = %s" % print_child_types(ast));
+		var ch_list:Array[AST] = gather_instances(ast, base_type);
+		print("gathered %d children" % len(ch_list));
+		ast.children.assign(ch_list);
+		print("after gather: ch = %s" % print_child_types(ast));
+	#else:
+	#	print("not a list");
+
+func gather_instances(ast:AST, type:String)->Array[AST]:
+	var res:Array[AST] = [];
+	for ch in ast.children:
+		if ch.tok_class == type:
+			print("gather: append base child");
+			res.append(ch);
+		elif ch.tok_class == ast.tok_class:
+			print("gather: recurse");
+			res.append_array(gather_instances(ch, type));
+		# other types are discarded
+	return res;
+
+#debug func
+func print_child_types(ast:AST)->String:
+	var S = "";
+	for ch in ast.children:
+		S += ch.tok_class + " ";
+	return S;
 
 func stack_to_str(stack:Array, prefix:String)->String:
 	var text:String = "";

@@ -13,3 +13,8 @@ func _init(cfg=null):
 		elif cfg is Token:
 			var tok = cfg;
 			G.duplicate_shallow(tok, self);
+
+func duplicate()->AST:
+	var ast2 = AST.new();
+	G.duplicate_shallow(self, ast2);
+	return ast2;

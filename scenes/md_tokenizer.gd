@@ -57,7 +57,7 @@ func basic_tokenize(text:String)->Array[Token]:
 func preproc(line:String)->String:
 	#var line_old = line;
 	line = remove_comments(line);
-	line = trim_spaces(line);
+	line = G.trim_spaces(line);
 	#print("preproc: before ["+line_old+"] -> after ["+line+"]")
 	return line;
 
@@ -82,29 +82,7 @@ func remove_comments(line:String)->String:
 		idx += 1;
 	return line.substr(0,idx);
 
-# removes space characters from the beginning and the end of a string
-func trim_spaces(line:String)->String:
-	var idx_first = first_non_space(line)
-	var idx_last = last_non_space(line)
-	var nsp_len = idx_last - idx_first+1;
-	line = line.substr(idx_first, nsp_len);
-	return line;
 
-# returns the index of the first character in a string that is not some space character
-func first_non_space(line:String)->int:
-	var idx = 0;
-	for ch in line:
-		if ch in " \n\r\t":
-			idx = idx+1;
-		else:
-			return idx;
-	return -1;
-
-# returns the index of the last character in a string that is not some space character
-func last_non_space(line:String)->int:
-	var idx = first_non_space(line.reverse())
-	if idx == -1: return -1;
-	else: return line.length() - idx - 1;
 #------------------------------------------------------------
 
 const recombinations = [
@@ -152,17 +130,19 @@ func recombine_n(toks:Array[Token], idx:int, length:int):
 		toks[from].text += toks[from+1].text;
 		toks.remove_at(from+1);
 
-
+const assign_ops = ["=", "+=", "-=", "*=", "/=", "%=","!=", "=="];
 # adjusts the token class based on a dictionary
 func reclassify_tokens(tokens:Array[Token]):
 	for tok:Token in tokens:
 		if tok.tok_class == "WORD":
 			if tok.text in lang.keywords:
 				tok.tok_class = "KEYWORD";
+			elif tok.text in lang.types:
+				tok.tok_class = "TYPE";
 			else:
 				tok.tok_class = "IDENT";
-		if tok.tok_class == "PUNCT":
-			if tok.text in lang.ops:
+		elif tok.tok_class == "PUNCT":
+			if tok.text in lang.ops and tok.text not in assign_ops:
 				tok.tok_class = "OP";
 			if tok.text[0] == "#":
 				tok.tok_class = "PREPROC";

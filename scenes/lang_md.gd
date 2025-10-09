@@ -3,7 +3,10 @@ extends Node
 
 var lang_name = "miniderp";
 
-const keywords = ["var", "func", "if", "else", "elif", "continue", "break", "while", "return", "and", "or", "not", "extern"];
+const keywords = ["var", "func", "if", "else", "elif", "continue", 
+				"break", "while", "return", "and", "or", "not", "extern"];
+const types = ["int", "char", "float", "double", "u8", "u16", "u32", "u64",
+				"s8", "s16", "s32", "s64"];
 const ops = [".", "+", "-", "*", "/", "%", 
 			"=", "+=", "-=", "*=", "/=", "%=", 
 			"&", "|", "^", ">", "<", "!=", "==",
@@ -39,7 +42,7 @@ const rules = [
 	#-- var_decl_stmt
 	["/var", "IDENT",					"/;", "var_decl_stmt"],
 	#-- assignment_stmt
-	["IDENT", "/=", "expr", 			"/;", "assignment_stmt"],
+	#["IDENT", "/=", "expr", 			"/;", "assignment_stmt"],
 	["expr", "/=", "expr",				"/;", "assignment_stmt"],
 	#-- decl_assignment_stmt
 	["/var", "assignment_stmt", 		"*", "decl_assignment_stmt"],
@@ -83,7 +86,7 @@ const rules = [
 	["NUMBER", 							"*", "expr_immediate"],
 	["STRING", 							"*", "expr_immediate"],
 	# -- expr_ident
-	["IDENT", 							"/=", "SHIFT"],
+	#["IDENT", 							"/=", "SHIFT"],
 	["IDENT", 							"*", "expr_ident"],
 	# -- expr_postfix
 	["expr", "OP", 						"/;", "expr_postfix"],
@@ -109,6 +112,7 @@ func get_syntax():
 	var col_purple = Color(0.8,0.4,0.7,	1);
 	var col_blue = 	 Color(0.0,0.3,1.0,	1);
 	var col_green =  Color(0.2,1.0,0.1,	1);
+	var col_type =	 Color(0.6,0.9,0.6,	1);
 	syn.member_variable_color = col_yellow;
 	syn.number_color = col_orange;
 	syn.symbol_color = col_yellow;
@@ -117,6 +121,7 @@ func get_syntax():
 	var comment_color =col_gray;
 	var string_color  =col_green;
 	add_keywords(syn, keywords, opcode_color);
+	add_keywords(syn, types, col_type);
 	syn.add_color_region("//","",comment_color,true);
 	syn.add_color_region("\"","\"",string_color,false);
 	return syn;
