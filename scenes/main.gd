@@ -36,7 +36,8 @@ func _ready():
 
 func debug_automation_script():
 	#automate_compile_asm_zd();
-	automate_compile_miniderp();
+	#automate_compile_miniderp();
+	pass;
 
 func automate_compile_asm_zd():
 		# Go to editor and open the file
@@ -53,7 +54,7 @@ func automate_compile_miniderp():
 	# Go to editor and open the file
 	autotab($Panel/TabContainer, "Editor");
 	automenu($Panel/TabContainer/Editor/V/MenuBar, ["File", "Load"]);
-	autofile($Panel/TabContainer/Editor/comp_file/fd_load, "res://res/data/hello.md");#"res://res/data/miniderp.txt");#"C:/Stride/godot/CpuDerp/res/data/main.txt");
+	autofile($Panel/TabContainer/Editor/comp_file/fd_load, "res://res/data/printf_test.md");#"res://res/data/hello.md");#"res://res/data/miniderp.txt");#"C:/Stride/godot/CpuDerp/res/data/main.txt");
 	# Compile it
 	automenu($Panel/TabContainer/Editor/V/MenuBar, ["Language", "miniderp"]);
 	automenu($Panel/TabContainer/Editor/V/MenuBar, ["Build", "compile"]);

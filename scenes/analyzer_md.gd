@@ -46,7 +46,14 @@ func analyze_expr(ast):
 		"expr_immediate": analyze_expr_immediate(ch);
 		"expr_ident": analyze_expr_ident(ch);
 		"expr_call": analyze_expr_call(ch);
+		"expr_parenthesis": analyze_expr_parenthesis(ch);
 		_: internal_error(E.ERR_22 % ch.tok_class); return;
+
+func analyze_expr_parenthesis(ast):
+	assert(ast.tok_class == "expr_parenthesis");
+	var expr = ast.children[1];
+	assert(expr.tok_class == "expr");
+	analyze_expr(expr);
 
 func analyze_one(ast):
 	if error_code != "": return;
@@ -161,20 +168,16 @@ func analyze_expr_call(ast):
 	var args = [];
 	if(ast.children[2].text != ")"):
 		var expr = ast.children[2];
-		while true:
-			if expr.tok_class == "expr_list":
-				# expr_list -> (expr_list, expr) or (expr, expr)
-				var expr_arg = expr.children[2];
-				assert(expr_arg.tok_class == "expr");
-				analyze_expr(expr_arg);
-				args.push_front(expr_stack.pop_back());
-				expr = expr.children[0];
-			elif expr.tok_class == "expr":
-				analyze_expr(expr);
-				args.push_front(expr_stack.pop_back());
-				break;
-			else:
-				internal_error(E.ERR_26); return;
+		if expr.tok_class == "expr":
+			analyze_expr(expr);
+			args.push_front(expr_stack.pop_back());
+		elif expr.tok_class == "expr_list":
+			for sub_expr in expr.children:
+				assert(sub_expr.tok_class == "expr");
+				analyze_expr(sub_expr);
+				args.push_front(expr_stack.pop_back()); 
+		else:
+			internal_error(E.ERR_26); return;
 	var res = IR.new_val_temp();
 	IR.save_variable(res);
 	IR.emit_IR(["CALL", fun, args, res]);
@@ -246,9 +249,21 @@ func analyze_decl_assignment(ast):
 	assert(ast.tok_class == "decl_assignment_stmt");
 	var stmt_ass = ast.children[1];
 	assert(stmt_ass.tok_class == "assignment_stmt");
-	var tok_ident = stmt_ass.children[0];
-	assert(tok_ident.tok_class == "IDENT");
-	var var_name = tok_ident.text;
+	#var tok_ident = stmt_ass.children[0];
+	#assert(tok_ident.tok_class == "IDENT");
+	var expr_lhs = stmt_ass.children[0];
+	assert(expr_lhs.tok_class == "expr");
+	var var_name = "";
+	var var_type = null;
+	var expr_lhs_2 = expr_lhs.children[0];
+	match expr_lhs_2.tok_class:
+		"expr_ident":
+			var tok_ident = expr_lhs_2.children[0];
+			assert(tok_ident.tok_class == "IDENT");
+			var_name = tok_ident.text;
+		_: user_error(E.ERR_32 % expr_lhs_2.tok_class);
+	
+	#var var_name = tok_ident.text;
 	var var_handle = IR.new_val_var(var_name);
 	IR.save_variable(var_handle);
 	# assign part
@@ -437,19 +452,27 @@ func analyze_func_def_stmt(ast):
 	var arg_names = [];
 	if expr_call.children[2].text != ")":
 		var expr = expr_call.children[2];
-		while true:
-			if expr.tok_class == "expr_list":
-				var arg = expr.children[2].children[0].children[0];
-				assert(arg.tok_class == "IDENT");
-				arg_names.push_front(arg.text);
-				expr = expr.children[0];
-			elif expr.tok_class == "expr":
-				var arg = expr.children[0].children[0];
-				assert(arg.tok_class == "IDENT");
-				arg_names.push_front(arg.text);
-				break;
-			else:
-				internal_error(E.ERR_28); return;
+		if expr.tok_class == "expr":
+			analyze_func_def_arg_expr(expr, arg_names);
+		elif expr.tok_class == "expr_list":
+			for expr2 in expr.children:
+				assert(expr2.tok_class == "expr");
+				analyze_func_def_arg_expr(expr2, arg_names);
+		else:
+			internal_error(E.ERR_28); return;
+		#while true:
+			#if expr.tok_class == "expr_list":
+				#var arg = expr.children[2].children[0].children[0];
+				#assert(arg.tok_class == "IDENT");
+				#arg_names.push_front(arg.text);
+				#expr = expr.children[0];
+			#elif expr.tok_class == "expr":
+				#var arg = expr.children[0].children[0];
+				#assert(arg.tok_class == "IDENT");
+				#arg_names.push_front(arg.text);
+				#break;
+			#else:
+				#internal_error(E.ERR_28); return;
 	var ocb = IR.push_code_block();
 	var osc = IR.push_scope();
 	IR.emit_IR(["ENTER", IR.cur_scope.ir_name]);
@@ -468,7 +491,16 @@ func analyze_func_def_stmt(ast):
 	else:
 		fun_handle = IR.new_val_func(fun_name, fun_scope, fun_code);
 		IR.save_function(fun_handle);
-	
+
+func analyze_func_def_arg_expr(expr, arg_names):
+	assert(expr.tok_class == "expr");
+	var sub_expr = expr.children[0];
+	match sub_expr.tok_class:
+		"expr_ident":
+			var tok_ident = sub_expr.children[0];
+			arg_names.push_front(tok_ident.text);
+		_: internal_error(E.ERR_28); return;
+
 func analyze_flow_stmt(ast):
 	if error_code != "": return;
 	assert(ast.tok_class == "flow_stmt");

@@ -27,3 +27,4 @@ const ERR_28 = "Error 28: analyzer: func_def: unexpected expr class";
 const ERR_29 = "Error 29: Identifier not found: [%s]";
 const ERR_30 = "Error 30: 'Continue' statement outside of a loop";
 const ERR_31 = "Error 31: Operator '%s' is not allowed here.";
+const ERR_32 = "Error 32: Variable declaration can't have [%s] as left-hand-side of assignment";

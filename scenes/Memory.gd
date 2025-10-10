@@ -85,7 +85,10 @@ func update_mem_view():
 		line_text += str(i).pad_zeros(n_addr_decimals)+": ";
 		for j in range(i,i+step):
 			var val = read_cell(j);
-			var col:Color = shadow_colors[read_cell(shadow_at+j)];
+			var shadow_byte = read_cell(shadow_at+j);
+			var col:Color = Color.WHITE;
+			if shadow_byte in shadow_colors:
+				col = shadow_colors[shadow_byte];
 			#color_fixups.append({"pos":line_text.length(), "line":i, "col":col});
 			line_text += "[color="+col.to_html(false)+"]"
 			var val_text = "";

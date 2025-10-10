@@ -130,13 +130,15 @@ func recombine_n(toks:Array[Token], idx:int, length:int):
 		toks[from].text += toks[from+1].text;
 		toks.remove_at(from+1);
 
-const assign_ops = ["=", "+=", "-=", "*=", "/=", "%=","!=", "=="];
+const assign_ops = ["=", "+=", "-=", "*=", "/=", "%=","!="];
 # adjusts the token class based on a dictionary
 func reclassify_tokens(tokens:Array[Token]):
 	for tok:Token in tokens:
 		if tok.tok_class == "WORD":
 			if tok.text in lang.keywords:
 				tok.tok_class = "KEYWORD";
+			elif tok.text in lang.ops:
+				tok.tok_class = "OP";
 			elif tok.text in lang.types:
 				tok.tok_class = "TYPE";
 			else:
@@ -146,7 +148,7 @@ func reclassify_tokens(tokens:Array[Token]):
 				tok.tok_class = "OP";
 			if tok.text[0] == "#":
 				tok.tok_class = "PREPROC";
-
+		if tok.text == "and": print("tok reclassified: [%s / %s]\n" % [tok.text, tok.tok_class]);
 # removes unneded tokens
 func filter_tokens(tokens:Array[Token])->Array[Token]:
 	var filtered = ["SPACE", "ENDSTRING"];

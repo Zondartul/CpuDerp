@@ -558,9 +558,13 @@ func parse_arg(iter, erep:ErrorReporter)->Cmd_arg:
 		arg.is_present = true;
 		var word = toks_word[0]["text"]; 
 		var reg = get_reg(word);
+		var flag = get_flag(word);
 		if G.has(reg):
 			arg.reg_idx = reg["idx"];
 			arg.reg_name = reg["name"];
+		elif flag != null:
+			arg.is_imm = true;
+			arg.offset = flag;
 		else: #is label
 			var lbl_name = word;
 			arg.reg_name = lbl_name;
@@ -618,6 +622,12 @@ func get_reg(rname:String)->Dictionary:
 		idx = ISA.regnames.find(rname);
 		return {"idx":idx, "name":rname};
 	else: return {};
+	
+func get_flag(fname:String):
+	fname = fname.to_upper();
+	if fname in ISA.ctrl_flag_masks:
+		return ISA.ctrl_flag_masks[fname];
+	return null;
 #------------- CODE GEN -----------
 
 

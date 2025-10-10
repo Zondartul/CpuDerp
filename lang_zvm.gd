@@ -28,6 +28,16 @@ const BIT_CMP_L = (0b1 << 3);
 const BIT_CMP_G = (0b1 << 4);
 const BIT_CMP_Z = (0b1 << 5);
 const BIT_IE = (0b1 << 6);
+
+const ctrl_flag_masks = {
+	"PWR":BIT_PWR,
+	"STEP":BIT_STEP,
+	"IRS":BIT_IRS,
+	"CMP_L": BIT_CMP_L,
+	"CMP_G": BIT_CMP_G,
+	"CMP_Z": BIT_CMP_Z,
+	"IE": BIT_IE,
+	};
 # option flags
 #     ---- adr mode ---
 # 0 - |  00 reg-reg, 001 reg-*reg, 10 *reg-reg, 11 *reg-*reg 

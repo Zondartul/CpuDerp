@@ -68,8 +68,8 @@ func unescape_string(text):
 	return new_str;
 
 #-------------- Code generation -----------------
-var if_block_continued = false;
-var if_block_lbl_end = null;
+#var if_block_continued = false;
+#var if_block_lbl_end = null;
 
 var assy_block_stack = [];
 var cur_assy_block = null;
@@ -78,7 +78,7 @@ var cur_stack_size = 0; # number of bytes in the current frame used for local va
 const regs = ["EAX", "EBX", "ECX", "EDX"];
 var regs_in_use = {};
 
-var referenced_cbs = {};
+var referenced_cbs = [];
 
 func generate():
 	allocate_vars();
@@ -86,21 +86,30 @@ func generate():
 	#	var cb = IR.code_blocks[key];
 	#	generate_code_block(cb);
 	var cb_global = IR.code_blocks[IR.code_blocks.keys()[0]];
-	referenced_cbs[cb_global] = true;
+	referenced_cbs.append(cb_global);
+	var emitted_cbs = [];
 	#referenced_cbs.push_back(cb_global);
 	var scp_global = IR.scopes[IR.scopes.keys()[0]];
 	enter_scope(scp_global);
 	var assy_full = "";
 	while not referenced_cbs.is_empty(): #we're using the dictionary as a Set.
-		var cb = referenced_cbs.keys().pop_front();
+		var cb = referenced_cbs.pop_front();
+		if cb in emitted_cbs: continue;
+		else: emitted_cbs.append(cb);
 		var ab = generate_code_block(cb);
 		fixup_enter_leave(ab);
 		assy_full += ab.code;
-		referenced_cbs.erase(cb);
 	assy_full += generate_globals();
 	return assy_full;
-	
+
+var cur_block = null
+var cb_stack = [];
+
 func generate_code_block(cb):
+	if cur_block:
+		cb_stack.push_back(cur_block);
+	cur_block = cb;
+	cb["if_block_continued"] = false;
 	assy_block_stack.push_back(cur_assy_block);
 	cur_assy_block = {"code":""};
 	emit_raw("# Begin code block %s\n" % cb.ir_name, "generate_code_block.intro");
@@ -108,12 +117,13 @@ func generate_code_block(cb):
 	if "code" in cb:
 		for i in range(len(cb.code)):
 			var cmd = cb.code[i];
-			generate_cmd(cmd);
 			check_if_block_continued(i, cb.code);
+			generate_cmd(cmd);
 	maybe_emit_func_ret(cb.ir_name);
 	emit_raw("# End code block %s\n" % cb.ir_name, "generate_code_block.exit");
 	var res = cur_assy_block;
 	cur_assy_block = assy_block_stack.pop_back();
+	cur_block = cb_stack.pop_back();
 	return res;
 
 func generate_globals()->String:
@@ -171,11 +181,11 @@ func is_referenced_by_func(ir_name:String):
 	return null
 
 func check_if_block_continued(i, code):
-	if_block_continued = false;
+	cur_block.if_block_continued = false;
 	if i+1 < len(code):
 		var cmd2 = code[i+1];
 		if cmd2[0] in ["ELSE_IF", "ELSE"]:
-			if_block_continued = true;
+			cur_block.if_block_continued = true;
 
 func generate_cmd(cmd:Array):
 	if ADD_IR_TRACE: emit_raw("# IR: %s\n" % " ".join(PackedStringArray(cmd)), "generate_cmd.trace");
@@ -198,17 +208,19 @@ func generate_cmd_mov(cmd):
 	var src = cmd[2];
 	emit("mov ^%s, $%s;\n" % [dest, src], "generate_cmd_mov");
 
+
 const op_map = {
 	"ADD":"add %a, %b;\n",
 	"SUB":"sub %a, %b;\n",
 	"MUL":"mul %a, %b;\n",
 	"DIV":"div %a, %b;\n",
-	"GREATER":"sub %a, %b; sgn %a;\n",
-	"LESS":"sub %a, %b; neg %a; sgn %a;\n",
+	"MOD":"mod %a, %b;\n",
+	"GREATER":"cmp %a, %b; mov %a, CTRL; band %a, CMP_G; bnot %a; bnot %a;\n",
+	"LESS":"cmp %a, %b; mov %a, CTRL; band %a, CMP_L; bnot %a; bnot %a;\n",
 	"INDEX":"add %a, %b;\n", #deref separately?
 	"DEC":"dec %a;\n",
 	"INC":"inc %a;\n",
-	"EQUAL":"sub %a, %b; sub %a;\n",
+	"EQUAL":"cmp %a, %b; mov %a, CTRL; band %a, CMP_Z; bnot %a; bnot %a;\n",
 };
 
 func generate_cmd_op(cmd):
@@ -265,38 +277,46 @@ func generate_cmd_if(cmd):
 	var cb_block = cmd[3];
 	var lbl_else = new_lbl("if_else").ir_name;
 	var lbl_end = new_lbl("if_end").ir_name;
+	var imm_0_handle = new_imm(0);
+	allocate_value(imm_0_handle, cur_scope);
+	var imm_0 = imm_0_handle.ir_name;
 	emit("$%s\n" % cb_cond, "generate_cmd_if.cb_cond");
-	emit("cmp $%s, 0;\n" % res, "generate_cmd_if.cmp");
+	emit("cmp $%s, $%s;\n" % [res, imm_0], "generate_cmd_if.cmp");
 	emit("jz %s;\n" % lbl_else, "generate_cmd_if.jz_else");
 	emit("$%s\n" % cb_block, "generate_cmd_if.cb_block");
+	emit("jmp %s;\n" % lbl_end, "generate_cmd_if.end_then");
 	emit(":%s:\n" % lbl_else, "generate_cmd_if.lbl_else");
-	if not if_block_continued:
-		emit(":%s:\n" % [lbl_end], "generate_cmd_if.end_if");
-		if_block_lbl_end = null;
+	if cur_block.if_block_continued:
+		cur_block["if_block_lbl_end"] = lbl_end;
 	else:
-		if_block_lbl_end = lbl_end;
+		emit(":%s:\n" % lbl_end, "generate_cmd_if.end_if");
+		cur_block.if_block_lbl_end = null;
 
 func generate_cmd_else_if(cmd):
 	var cb_cond = cmd[1];
 	var res = cmd[2];
 	var cb_block = cmd[3];
 	var lbl_else = new_lbl("if_else").ir_name;
-	var lbl_end = if_block_lbl_end;
+	var lbl_end = cur_block.if_block_lbl_end;
+	var imm_0_handle = new_imm(0);
+	allocate_value(imm_0_handle, cur_scope);
+	var imm_0 = imm_0_handle.ir_name;
 	emit("$%s\n" % cb_cond, "generate_cmd_else_if.cb_cond");
-	emit("cmp $%s, 0;\n" % res, "generate_cmd_else_if.cmp");
+	emit("cmp $%s, $%s;\n" % [res, imm_0], "generate_cmd_else_if.cmp");
 	emit("jz %s;\n" % lbl_else, "generate_cmd_else_if.jz_else");
 	emit("$%s\n" % cb_block, "generate_cmd_else_if.cb_block");
+	emit("jmp %s\n" % lbl_end, "generate_cmd_else_if.end_then");
 	emit(":%s:\n" % lbl_else, "generate_cmd_else_if.lbl_else");
-	if not if_block_continued:
-		emit(":%s:\n" % [lbl_end], "generate_cmd_else_if.end_if");
-		if_block_lbl_end = null;
+	if not cur_block.if_block_continued:
+		emit(":%s:\n" % lbl_end, "generate_cmd_else_if.end_if");
+		cur_block.if_block_lbl_end = null;
 
 func generate_cmd_else(cmd):
 	var cb_block = cmd[1];
-	var lbl_end = if_block_lbl_end;
+	var lbl_end = cur_block.if_block_lbl_end;
 	emit("$%s\n" % [cb_block], "generate_cmd_else.cb_block");
 	emit(":%s:\n" % [lbl_end], "generate_cmd_else.lbl_end");
-	if_block_lbl_end = null;
+	cur_block.if_block_lbl_end = null;
 
 func generate_cmd_while(cmd):
 	#WHILE cb_cond res cb_block lbl_next lbl_end
@@ -344,7 +364,7 @@ func generate_cmd_call(cmd):
 		var cb_name = fun_handle.code;
 		assert(cb_name in all_syms);
 		var cb = all_syms[cb_name];
-		referenced_cbs[cb] = true;
+		if cb not in referenced_cbs: referenced_cbs.append(cb);
 
 func emit(text:String, dbg_trace:String):
 	var imm_flag = false;

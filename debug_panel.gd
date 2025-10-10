@@ -6,6 +6,7 @@ const ISA = preload("res://lang_zvm.gd")
 @onready var n_locals = $V/TabContainer/local_view/V/locals
 @onready var n_stackview = $V/TabContainer/stack_view
 @onready var n_indicator = $V/TabContainer/local_view/V/H/indicator
+@onready var win = get_parent();
 
 const class_PerfLimitDirectory = preload("res://PerfLimitDirectory.gd");
 
@@ -118,6 +119,7 @@ func cache_op_locations():
 		op_ips.append(op.ip);
 
 func update_ip_highlight():
+	if not win.visible: return;
 	if not perf.ip.run(0): return;
 	
 	if assembler and assembler.op_locations.size():
@@ -132,11 +134,13 @@ func update_ip_highlight():
 			set_highlight.emit(0,0,0,0);
 
 func _process(delta):
+	if not win.visible: return;
 	perf.credit_all(delta);
 	update_cpu();
 	$V/H2/lbl_history.text = "steps recorded: "+str(cpu_n_steps);
 
 func update_cpu():
+	if not win.visible: return;
 	update_registers();
 	update_stack();
 	update_ip_highlight();

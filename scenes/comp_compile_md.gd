@@ -16,16 +16,16 @@ var has_error = false;
 
 func compile(text):
 	has_error = false;
-	var tokens = tokenizer.tokenize(text);		if has_error: return;
+	var tokens = tokenizer.tokenize(text);		if has_error: return false;
 	if not tokens: return;
-	var ast = parser.parse(tokens);				if has_error: return;
+	var ast = parser.parse(tokens);				if has_error: return false;
 	if not ast: return;
-	var _IR = analyzer.analyze(ast);			if has_error: return;
-	var _assy = codegen.parse_file("IR.txt");	if has_error: return;
+	var _IR = analyzer.analyze(ast);			if has_error: return false;
+	var _assy = codegen.parse_file("IR.txt");	if has_error: return false;
 	#print(_assy);
 	save_file(_assy, "a.zd");
 	open_file_request.emit("a.zd");
-
+	return true;
 func save_file(text:String, filename:String):
 	var fp = FileAccess.open(filename, FileAccess.WRITE);
 	if not fp: push_error("Can't save file ["+filename+"]"); has_error = true; return;

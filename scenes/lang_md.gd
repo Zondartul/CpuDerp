@@ -4,13 +4,13 @@ extends Node
 var lang_name = "miniderp";
 
 const keywords = ["var", "func", "if", "else", "elif", "continue", 
-				"break", "while", "return", "and", "or", "not", "extern"];
+				"break", "while", "return", "extern"];
 const types = ["int", "char", "float", "double", "u8", "u16", "u32", "u64",
 				"s8", "s16", "s32", "s64"];
 const ops = [".", "+", "-", "*", "/", "%", 
 			"=", "+=", "-=", "*=", "/=", "%=", 
 			"&", "|", "^", ">", "<", "!=", "==",
-			"--", "++",];
+			"--", "++", "and", "or", "not"];
 const punct = [";", "//", "(", "[", "{", ")", "]", "}", "#"];
 const punct_range_begin = ["(", "[", "{"];
 const punct_range_end = [")", "]", "}"];
@@ -58,7 +58,9 @@ const rules = [
 	["/while", "/(", "expr", "/)", 		"*", "while_start"],
 	["while_start", "block", 			"*", "while_stmt"],
 	#-- if_stmt
+	["/if", "/(", "expr", "/)",								"*", "SHIFT"],
 	["/if", "/(", "expr", "/)",	"block",					"*", "if_block"],
+	["if_block", "/elif", "/(", "expr", "/)",				"*", "SHIFT"],
 	["if_block", "/elif", "/(", "expr", "/)", "block",		"*", "if_block"],
 	["if_block", "/else", "block",							"*", "if_else_block"],
 	["if_block", 											"/else", "SHIFT"],
@@ -80,6 +82,7 @@ const rules = [
 	["expr_postfix", 					"*", "expr"],
 	["expr_infix", 						"*", "expr"],
 	["expr_call",						"*", "expr"],
+	["expr_parenthesis",				"*", "expr"],
 	
 	# sub-expressions
 	# -- expr_immediate
@@ -101,6 +104,7 @@ const rules = [
 	["expr", "/(", "/)",				"*", "expr_call"],
 	["expr", "/(", "expr", "/)",		"*", "expr_call"],
 	["expr", "/(", "expr_list", "/)",	"*", "expr_call"],
+	["/(", "expr", "/)",				"*", "expr_parenthesis"],
 ];
 
 func get_syntax():
