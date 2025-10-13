@@ -35,7 +35,7 @@ func _ready():
 		default_file_dir = ProjectSettings.globalize_path("res://res/data");
 	else:
 		default_file_dir = OS.get_executable_path().get_base_dir().path_join("res/data");
-	print("default_file_dir = ["+default_file_dir+"]");
+	#print("default_file_dir = ["+default_file_dir+"]");
 	dialog_save.root_subfolder = default_file_dir;
 	dialog_load.root_subfolder = default_file_dir;
 	dialog_save.current_dir = default_file_dir;
@@ -139,15 +139,16 @@ func async_remove_efile(ef_name):
 		return true;
 	
 func async_new_file(new_name):
-	print("new file");
+	#print("new file");
 	var efile = get_efile(new_name);
 	if efile:
-		print("new: already have that file")
+		#print("new: already have that file")
 		cur_efile = efile;
 		var res = await async_remove_efile(new_name);
 		if not res: print("new_file fail"); return false;
 	else:
-		print("new: file not yet open");
+		#print("new: file not yet open");
+		pass
 	new_efile(new_name);
 	set_cur_efile(get_efile(new_name));
 	assert(cur_efile != null);
@@ -179,7 +180,7 @@ func async_save_file_as():
 	return true;
 
 func async_load_file():
-	print("Load file");
+	#print("Load file");
 	dialog_load.popup();
 	var path = await file_selected;
 	var fname = path_to_filename(path);
@@ -206,7 +207,7 @@ func _on_e_files_tab_changed(tab):
 	cur_efile = n_efiles.get_child(tab);
 
 func _on_fd_load_file_selected(path):
-	print("file_selected("+path+")");
+	#print("file_selected("+path+")");
 	file_selected.emit(path);
 
 func _on_efile_update_my_tab(efile):

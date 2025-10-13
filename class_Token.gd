@@ -17,3 +17,9 @@ func duplicate()->Token:
 	var tok2 = Token.new();
 	G.duplicate_shallow(self, tok2);
 	return tok2;
+
+func _to_string()->String:
+	if text == "":
+		return "[%s]" % tok_class;
+	else:
+		return "[%s:%s]" % [tok_class, text];

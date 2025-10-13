@@ -22,7 +22,7 @@ func analyze(ast):
 	IR.clear_IR();
 	analyze_one(ast);
 	IR_ready.emit(IR.IR);
-	print(IR);
+	#print(IR);
 	IR.to_file("IR.txt");
 	return IR;
 

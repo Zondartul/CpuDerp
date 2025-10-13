@@ -51,9 +51,17 @@ func parse(in_tokens:Array[Token]):
 		return false;
 	else:
 		sig_user_error.emit("syntax error");
-		var erep:ErrorReporter = ErrorReporter.new(self, stack[1] as Token);
+		var ctx = stack[1];#find_best_error_token(stack);
+		var erep:ErrorReporter = ErrorReporter.new(self, ctx as Token);
 		erep.error("syntax error");
 		return false;
+#
+#func find_best_error_token(stack:Array[AST])->AST:
+	#for i in range(1, len(stack)):
+		#var ast = stack[i];
+		#if ast.children.is_empty():
+			#return ast;
+	#return stack[1];
 
 var run_i = 0;
 
@@ -101,13 +109,13 @@ func linearize_ast(ast:AST)->void:
 	for ch:AST in ast.children:
 		linearize_ast(ch);
 	if ast.tok_class in list_types:
-		print("linearize: visit "+ast.tok_class);
+		#print("linearize: visit "+ast.tok_class);
 		var base_type = list_types[ast.tok_class];
-		print("before gather: ch = %s" % print_child_types(ast));
+		#print("before gather: ch = %s" % print_child_types(ast));
 		var ch_list:Array[AST] = gather_instances(ast, base_type);
-		print("gathered %d children" % len(ch_list));
+		#print("gathered %d children" % len(ch_list));
 		ast.children.assign(ch_list);
-		print("after gather: ch = %s" % print_child_types(ast));
+		#print("after gather: ch = %s" % print_child_types(ast));
 	#else:
 	#	print("not a list");
 
@@ -115,10 +123,10 @@ func gather_instances(ast:AST, type:String)->Array[AST]:
 	var res:Array[AST] = [];
 	for ch in ast.children:
 		if ch.tok_class == type:
-			print("gather: append base child");
+			#print("gather: append base child");
 			res.append(ch);
 		elif ch.tok_class == ast.tok_class:
-			print("gather: recurse");
+			#print("gather: recurse");
 			res.append_array(gather_instances(ch, type));
 		# other types are discarded
 	return res;

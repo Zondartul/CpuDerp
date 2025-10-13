@@ -33,40 +33,30 @@ func tokenize(text:String)->Array[Token]:
 func basic_tokenize(text:String)->Array[Token]:
 	var tokens:Array[Token] = [];
 	var lines:PackedStringArray = text.split("\n",true);
-	print(lines);
 	for line:String in lines:
 		cur_line = line;
 		if line == "": 
 			cur_line_idx += 1;
 			continue;
 		line = preproc(line);
-		#cur_line = line;
 		var line_tokens:Array[Token] = tokenizer.tokenize(line);
 		for tok:Token in line_tokens:
-			#tok["token_viewer_line"] = cur_line_idx;
 			tok.set_meta("token_viewer_line", cur_line_idx)
 			tok.line = line;
 			tok.line_idx = cur_line_idx;
 		tokens.append_array(line_tokens);
-		#process(tokens);
 		cur_line_idx += 1;
 		if error_code: return [];
 	return tokens;
 # ---------- Basic preprocess ---------------------------------
-# preprocess the line: remove comments, trim whitespace, etc
+## preprocess the line: remove comments, trim whitespace, etc
 func preproc(line:String)->String:
-	#var line_old = line;
 	line = remove_comments(line);
 	line = G.trim_spaces(line);
-	#print("preproc: before ["+line_old+"] -> after ["+line+"]")
 	return line;
 
-# removes comments from the line. Comments start with the # character and last until end of string.
+## removes comments from the line. Comments start with the # character and last until end of string.
 func remove_comments(line:String)->String:
-	#var idx = line.find("#");
-	#if(idx != -1):
-	#	line = line.substr(0, idx);
-	# need to handle strings as well
 	var is_string = false;
 	var idx = 0;
 	var prev_ch = "";
@@ -109,7 +99,7 @@ func recombine_tokens(tokens:Array[Token]):
 		i += 1;
 	return tokens;
 
-# returns true if the 
+## returns true if the tokens match a pattern
 func recombine_pattern_match(toks:Array[Token], pattern:Array[String]):
 	for i in range(len(pattern)):
 		var p = pattern[G.rev_idx(pattern, i)];
@@ -122,8 +112,7 @@ func recombine_pattern_match(toks:Array[Token], pattern:Array[String]):
 		return false;
 	return true;
 
-
-# replaces in-place tokens idx-len ... idx with a single token.
+## replaces in-place tokens idx-len ... idx with a single token.
 func recombine_n(toks:Array[Token], idx:int, length:int):
 	var from = idx-length+1;
 	for i in range(length-1):
@@ -131,7 +120,8 @@ func recombine_n(toks:Array[Token], idx:int, length:int):
 		toks.remove_at(from+1);
 
 const assign_ops = ["=", "+=", "-=", "*=", "/=", "%=","!="];
-# adjusts the token class based on a dictionary
+
+## adjusts the token class based on a dictionary
 func reclassify_tokens(tokens:Array[Token]):
 	for tok:Token in tokens:
 		if tok.tok_class == "WORD":
@@ -148,18 +138,12 @@ func reclassify_tokens(tokens:Array[Token]):
 				tok.tok_class = "OP";
 			if tok.text[0] == "#":
 				tok.tok_class = "PREPROC";
-		if tok.text == "and": print("tok reclassified: [%s / %s]\n" % [tok.text, tok.tok_class]);
-# removes unneded tokens
+
+## removes unneded tokens
 func filter_tokens(tokens:Array[Token])->Array[Token]:
 	var filtered = ["SPACE", "ENDSTRING"];
 	return tokens.filter(func(tok:Token): return tok.tok_class not in filtered);
-#	return tokens.filter(
-#		func(tok:Token): 
-#			return not (
-#						(tok.tok_class == "SPACE") or
-#						(tok.tok_class == "ENDSTRING")
-#					)
-#	);
+
 
 const token_colors = {
 	"PREPROC":Color(0.91, 0.576, 0.109, 1.0),

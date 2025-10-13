@@ -32,7 +32,7 @@ func deserialize(text):
 		var scope = IR.scopes[key];
 		for val in scope.vars: all_syms[val.ir_name] = val;
 		for val in scope.funcs: all_syms[val.ir_name] = val;
-	print(all_syms.keys());
+	#print(all_syms.keys());
 
 func inflate_vals(arr):
 	const props = ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code"];
@@ -62,9 +62,11 @@ func unescape_string(text):
 				num_str += ch;
 				assert(num_str.is_valid_int());
 				var num = num_str.to_int();
+				num_str = "";
 				var new_ch = PackedByteArray([num]).get_string_from_ascii();
 				new_str += new_ch;
-				esc_step = 0;;
+				esc_step = 0;
+	#print("unescape str: in [%s], out [%s]" % [text, new_str]);
 	return new_str;
 
 #-------------- Code generation -----------------
@@ -152,6 +154,7 @@ func format_db_string(S):
 	#	text += "0,0,0,0";
 	#else:
 	text = "\"%s\", 0" % S;
+	#print("format db string: in ["+S+"], out ["+text+"]");
 	return text;
 
 var entered_scopes = [];
@@ -471,7 +474,7 @@ func load_value(val:String):
 			"extern":
 				res = "*%s" % handle.ir_name;
 			_: push_error("codegen: load_value: unknown storage type ["+handle.storage.type+"]");
-		print("load val [%s] is %s: res [%s]" % [val, handle.storage.type, res]);
+		#print("load val [%s] is %s: res [%s]" % [val, handle.storage.type, res]);
 	return res;
 
 ## returns the CPU-addressable string that yields the address of the value.
@@ -520,7 +523,7 @@ func store_val(val:String):
 			res = "EBP[%d]" % handle.storage.pos;
 			assert(handle.storage.pos != 0);
 		_: push_error("codegen: store_value: unkown storage type ["+handle.storage.type+"]");
-	print("store val [%s] is %s: res [%s]" % [val, handle.storage.type, res]);
+	#print("store val [%s] is %s: res [%s]" % [val, handle.storage.type, res]);
 	#emit("mov %s, %s;\n" % [res, reg]);
 	#return reg;
 	return res;
@@ -593,7 +596,7 @@ func allocate_value(handle, scope):
 	else:
 		push_error("codegen: allocate_vars: unknown storage type");
 	handle["needs_deref"] = false;
-	print("alloc %s to %s: result %s" % [handle.ir_name, scope.ir_name, handle.storage]);
+	#print("alloc %s to %s: result %s" % [handle.ir_name, scope.ir_name, handle.storage]);
 
 # defines a mapping between the input pos and stack pos for local vars of a function
 func to_local_pos(pos):
@@ -603,7 +606,10 @@ func to_local_pos(pos):
 func to_arg_pos(pos):
 	return 9+pos;
 
-func generate_cmd_return(_cmd):
+func generate_cmd_return(cmd):
+	if len(cmd) >= 2:
+		var res = cmd[1];
+		emit("mov EAX, $%s;\n", res);
 	emit("ret;\n", "generate_cmd_return");
 
 func generate_cmd_enter(cmd):

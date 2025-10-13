@@ -236,9 +236,11 @@ func unescape_string(text):
 				num_str += ch;
 				assert(num_str.is_valid_int());
 				var num = num_str.to_int();
+				num_str = "";
 				var new_ch = PackedByteArray([num]).get_string_from_ascii();
 				new_str += new_ch;
-				esc_step = 0;;
+				esc_step = 0;
+	print("unescape str: in [%s], out [%s]" % [text, new_str]);
 	return new_str;
 
 func to_file(filename):

@@ -417,7 +417,7 @@ func parse_label(iter:Iter)->bool:
 			user_error("Label already defined: "+lbl_name);
 			return false;
 		labels[lbl_name] = write_pos;
-		print("Parsed [label:"+lbl_name+"]");
+		#print("Parsed [label:"+lbl_name+"]");
 		return true;
 	else: return false;
 
@@ -440,7 +440,7 @@ func parse_db(iter:Iter)->bool:
 		record_op_position(old_iter, iter);
 		emit_db_items(items);
 		#add debug info for this instuction
-		print("Parsed DB (count "+str(len(items))+")");
+		#print("Parsed DB (count "+str(len(items))+")");
 		return true;
 	else: return false;
 
@@ -485,7 +485,7 @@ func parse_command(iter:Iter)->bool:
 		var shadow_flags = {"unresolved":(arg1.is_unresolved or arg2.is_unresolved)};
 		record_op_position(old_iter, iter);
 		emit_opcode(op_code, flags, erep, arg1.reg_idx, arg2.reg_idx, arg1.offset+arg2.offset, shadow_flags);
-		print("Parsed ["+op_name+"("+str(int(arg1.is_present) + int(arg2.is_present))+")]")
+		#print("Parsed ["+op_name+"("+str(int(arg1.is_present) + int(arg2.is_present))+")]")
 		return true;
 	else: return false;
 

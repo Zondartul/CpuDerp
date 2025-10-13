@@ -44,8 +44,10 @@ func val_changed(new_val, prev_val:Array):
 	prev_val[0] = new_val;
 	return res;
 
-func maybe_prop(obj, propname, default=null):
-	if propname in obj:
+func maybe_prop(obj:RefCounted, propname, default=null):
+	if obj.has_meta(propname):
+		return obj.get_meta(propname, default);
+	elif propname in obj:
 		return obj[propname];
 	return default;
 
