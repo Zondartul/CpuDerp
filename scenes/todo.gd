@@ -21,4 +21,9 @@ extends Node
 #			that should happen automatically when starting
 # [enhancement] infer language from file extension
 # [bug] I suspect that multiple array access has a landmine as it produces a needs_deref value
+# [bug] sometimes the wrong tab gets the filename*
+# [bug] compiler and codegen do not clear data between runs
+# [enchancement] analyzer should check argument count
+# [enhancement] compiling should also reset CPU and screen
+# [enhancement] compiling should clear the console
 #

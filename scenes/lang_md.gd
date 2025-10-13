@@ -99,6 +99,8 @@ const rules = [
 	["expr", "OP", "expr", 				"*", "expr_infix"],
 	["expr", "/[", "expr", "/]",		"*", "expr_infix"],
 	# -- expr_call
+	["expr", "/,", "expr", 				"/[", "SHIFT"],
+	["expr", "/,", "expr", 				"OP", "SHIFT"],
 	["expr", "/,", "expr", 				"*", "expr_list"],
 	["expr_list", "/,", "expr", 		"*", "expr_list"],
 	["expr", "/(", "/)",				"*", "expr_call"],
@@ -114,7 +116,7 @@ func get_syntax():
 	var col_gray = 	 Color(0.5,0.5,0.5,	1);
 	var col_yellow = Color(1.0,1.0,0.0,	1);
 	var col_purple = Color(0.8,0.4,0.7,	1);
-	var col_blue = 	 Color(0.0,0.3,1.0,	1);
+	var col_blue = 	 Color(0.143, 0.401, 1.0, 1.0);
 	var col_green =  Color(0.2,1.0,0.1,	1);
 	var col_type =	 Color(0.6,0.9,0.6,	1);
 	syn.member_variable_color = col_yellow;

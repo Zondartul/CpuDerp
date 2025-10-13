@@ -132,7 +132,7 @@ text = "error"
 layout_mode = 2
 min_value = 1.0
 max_value = 100000.0
-value = 10.0
+value = 10000.0
 suffix = "Hz"
 
 [node name="Memory" type="Control" parent="Panel/TabContainer"]

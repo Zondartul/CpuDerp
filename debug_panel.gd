@@ -19,7 +19,7 @@ var perf = PerfLimitDirectory.new({
 	"locals":1.0,
 	});
 
-var perf_always_on = ["all", "regs", "stack", "ip"];
+var perf_always_on = ["all", "regs", "stack"];#, "ip"];
 
 var regnames = [
 	"NONE",
@@ -118,6 +118,7 @@ func cache_op_locations():
 	for op in op_locations:
 		op_ips.append(op.ip);
 
+var last_highlighted_line = -1;
 func update_ip_highlight():
 	if not win.visible: return;
 	if not perf.ip.run(0): return;
@@ -128,8 +129,10 @@ func update_ip_highlight():
 		var idx = op_ips.bsearch(ip, false)-1;
 		if(idx >= 0):
 			var op = op_locations[idx];
-			editor.switch_to_file(op.filename)
-			set_highlight.emit(op.line, op.begin, op.line, op.end);
+			if op.line != last_highlighted_line:
+				last_highlighted_line = op.line;
+				editor.switch_to_file(op.filename)
+				set_highlight.emit(op.line, op.begin, op.line, op.end);
 		else:
 			set_highlight.emit(0,0,0,0);
 
@@ -250,8 +253,8 @@ func _on_btn_step_in_pressed():
 
 func _on_btn_step_out_pressed():
 	var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
-	for i in range(1000):
-		if(cpu.regs[cpu.ISA.REG_EBP] != cur_ebp): break;
+	for i in range(10000):
+		if(cpu.regs[cpu.ISA.REG_EBP] > cur_ebp): break;
 		cpu.step();
 	perf.all.prime();
 

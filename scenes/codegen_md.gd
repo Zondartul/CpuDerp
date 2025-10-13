@@ -609,8 +609,10 @@ func to_arg_pos(pos):
 func generate_cmd_return(cmd):
 	if len(cmd) >= 2:
 		var res = cmd[1];
-		emit("mov EAX, $%s;\n", res);
-	emit("ret;\n", "generate_cmd_return");
+		emit("mov EAX, $%s;\n" % res, "generate_cmd_return.arg");
+	var scp_name = cur_scope.ir_name;
+	emit("__LEAVE_%s;\n" % scp_name, "generate_cmd_return.leave");
+	emit("ret;\n", "generate_cmd_return.ret");
 
 func generate_cmd_enter(cmd):
 	var scp_name = cmd[1];
@@ -619,7 +621,7 @@ func generate_cmd_enter(cmd):
 
 func generate_cmd_leave(_cmd):
 	var scp_name = cur_scope.ir_name;
-	emit("__LEAVE_%s;\n" % scp_name, "generate_cmd_leave")
+	emit("__LEAVE_%s;\n" % scp_name, "generate_cmd_leave");
 	leave_scope();
 
 func fixup_enter_leave(assy_block):

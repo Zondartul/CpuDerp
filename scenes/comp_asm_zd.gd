@@ -98,7 +98,7 @@ func assemble(source:String)->Chunk:
 	clear();
 	output_tokens.clear();
 	lines = source.split("\n",true);
-	print(lines);
+	#print(lines);
 	for line in lines:
 		if line == "": cur_line_idx += 1; continue;
 		cur_line = line;
