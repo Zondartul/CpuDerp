@@ -66,3 +66,7 @@ func _on_settings_index_pressed(index: int) -> void:
 		0: pass; # Language...
 		1: pass; # Settings
 		2: $win_ed_dbg.popup();
+
+func _on_comp_file_cur_efile_changed(efile: Variant) -> void:
+	for item_idx in [1,2,4]: #save, save_as, close
+		$V/MenuBar/File.set_item_disabled(item_idx, (efile == null));

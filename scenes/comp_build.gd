@@ -111,9 +111,14 @@ func _on_build_index_pressed(index):
 
 func _on_comp_file_cur_efile_changed(efile):
 	cur_efile = efile;
-	cur_lang = efile.language;
-	n_assembler.cur_filename = efile.file_name;
-	n_compiler.cur_filename = efile.file_name;
+	if cur_efile:
+		cur_lang = efile.language;
+		n_assembler.cur_filename = efile.file_name;
+		n_compiler.cur_filename = efile.file_name;
+	else:
+		cur_lang = "";
+		n_assembler.cur_filename = "";
+		n_compiler.cur_filename = "";
 
 func set_highlight(from_line, from_col, to_line, to_col):
 	var TE = cur_efile.find_child("TextEdit");

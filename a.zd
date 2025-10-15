@@ -1,41 +1,42 @@
-# Begin code block cb_1
-# IR: IF cb_3 imm_4 cb_5
-# Begin code block cb_3
-# End code block cb_3
+# Begin code block cb_14
+# IR: IF cb_16 imm_17 cb_18
+# Begin code block cb_16
+# End code block cb_16
 
 mov EAX, 0;
 cmp 1, EAX;
-jz lbl_13__if_else;
-# Begin code block cb_5
-# IR: MOV var_2__x imm_6
+jz lbl_30__if_else;
+# Begin code block cb_18
+# IR: MOV var_15__x imm_19
 mov EAX, 2;
-mov *var_2__x, EAX;
-# End code block cb_5
+mov *var_15__x, EAX;
+# End code block cb_18
 
-jmp lbl_14__if_end;
-:lbl_13__if_else:
-# IR: ELSE_IF cb_7 imm_8 cb_9
-# Begin code block cb_7
-# End code block cb_7
+jmp lbl_31__if_end;
+:lbl_30__if_else:
+# IR: ELSE_IF cb_20 imm_21 cb_22
+# Begin code block cb_20
+# End code block cb_20
 
 mov EAX, 0;
 cmp 3, EAX;
-jz lbl_16__if_else;
-# Begin code block cb_9
-# IR: MOV var_2__x imm_10
+jz lbl_33__if_else;
+# Begin code block cb_22
+# IR: MOV var_15__x imm_23
 mov EAX, 4;
-mov *var_2__x, EAX;
-# End code block cb_9
+mov *var_15__x, EAX;
+# End code block cb_22
 
-jmp lbl_14__if_end
-:lbl_16__if_else:
-# IR: ELSE cb_11
-# Begin code block cb_11
-# IR: MOV var_2__x imm_12
+jmp lbl_31__if_end
+:lbl_33__if_else:
+# IR: ELSE cb_24
+# Begin code block cb_24
+# IR: MOV var_15__x imm_25
 mov EAX, 5;
-mov *var_2__x, EAX;
-# End code block cb_11
+mov *var_15__x, EAX;
+# End code block cb_24
 
-:lbl_14__if_end:
-# End code block cb_1
+:lbl_31__if_end:
+# End code block cb_14
 :var_2__x: db 0;
+:var_15__x: db 0;

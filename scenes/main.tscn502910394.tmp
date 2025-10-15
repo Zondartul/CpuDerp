@@ -190,15 +190,12 @@ item_0/text = "New"
 item_0/id = 0
 item_1/text = "Save"
 item_1/id = 1
-item_1/disabled = true
 item_2/text = "Save as..."
 item_2/id = 2
-item_2/disabled = true
 item_3/text = "Load"
 item_3/id = 3
 item_4/text = "Close"
 item_4/id = 4
-item_4/disabled = true
 
 [node name="View" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
 item_count = 3
@@ -379,7 +376,6 @@ script = ExtResource("19_a20q3")
 [connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Settings/Language" to="Panel/TabContainer/Editor/comp_build" method="_on_language_index_pressed"]
 [connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Build" to="Panel/TabContainer/Editor/comp_build" method="_on_build_index_pressed"]
 [connection signal="tab_changed" from="Panel/TabContainer/Editor/V/EFiles" to="Panel/TabContainer/Editor/comp_file" method="_on_e_files_tab_changed"]
-[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor" method="_on_comp_file_cur_efile_changed"]
 [connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_highlight" method="_on_comp_file_cur_efile_changed"]
 [connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_build" method="_on_comp_file_cur_efile_changed"]
 [connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_save" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_save_file_selected"]

@@ -52,5 +52,7 @@ func set_lang(obj):
 	
 func _on_comp_file_cur_efile_changed(efile):
 	cur_efile = efile;
-	#set_lang(cur_language);
-	set_lang_name(cur_efile.language);
+	if cur_efile:
+		set_lang_name(cur_efile.language);
+	else:
+		set_lang(null);

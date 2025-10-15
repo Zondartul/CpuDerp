@@ -80,9 +80,10 @@ func switch_to_file(filename):
 	var efile = get_efile(filename);
 	if(efile): set_cur_efile(efile);
 
-func set_cur_efile(efile):
+func set_cur_efile(efile):		
 	cur_efile = efile;
-	n_efiles.current_tab = cur_efile.tab_idx;
+	if cur_efile: 
+		n_efiles.current_tab = cur_efile.tab_idx;
 	cur_efile_changed.emit(efile);
 
 func update_efile_tab(efile):
@@ -111,6 +112,9 @@ func remove_efile_actual(efile):
 	n_efiles.remove_child(efile);
 	efiles.erase(efile);
 	
+func async_close_file():
+	if cur_efile:
+		await async_remove_efile(cur_efile.file_name);
 
 func async_remove_efile(ef_name):
 	print("remove_efile("+ef_name+")");
@@ -196,6 +200,7 @@ func _on_file_index_pressed(index):
 	if index == 1: await async_save_file();
 	if index == 2: await async_save_file_as();
 	if index == 3: await async_load_file();
+	if index == 4: await async_close_file();
 
 func path_to_filename(path):
 	return path.substr(path.rfind("/")+1);
@@ -204,7 +209,10 @@ func _on_fd_save_file_selected(path):
 	file_selected.emit(path);
 
 func _on_e_files_tab_changed(tab):
-	set_cur_efile(n_efiles.get_child(tab));
+	if tab != -1:
+		set_cur_efile(n_efiles.get_child(tab));
+	else:
+		set_cur_efile(null);
 	#cur_efile = n_efiles.get_child(tab);
 
 func _on_fd_load_file_selected(path):
