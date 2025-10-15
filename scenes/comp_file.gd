@@ -193,6 +193,8 @@ func async_load_file():
 	cur_efile.path = path;
 	cur_efile.name = fname;
 	cur_efile.file_load(path);
+	cur_efile.language = identify_lang(fname);
+	cur_efile_changed.emit(cur_efile);
 
 func _on_file_index_pressed(index):
 	op_cancelled = false;
@@ -201,6 +203,14 @@ func _on_file_index_pressed(index):
 	if index == 2: await async_save_file_as();
 	if index == 3: await async_load_file();
 	if index == 4: await async_close_file();
+
+func identify_lang(fname:String)->String:
+	var ext = fname.get_extension();
+	var res = "";
+	match ext:
+		"zd": res = "zderp";
+		"md": res = "miniderp";
+	return res;
 
 func path_to_filename(path):
 	return path.substr(path.rfind("/")+1);
@@ -222,8 +232,8 @@ func _on_fd_load_file_selected(path):
 func _on_efile_update_my_tab(efile):
 	update_efile_tab(efile);
 
-func highlight_line(line_idx, col=-1, len=-1):
-	cur_efile.highlight_line(line_idx, col, len);
+func highlight_line(line_idx, col=-1, length=-1):
+	cur_efile.highlight_line(line_idx, col, length);
 
 func get_cur_line_idx():
 	return cur_efile.get_cur_line_idx();
