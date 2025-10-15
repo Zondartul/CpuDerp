@@ -41,6 +41,8 @@ func print_console(text, col=Color.GRAY):
 func _process(_delta):
 	if Input.is_action_just_pressed("action_save"):
 		await $comp_file.async_save_file();
+	if Input.is_action_just_pressed("action_search"):
+		$comp_search.popup();
 
 func _on_view_index_pressed(index: int) -> void:
 	match index:
@@ -55,8 +57,8 @@ func _on_cprint(msg, col=null)->void:
 	if col == null: col = Color.GRAY;
 	print_console(msg,col);
 
-func _on_highlight_line(line_idx)->void:
-	$comp_file.highlight_line(line_idx);
+func _on_highlight_line(line_idx, col=-1, length=-1)->void:
+	$comp_file.highlight_line(line_idx, col, length);
 
 func get_cur_line_idx()->int:
 	return $comp_file.get_cur_line_idx();
@@ -70,3 +72,8 @@ func _on_settings_index_pressed(index: int) -> void:
 func _on_comp_file_cur_efile_changed(efile: Variant) -> void:
 	for item_idx in [1,2,4]: #save, save_as, close
 		$V/MenuBar/File.set_item_disabled(item_idx, (efile == null));
+
+
+func _on_edit_index_pressed(index: int) -> void:
+	match index:
+		0: $comp_search.popup();

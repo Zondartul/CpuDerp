@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=3 uid="uid://cfii8rrppxgqq"]
+[gd_scene load_steps=37 format=3 uid="uid://cfii8rrppxgqq"]
 
 [ext_resource type="Script" uid="uid://c4qakorwmu6dc" path="res://scenes/main.gd" id="1_ggytm"]
 [ext_resource type="Script" uid="uid://c44d4a042o542" path="res://scenes/Memory.gd" id="2_0ld40"]
@@ -6,8 +6,11 @@
 [ext_resource type="Script" uid="uid://do2o7jy66djys" path="res://scenes/VM.gd" id="3_m68nv"]
 [ext_resource type="Script" uid="uid://befrtr2e0sjij" path="res://scenes/comp_file.gd" id="4_3f0fj"]
 [ext_resource type="PackedScene" uid="uid://cmb3hamipl46" path="res://editor/cd_save_discard.tscn" id="4_inoj7"]
+[ext_resource type="Texture2D" uid="uid://c7yu473cbd4rk" path="res://res/icons/resultset_first.png" id="4_j8jky"]
 [ext_resource type="Script" uid="uid://bsi8mnhpra251" path="res://scenes/GPU_cs.gd" id="4_yy5uk"]
 [ext_resource type="PackedScene" uid="uid://ev46am1blkcl" path="res://scenes/gpu_scene.tscn" id="5_5bfjd"]
+[ext_resource type="Texture2D" uid="uid://cvkv18h2lt637" path="res://res/icons/resultset-last-icon.png" id="5_kmb1v"]
+[ext_resource type="Texture2D" uid="uid://bkapeci1jrxpv" path="res://res/icons/cancel.png" id="6_fuf3a"]
 [ext_resource type="Script" uid="uid://deaqpmht4sw37" path="res://scenes/KB.gd" id="6_jv3qg"]
 [ext_resource type="Script" uid="uid://d3hndajig4v8p" path="res://scenes/comp_highlight.gd" id="6_u56tr"]
 [ext_resource type="Script" uid="uid://k4uuqhqbsjgr" path="res://scenes/lang_zd.gd" id="7_8jmkd"]
@@ -30,6 +33,7 @@
 [ext_resource type="PackedScene" uid="uid://bgb5s3xu12cb0" path="res://scenes/win_ir.tscn" id="16_og1vs"]
 [ext_resource type="Script" uid="uid://b74jfmkseejoc" path="res://scenes/todo.gd" id="19_a20q3"]
 [ext_resource type="PackedScene" uid="uid://bo8535irp46bf" path="res://scenes/win_ed_dbg.tscn" id="21_fv21b"]
+[ext_resource type="Script" uid="uid://vqh76ivpomru" path="res://scenes/comp_search.gd" id="21_pibwh"]
 [ext_resource type="Script" uid="uid://bc3i5p12hm1p1" path="res://class_ErrorReporter.gd" id="22_tel4y"]
 
 [sub_resource type="SystemFont" id="SystemFont_30trl"]
@@ -200,6 +204,11 @@ item_4/text = "Close"
 item_4/id = 4
 item_4/disabled = true
 
+[node name="Edit" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
+item_count = 1
+item_0/text = "Search"
+item_0/id = 0
+
 [node name="View" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
 item_count = 3
 item_0/text = "tokens"
@@ -233,32 +242,47 @@ size_flags_stretch_ratio = 3.0
 [node name="HSeparator" type="HSeparator" parent="Panel/TabContainer/Editor/V"]
 layout_mode = 2
 
+[node name="VSearch" type="VBoxContainer" parent="Panel/TabContainer/Editor/V"]
+visible = false
+layout_mode = 2
+
+[node name="H" type="HBoxContainer" parent="Panel/TabContainer/Editor/V/VSearch"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/TabContainer/Editor/V/VSearch/H"]
+layout_mode = 2
+text = "Search:"
+
+[node name="LineEdit" type="LineEdit" parent="Panel/TabContainer/Editor/V/VSearch/H"]
+layout_mode = 2
+size_flags_horizontal = 3
+keep_editing_on_text_submit = true
+
+[node name="lbl_res" type="Label" parent="Panel/TabContainer/Editor/V/VSearch/H"]
+layout_mode = 2
+text = "0/0 Results"
+
+[node name="btn_prev" type="Button" parent="Panel/TabContainer/Editor/V/VSearch/H"]
+layout_mode = 2
+icon = ExtResource("4_j8jky")
+
+[node name="btn_next" type="Button" parent="Panel/TabContainer/Editor/V/VSearch/H"]
+layout_mode = 2
+icon = ExtResource("5_kmb1v")
+
+[node name="btn_close_search" type="Button" parent="Panel/TabContainer/Editor/V/VSearch/H"]
+layout_mode = 2
+icon = ExtResource("6_fuf3a")
+
+[node name="HSeparator2" type="HSeparator" parent="Panel/TabContainer/Editor/V/VSearch"]
+layout_mode = 2
+
 [node name="RTL_console" type="RichTextLabel" parent="Panel/TabContainer/Editor/V"]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 3
 bbcode_enabled = true
 scroll_following = true
-
-[node name="comp_file" type="Node" parent="Panel/TabContainer/Editor"]
-script = ExtResource("4_3f0fj")
-
-[node name="fd_save" type="FileDialog" parent="Panel/TabContainer/Editor/comp_file"]
-initial_position = 2
-size = Vector2i(400, 400)
-access = 2
-
-[node name="fd_load" type="FileDialog" parent="Panel/TabContainer/Editor/comp_file"]
-title = "Open a File"
-initial_position = 2
-size = Vector2i(400, 400)
-ok_button_text = "Open"
-file_mode = 0
-access = 2
-
-[node name="cd_save_discard" parent="Panel/TabContainer/Editor/comp_file" instance=ExtResource("4_inoj7")]
-initial_position = 2
-visible = false
 
 [node name="comp_highlight" type="Node" parent="Panel/TabContainer/Editor"]
 script = ExtResource("6_u56tr")
@@ -299,9 +323,34 @@ script = ExtResource("14_vxglm")
 [node name="codegen_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md"]
 script = ExtResource("15_2f3dj")
 
+[node name="comp_file" type="Node" parent="Panel/TabContainer/Editor"]
+script = ExtResource("4_3f0fj")
+
+[node name="fd_save" type="FileDialog" parent="Panel/TabContainer/Editor/comp_file"]
+initial_position = 2
+size = Vector2i(400, 400)
+access = 2
+
+[node name="fd_load" type="FileDialog" parent="Panel/TabContainer/Editor/comp_file"]
+title = "Open a File"
+initial_position = 2
+size = Vector2i(400, 400)
+ok_button_text = "Open"
+file_mode = 0
+access = 2
+
+[node name="cd_save_discard" parent="Panel/TabContainer/Editor/comp_file" instance=ExtResource("4_inoj7")]
+initial_position = 2
+visible = false
+
 [node name="comp_erep" type="Node" parent="Panel/TabContainer/Editor" node_paths=PackedStringArray("Editor")]
 script = ExtResource("22_tel4y")
 Editor = NodePath("..")
+
+[node name="comp_search" type="Node" parent="Panel/TabContainer/Editor" node_paths=PackedStringArray("Editor", "comp_file")]
+script = ExtResource("21_pibwh")
+Editor = NodePath("..")
+comp_file = NodePath("../comp_file")
 
 [node name="window_debug" type="Window" parent="Panel/TabContainer/Editor"]
 oversampling_override = 1.0
@@ -374,16 +423,18 @@ script = ExtResource("19_a20q3")
 [connection signal="value_changed" from="Panel/TabContainer/Screen/V/Control/GridContainer/sb_freq" to="VM" method="_on_sb_freq_value_changed"]
 [connection signal="item_selected" from="Panel/TabContainer/Memory/BoxContainer/mem_map" to="Panel/TabContainer/Memory" method="_on_mem_map_item_selected"]
 [connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/File" to="Panel/TabContainer/Editor/comp_file" method="_on_file_index_pressed"]
+[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Edit" to="Panel/TabContainer/Editor" method="_on_edit_index_pressed"]
 [connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/View" to="Panel/TabContainer/Editor" method="_on_view_index_pressed"]
 [connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Settings" to="Panel/TabContainer/Editor" method="_on_settings_index_pressed"]
 [connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Settings/Language" to="Panel/TabContainer/Editor/comp_build" method="_on_language_index_pressed"]
 [connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Build" to="Panel/TabContainer/Editor/comp_build" method="_on_build_index_pressed"]
 [connection signal="tab_changed" from="Panel/TabContainer/Editor/V/EFiles" to="Panel/TabContainer/Editor/comp_file" method="_on_e_files_tab_changed"]
-[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor" method="_on_comp_file_cur_efile_changed"]
-[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_highlight" method="_on_comp_file_cur_efile_changed"]
-[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_build" method="_on_comp_file_cur_efile_changed"]
-[connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_save" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_save_file_selected"]
-[connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_load" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_load_file_selected"]
+[connection signal="gui_input" from="Panel/TabContainer/Editor/V/VSearch/H/LineEdit" to="Panel/TabContainer/Editor/comp_search" method="_on_line_edit_gui_input"]
+[connection signal="text_changed" from="Panel/TabContainer/Editor/V/VSearch/H/LineEdit" to="Panel/TabContainer/Editor/comp_search" method="_on_line_edit_text_changed"]
+[connection signal="text_submitted" from="Panel/TabContainer/Editor/V/VSearch/H/LineEdit" to="Panel/TabContainer/Editor/comp_search" method="_on_line_edit_text_submitted"]
+[connection signal="pressed" from="Panel/TabContainer/Editor/V/VSearch/H/btn_prev" to="Panel/TabContainer/Editor/comp_search" method="_on_btn_prev_pressed"]
+[connection signal="pressed" from="Panel/TabContainer/Editor/V/VSearch/H/btn_next" to="Panel/TabContainer/Editor/comp_search" method="_on_btn_next_pressed"]
+[connection signal="pressed" from="Panel/TabContainer/Editor/V/VSearch/H/btn_close_search" to="Panel/TabContainer/Editor/comp_search" method="_on_btn_close_search_pressed"]
 [connection signal="sig_cprint" from="Panel/TabContainer/Editor/comp_build/comp_asm_zd" to="Panel/TabContainer/Editor" method="_on_cprint"]
 [connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_asm_zd" to="Panel/TabContainer/Editor" method="_on_user_error"]
 [connection signal="IR_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor/win_IR" method="_on_comp_compile_md_ir_ready"]
@@ -397,6 +448,12 @@ script = ExtResource("19_a20q3")
 [connection signal="IR_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_analyzer_md_ir_ready"]
 [connection signal="sig_cprint" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor" method="_on_cprint"]
 [connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_analyzer_md_sig_user_error"]
+[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor" method="_on_comp_file_cur_efile_changed"]
+[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_highlight" method="_on_comp_file_cur_efile_changed"]
+[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_build" method="_on_comp_file_cur_efile_changed"]
+[connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_save" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_save_file_selected"]
+[connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_load" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_load_file_selected"]
+[connection signal="sig_highlight_line" from="Panel/TabContainer/Editor/comp_search" to="Panel/TabContainer/Editor" method="_on_highlight_line"]
 [connection signal="close_requested" from="Panel/TabContainer/Editor/window_debug" to="Panel/TabContainer/Editor/window_debug" method="hide"]
 [connection signal="set_highlight" from="Panel/TabContainer/Editor/window_debug/debug_panel" to="Panel/TabContainer/Editor/comp_build" method="_on_debug_panel_set_highlight"]
 [connection signal="close_requested" from="Panel/TabContainer/Editor/win_IR" to="Panel/TabContainer/Editor/win_IR" method="hide"]

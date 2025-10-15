@@ -75,3 +75,38 @@ func last_non_space(line:String)->int:
 	var idx = first_non_space(line.reverse())
 	if idx == -1: return -1;
 	else: return line.length() - idx - 1;
+
+## returns an array with the positions of all occurences of needle in haystack
+func str_find_all_instances(needle:String, haystack:String)->Array:
+	var res = [];
+	var pos = 0;
+	while true:
+		var iter = haystack.find(needle, pos);
+		if(iter != -1):
+			res.append(iter);
+			pos = iter+1;
+		else: break;
+	return res;
+
+## converts a string index to a row/column pair.
+func str_to_row_col(pos:int, text:String)->Array:
+	return str_to_row_col_arr([pos], text)[0];
+
+## returns an array of [row, column] entries for each entry in the [positions] array
+func str_to_row_col_arr(positions:Array, text:String)->Array:
+	var res = [];
+	var newlines = str_find_all_instances("\n", text);
+	for pos in positions:
+		var line_idx = 0;
+		var last_pos = 0;
+		for line_pos in newlines:
+			if line_pos > pos:
+				pos -= last_pos;
+				pos -= 1; # off by one error
+				break;
+			else:
+				last_pos = line_pos;
+				line_idx += 1;
+		res.append([line_idx, pos]);
+	assert(len(res) == len(positions));
+	return res;
