@@ -558,7 +558,7 @@ func get_cur_func_name():
 	return cur_func;
 
 func find_locals():
-	var locals = [];
+	var found_locals = [];
 	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
 	var next_ret = find_ret(cur_ip);
 	print("next_ret = %d" % next_ret);
@@ -622,22 +622,22 @@ func find_locals():
 						access_type = "ebp+x/"+acc_r;
 						is_valid = true;
 		if is_valid: 
-			locals.append(
+			found_locals.append(
 			{"pos":cmd_offs, "type":local_type, 
 			"ip":cur_ip, "access":access_type});
 		cur_ip += cmd_size;
-	return locals;
+	return found_locals;
 
-func group_locals(locals, mode:String):
+func group_locals(in_locals, mode:String):
 	var new_locals:Array = [];
 	if mode == "by_ip":
-		new_locals = locals.duplicate();
+		new_locals = in_locals.duplicate();
 		new_locals.sort_custom(func(a,b): 
 			return a.ip < b.ip;
 		)
 	elif mode == "by_pos":
 		var pos_dict = {};
-		for local in locals:
+		for local in in_locals:
 			var key = local.pos;
 			if key not in pos_dict: pos_dict[key] = [];
 			pos_dict[key].append(local);

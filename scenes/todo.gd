@@ -1,7 +1,7 @@
 extends Node
 
 # Todo
-# [bug] ctrl-s doesn't save
+# [FIXED bug] ctrl-s doesn't save
 # [bug] build doesn't save
 # [bug] opening another file and then tabbing back makes it not compile
 #
@@ -26,4 +26,6 @@ extends Node
 # [enchancement] analyzer should check argument count
 # [enhancement] compiling should also reset CPU and screen
 # [enhancement] compiling should clear the console
+# [enhancement] the editor needs a Search (ctrl+F) function (GUI)
+#
 #

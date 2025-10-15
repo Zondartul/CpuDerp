@@ -6,6 +6,7 @@ var console:RichTextLabel;
 var is_setup = false;
 
 func _ready():
+	$V/MenuBar/Settings.set_item_submenu_node(0,$V/MenuBar/Settings/Language);
 	pass;
 	
 func setup(dict:Dictionary):
@@ -18,7 +19,7 @@ func setup(dict:Dictionary):
 	console = dict.console;
 	is_setup = true;
 	dict2["efiles"] = $V/EFiles;
-	dict2["ddm_language"] = $V/MenuBar/Language;
+	dict2["ddm_language"] = $V/MenuBar/Settings/Language;
 	
 	#$comp_file.setup({"efiles":$V/EFiles});
 	#$comp_highlight.setup({"ddm_language":$V/MenuBar/Language});
@@ -59,3 +60,9 @@ func _on_highlight_line(line_idx)->void:
 
 func get_cur_line_idx()->int:
 	return $comp_file.get_cur_line_idx();
+
+func _on_settings_index_pressed(index: int) -> void:
+	match index:
+		0: pass; # Language...
+		1: pass; # Settings
+		2: $win_ed_dbg.popup();

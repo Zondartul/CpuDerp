@@ -9,7 +9,7 @@ var path = "";
 var is_dirty = false; # has file been edited?
 var file_name = "";
 var tab_idx = 0; 	  # position of this tab in the parent tab container
-
+var language = "";
 signal update_my_tab(efile);
 
 # Called when the node enters the scene tree for the first time.

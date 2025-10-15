@@ -1,0 +1,26 @@
+[gd_scene load_steps=2 format=3 uid="uid://bo8535irp46bf"]
+
+[ext_resource type="Script" uid="uid://ccbypr1tmwjxh" path="res://scenes/win_ed_dbg.gd" id="1_pomuh"]
+
+[node name="win_ed_dbg" type="Window"]
+oversampling_override = 1.0
+title = "Internal debug view"
+initial_position = 2
+size = Vector2i(300, 300)
+script = ExtResource("1_pomuh")
+
+[node name="BC" type="BoxContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+vertical = true
+
+[node name="IL" type="ItemList" parent="BC"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+max_columns = 2
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]

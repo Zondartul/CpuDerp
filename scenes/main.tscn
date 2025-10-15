@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://cfii8rrppxgqq"]
+[gd_scene load_steps=33 format=3 uid="uid://cfii8rrppxgqq"]
 
 [ext_resource type="Script" uid="uid://c4qakorwmu6dc" path="res://scenes/main.gd" id="1_ggytm"]
 [ext_resource type="Script" uid="uid://c44d4a042o542" path="res://scenes/Memory.gd" id="2_0ld40"]
@@ -29,6 +29,8 @@
 [ext_resource type="PackedScene" uid="uid://bystectvtbdhc" path="res://scenes/win_parse.tscn" id="15_y6deb"]
 [ext_resource type="PackedScene" uid="uid://bgb5s3xu12cb0" path="res://scenes/win_ir.tscn" id="16_og1vs"]
 [ext_resource type="Script" uid="uid://b74jfmkseejoc" path="res://scenes/todo.gd" id="19_a20q3"]
+[ext_resource type="PackedScene" uid="uid://bo8535irp46bf" path="res://scenes/win_ed_dbg.tscn" id="21_fv21b"]
+[ext_resource type="Script" uid="uid://bc3i5p12hm1p1" path="res://class_ErrorReporter.gd" id="22_tel4y"]
 
 [sub_resource type="SystemFont" id="SystemFont_30trl"]
 font_names = PackedStringArray("Courier New")
@@ -202,7 +204,16 @@ item_1/id = 1
 item_2/text = "analysis (IR)"
 item_2/id = 2
 
-[node name="Language" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
+[node name="Settings" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
+item_count = 3
+item_0/text = "Language..."
+item_0/id = 0
+item_1/text = "Settings"
+item_1/id = 1
+item_2/text = "editor debug"
+item_2/id = 2
+
+[node name="Language" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar/Settings"]
 
 [node name="Build" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
 item_count = 1
@@ -257,8 +268,9 @@ script = ExtResource("8_gqmmt")
 script = ExtResource("8_jurei")
 win_tokens = NodePath("../win_token_view")
 
-[node name="comp_asm_zd" type="Node" parent="Panel/TabContainer/Editor/comp_build"]
+[node name="comp_asm_zd" type="Node" parent="Panel/TabContainer/Editor/comp_build" node_paths=PackedStringArray("erep")]
 script = ExtResource("8_dp3eg")
+erep = NodePath("../../comp_erep")
 
 [node name="comp_compile_md" type="Node" parent="Panel/TabContainer/Editor/comp_build"]
 script = ExtResource("11_yc10j")
@@ -266,12 +278,14 @@ script = ExtResource("11_yc10j")
 [node name="tokenizer_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md"]
 script = ExtResource("12_pm3ni")
 
-[node name="parser_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md"]
+[node name="parser_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md" node_paths=PackedStringArray("erep")]
 script = ExtResource("13_yq6so")
+erep = NodePath("../../../comp_erep")
 
-[node name="analyzer_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md" node_paths=PackedStringArray("IR", "Editor")]
+[node name="analyzer_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md" node_paths=PackedStringArray("IR", "erep", "Editor")]
 script = ExtResource("13_2wyq8")
 IR = NodePath("../IR_md")
+erep = NodePath("../../../comp_erep")
 Editor = NodePath("../../..")
 
 [node name="IR_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md"]
@@ -279,6 +293,10 @@ script = ExtResource("14_vxglm")
 
 [node name="codegen_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md"]
 script = ExtResource("15_2f3dj")
+
+[node name="comp_erep" type="Node" parent="Panel/TabContainer/Editor" node_paths=PackedStringArray("Editor")]
+script = ExtResource("22_tel4y")
+Editor = NodePath("..")
 
 [node name="window_debug" type="Window" parent="Panel/TabContainer/Editor"]
 oversampling_override = 1.0
@@ -298,6 +316,13 @@ visible = false
 
 [node name="win_IR" parent="Panel/TabContainer/Editor" instance=ExtResource("16_og1vs")]
 visible = false
+
+[node name="win_ed_dbg" parent="Panel/TabContainer/Editor" node_paths=PackedStringArray("Editor", "comp_file", "tab_EFiles", "comp_build") instance=ExtResource("21_fv21b")]
+visible = false
+Editor = NodePath("..")
+comp_file = NodePath("../comp_file")
+tab_EFiles = NodePath("../V/EFiles")
+comp_build = NodePath("../comp_build")
 
 [node name="btn_debugger" type="Button" parent="Panel"]
 layout_mode = 1
@@ -345,7 +370,8 @@ script = ExtResource("19_a20q3")
 [connection signal="item_selected" from="Panel/TabContainer/Memory/BoxContainer/mem_map" to="Panel/TabContainer/Memory" method="_on_mem_map_item_selected"]
 [connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/File" to="Panel/TabContainer/Editor/comp_file" method="_on_file_index_pressed"]
 [connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/View" to="Panel/TabContainer/Editor" method="_on_view_index_pressed"]
-[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Language" to="Panel/TabContainer/Editor/comp_build" method="_on_language_index_pressed"]
+[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Settings" to="Panel/TabContainer/Editor" method="_on_settings_index_pressed"]
+[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Settings/Language" to="Panel/TabContainer/Editor/comp_build" method="_on_language_index_pressed"]
 [connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Build" to="Panel/TabContainer/Editor/comp_build" method="_on_build_index_pressed"]
 [connection signal="tab_changed" from="Panel/TabContainer/Editor/V/EFiles" to="Panel/TabContainer/Editor/comp_file" method="_on_e_files_tab_changed"]
 [connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_highlight" method="_on_comp_file_cur_efile_changed"]
@@ -353,7 +379,6 @@ script = ExtResource("19_a20q3")
 [connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_save" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_save_file_selected"]
 [connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_load" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_load_file_selected"]
 [connection signal="sig_cprint" from="Panel/TabContainer/Editor/comp_build/comp_asm_zd" to="Panel/TabContainer/Editor" method="_on_cprint"]
-[connection signal="sig_highlight_line" from="Panel/TabContainer/Editor/comp_build/comp_asm_zd" to="Panel/TabContainer/Editor" method="_on_highlight_line"]
 [connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_asm_zd" to="Panel/TabContainer/Editor" method="_on_user_error"]
 [connection signal="IR_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor/win_IR" method="_on_comp_compile_md_ir_ready"]
 [connection signal="open_file_request" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="." method="_on_comp_compile_md_open_file_request"]
@@ -361,12 +386,10 @@ script = ExtResource("19_a20q3")
 [connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor" method="_on_user_error"]
 [connection signal="tokens_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/tokenizer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_tokenizer_md_tokens_ready"]
 [connection signal="sig_cprint" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor" method="_on_cprint"]
-[connection signal="sig_highlight_line" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor" method="_on_highlight_line"]
 [connection signal="sig_parse_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_parser_md_sig_parse_ready"]
 [connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor" method="_on_user_error"]
 [connection signal="IR_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_analyzer_md_ir_ready"]
 [connection signal="sig_cprint" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor" method="_on_cprint"]
-[connection signal="sig_highlight_line" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor" method="_on_highlight_line"]
 [connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_analyzer_md_sig_user_error"]
 [connection signal="close_requested" from="Panel/TabContainer/Editor/window_debug" to="Panel/TabContainer/Editor/window_debug" method="hide"]
 [connection signal="set_highlight" from="Panel/TabContainer/Editor/window_debug/debug_panel" to="Panel/TabContainer/Editor/comp_build" method="_on_debug_panel_set_highlight"]

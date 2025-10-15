@@ -3,13 +3,14 @@ extends Node
 signal IR_ready;
 signal sig_user_error;
 @export var IR:Node;
+@export var erep:ErrorReporter;
 #----------- Anlysis ----------------------
 
 # error reporter support
 var error_code = "";
 var cur_line = "";
 var cur_line_idx = 0;
-signal sig_highlight_line(line);
+#signal sig_highlight_line(line);
 signal sig_cprint(msg, col);
 @export var Editor:Node;
 
@@ -121,8 +122,8 @@ func analyze_expr_infix(ast):
 	var op = ast.children[1];
 	var expr2 = ast.children[2];
 	assert(expr2.tok_class == "expr");
-	var erep = ErrorReporter.new(self, op);
-	
+	#var erep = ErrorReporter.new(self, op);
+	erep.context = op;
 	if op.text in op_map: analyze_expr_infix_op(expr1, expr2, op_map[op.text]);
 	else: erep.error(E.ERR_31 % op.text); return;
 	return;
@@ -254,7 +255,7 @@ func analyze_decl_assignment(ast):
 	var expr_lhs = stmt_ass.children[0];
 	assert(expr_lhs.tok_class == "expr");
 	var var_name = "";
-	var var_type = null;
+	#var var_type = null;
 	var expr_lhs_2 = expr_lhs.children[0];
 	match expr_lhs_2.tok_class:
 		"expr_ident":
@@ -353,7 +354,8 @@ func analyze_expr_ident(ast):
 	assert(ast.tok_class == "expr_ident");
 	var tok = ast.children[0];
 	assert(tok.tok_class == "IDENT");
-	var erep = ErrorReporter.new(self, tok);
+	#var erep = ErrorReporter.new(self, tok);
+	erep.context = tok;
 	var var_name = tok.text;
 	var var_handle = IR.get_var(var_name);
 	if not var_handle:
@@ -505,7 +507,8 @@ func analyze_flow_stmt(ast):
 	if error_code != "": return;
 	assert(ast.tok_class == "flow_stmt");
 	var cmd = ast.children[0];
-	var erep = ErrorReporter.new(self, cmd);
+	#var erep = ErrorReporter.new(self, cmd);
+	erep.context = cmd;
 	match cmd.text:
 		"break":
 			if len(control_flow_stack):

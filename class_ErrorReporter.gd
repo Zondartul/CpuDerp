@@ -1,12 +1,16 @@
-extends RefCounted
+extends Node
 class_name ErrorReporter;
 
+@export var Editor:Node;
 var proxy;
 var context;
 
-func _init(new_proxy, new_context=null):
-	proxy = new_proxy;
-	context = new_context;
+#func _init(new_proxy, new_context=null):
+#	proxy = new_proxy;
+#	context = new_context;
+
+func _ready():
+	if Editor: proxy = Editor;
 
 func assert_valid_proxy():
 	for prop in ["user_error", "error_code", "cprint", "sig_highlight_line", "cur_line", "cur_line_idx"]:

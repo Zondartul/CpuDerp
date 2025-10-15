@@ -2,8 +2,9 @@ extends Node
 const lang = preload("res://scenes/lang_md.gd");
 signal sig_parse_ready(stack:Array[AST]);
 signal sig_user_error(msg:String);
-signal sig_highlight_line(line_idx);
+#signal sig_highlight_line(line_idx);
 signal sig_cprint(msg:String);
+@export var erep:ErrorReporter;
 #--- error reporter support ---
 var error_code = "";
 func user_error(msg): sig_user_error.emit(msg);
@@ -52,7 +53,8 @@ func parse(in_tokens:Array[Token]):
 	else:
 		sig_user_error.emit("syntax error");
 		var ctx = stack[1];#find_best_error_token(stack);
-		var erep:ErrorReporter = ErrorReporter.new(self, ctx as Token);
+		#var erep:ErrorReporter = ErrorReporter.new(self, ctx as Token);
+		erep.context = ctx as Token;
 		erep.error("syntax error");
 		return false;
 #

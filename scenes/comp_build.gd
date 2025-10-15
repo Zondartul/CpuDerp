@@ -7,8 +7,7 @@ var cur_efile;
 var Memory;
 var Editor;
 var view_Memory;
-var cur_lang = "zderp" # we should probably figure out the lang from extension
-#var is_setup = false;
+var cur_lang = "";
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -112,6 +111,7 @@ func _on_build_index_pressed(index):
 
 func _on_comp_file_cur_efile_changed(efile):
 	cur_efile = efile;
+	cur_lang = efile.language;
 	n_assembler.cur_filename = efile.file_name;
 	n_compiler.cur_filename = efile.file_name;
 

@@ -204,7 +204,8 @@ func _on_fd_save_file_selected(path):
 	file_selected.emit(path);
 
 func _on_e_files_tab_changed(tab):
-	cur_efile = n_efiles.get_child(tab);
+	set_cur_efile(n_efiles.get_child(tab));
+	#cur_efile = n_efiles.get_child(tab);
 
 func _on_fd_load_file_selected(path):
 	#print("file_selected("+path+")");

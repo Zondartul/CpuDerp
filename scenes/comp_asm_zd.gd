@@ -3,7 +3,8 @@ extends Node
 # signals
 signal sig_cprint; # cprint(msg:String, col=null) - print a message to console
 signal sig_user_error; # user_error(msg:String) - print a user error message
-signal sig_highlight_line; #highlight_line(line_idx:int) - scroll to and highlight a row of text
+#signal sig_highlight_line; #highlight_line(line_idx:int) - scroll to and highlight a row of text
+@export var erep:ErrorReporter;
 # globals
 var cur_filename:String = ""
 var cur_path:String = ""
@@ -120,7 +121,8 @@ func assemble(source:String)->Chunk:
 		for ref in chunk.refs:
 			var lbl_name = chunk.refs[ref];
 			var lbl_tok = chunk.label_toks[ref];
-			var erep = ErrorReporter.new(self, lbl_tok);
+			#var erep = ErrorReporter.new(self, lbl_tok);
+			erep.context = lbl_tok;
 			erep.error(E.ERR_13 % lbl_name);
 		push_error(E.ERR_02 % str(unlinked))
 	print("Assembly done");
@@ -207,8 +209,9 @@ func patch_ref(out_code:Array, ref:int, lbl_pos:int, out_shadow:Array, lbl_tok:T
 		ISA.SHADOW_DATA_UNRESOLVED: shadow_flag = ISA.SHADOW_DATA_RESOLVED;
 		ISA.SHADOW_CMD_UNRESOLVED: shadow_flag = ISA.SHADOW_CMD_RESOLVED;
 		_: push_error(E.ERR_03); assert(false);
-	var erep:ErrorReporter = ErrorReporter.new(self, lbl_tok);
-	emit32(lbl_pos, shadow_flag, erep);
+	#var erep:ErrorReporter = ErrorReporter.new(self, lbl_tok);
+	erep.context = lbl_tok;
+	emit32(lbl_pos, shadow_flag);
 	code = old_code;
 	write_pos = old_wp;
 	shadow = old_shadow;
@@ -393,7 +396,8 @@ func tok_ch_class(ch:String)->String:
 
 func process(tokens:Array[Token])->bool:
 	var iter = Iter.new(tokens, 0);
-	var erep:ErrorReporter = ErrorReporter.new(self, iter);
+	#var erep:ErrorReporter = ErrorReporter.new(self, iter);
+	erep.context = iter;
 	while iter.pos != len(iter.tokens):
 		if parse_label(iter) \
 		or parse_db(iter) \
@@ -471,10 +475,11 @@ func parse_command(iter:Iter)->bool:
 		flags.is_32bit = USE_32BIT_BY_DEFAULT;
 		if match_tokens(iter, ["\\.", "\\32"]): flags.is_32bit = true;
 		elif match_tokens(iter, ["\\.", "\\8"]): flags.is_32bit = false;
-		var erep:ErrorReporter = ErrorReporter.new(self, iter);
-		var arg1:Cmd_arg = parse_arg(iter,erep);
+		#var erep:ErrorReporter = ErrorReporter.new(self, iter);
+		erep.context = iter;
+		var arg1:Cmd_arg = parse_arg(iter);
 		match_tokens(iter, ["\\,"]);
-		var arg2:Cmd_arg = parse_arg(iter,erep);
+		var arg2:Cmd_arg = parse_arg(iter);
 		match_tokens(iter, ["\\;"]); # optional semicolon
 		
 		# if argument is present: arg1/arg2 gets set
@@ -484,7 +489,7 @@ func parse_command(iter:Iter)->bool:
 		flags.set_arg2(arg2, erep);
 		var shadow_flags = {"unresolved":(arg1.is_unresolved or arg2.is_unresolved)};
 		record_op_position(old_iter, iter);
-		emit_opcode(op_code, flags, erep, arg1.reg_idx, arg2.reg_idx, arg1.offset+arg2.offset, shadow_flags);
+		emit_opcode(op_code, flags, arg1.reg_idx, arg2.reg_idx, arg1.offset+arg2.offset, shadow_flags);
 		#print("Parsed ["+op_name+"("+str(int(arg1.is_present) + int(arg2.is_present))+")]")
 		return true;
 	else: return false;
@@ -547,7 +552,7 @@ func match_tokens(iter:Iter, ref_toks:Array[String], out=null)->bool:
 # w.r.t. dereference + offset order
 # syntax: (cmd)[.32] [[*](reg|num|label)['['num']']]x2 [;]
 
-func parse_arg(iter, erep:ErrorReporter)->Cmd_arg:
+func parse_arg(iter)->Cmd_arg:
 	var arg:Cmd_arg = Cmd_arg.new()
 	# * - deref star
 	if match_tokens(iter, ["\\*"]): arg.is_deref = true;
@@ -631,17 +636,17 @@ func get_flag(fname:String):
 #------------- CODE GEN -----------
 
 
-func emit_opcode(cmd:int, flags:Cmd_flags, erep:ErrorReporter, reg1:int=0, reg2:int=0, imm_u32:int=0, shadow_flags={})->void:
+func emit_opcode(cmd:int, flags:Cmd_flags, reg1:int=0, reg2:int=0, imm_u32:int=0, shadow_flags={})->void:
 	assert(write_pos % cmd_size == 0);
-	emit8(cmd, ISA.SHADOW_CMD_HEAD, erep);
-	emit8(flags.to_byte(), ISA.SHADOW_CMD_TAIL, erep);
-	emit8((reg1 & 0b1111) | ((reg2 & 0b1111) << 4), ISA.SHADOW_CMD_TAIL, erep);
+	emit8(cmd, ISA.SHADOW_CMD_HEAD);
+	emit8(flags.to_byte(), ISA.SHADOW_CMD_TAIL);
+	emit8((reg1 & 0b1111) | ((reg2 & 0b1111) << 4), ISA.SHADOW_CMD_TAIL);
 	var tail_flag = ISA.SHADOW_CMD_TAIL;
 	if "unresolved" in shadow_flags and shadow_flags.unresolved: tail_flag = ISA.SHADOW_CMD_UNRESOLVED;
-	emit32(imm_u32, tail_flag, erep);
-	emit8(0xFF, ISA.SHADOW_CMD_TAIL, erep); # pad
+	emit32(imm_u32, tail_flag);
+	emit8(0xFF, ISA.SHADOW_CMD_TAIL); # pad
 
-func emit8(val:int, shadow_val:int, erep:ErrorReporter):
+func emit8(val:int, shadow_val:int):
 	if (val < 0):
 		val = 256 - val;
 	if (val < 0) or (val > 255): 
@@ -652,35 +657,36 @@ func emit8(val:int, shadow_val:int, erep:ErrorReporter):
 	shadow[write_pos] = shadow_val;
 	write_pos += 1;
 
-func emit32(val:int, shadow_val:int, erep:ErrorReporter):
+func emit32(val:int, shadow_val:int):
 	if(val < 0):
 		val = (2**32)+val;
 	if (val < 0) or (val > ((2**32)-1)): 
 		erep.error(E.ERR_11 % val)
 		return;
-	emit8((val >> 8*0) & 0xFF, shadow_val, erep);
-	emit8((val >> 8*1) & 0xFF, shadow_val, erep);
-	emit8((val >> 8*2) & 0xFF, shadow_val, erep);
-	emit8((val >> 8*3) & 0xFF, shadow_val, erep);	
+	emit8((val >> 8*0) & 0xFF, shadow_val);
+	emit8((val >> 8*1) & 0xFF, shadow_val);
+	emit8((val >> 8*2) & 0xFF, shadow_val);
+	emit8((val >> 8*3) & 0xFF, shadow_val);	
 	
 func emit_db_items(items:Array[Token])->void: #maybe we could use the .32 specifier with db too
-	var erep:ErrorReporter = ErrorReporter.new(self, Token.new());
+	#var erep:ErrorReporter = ErrorReporter.new(self, Token.new());
+	erep.context = Token.new();
 	for item:Token in items:
 		erep.context = item;
 		match item.tok_class:
 			"NUMBER": # a 32-bit number
 				var num = str(item["text"]).to_int();
-				emit32(num, ISA.SHADOW_DATA,erep);
+				emit32(num, ISA.SHADOW_DATA);
 			"WORD": # it's a label
-				emit32(0, ISA.SHADOW_DATA_UNRESOLVED,erep);
+				emit32(0, ISA.SHADOW_DATA_UNRESOLVED);
 				label_refs[write_pos] = item["text"];
 			"STRING": # a bunch of text
 				var text = str(item["text"]).to_ascii_buffer()
 				for ch in text:
 					if USE_WIDE_STRINGS:
-						emit32(ch, ISA.SHADOW_DATA, erep);
+						emit32(ch, ISA.SHADOW_DATA);
 					else:
-						emit8(ch, ISA.SHADOW_DATA,erep);
+						emit8(ch, ISA.SHADOW_DATA);
 				#if USE_WIDE_STRINGS:
 				#	emit32(0, ISA.SHADOW_DATA, erep);
 				#else:
@@ -691,5 +697,5 @@ func emit_db_items(items:Array[Token])->void: #maybe we could use the .32 specif
 	#if (write_pos % cmd_size): # if not aligned
 	#	write_pos += (cmd_size - (write_pos % cmd_size)); # pad until alignement is reached
 	while(write_pos % cmd_size):
-		emit8(0, ISA.SHADOW_PADDING, erep);
+		emit8(0, ISA.SHADOW_PADDING);
 	assert(write_pos % cmd_size == 0);

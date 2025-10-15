@@ -21,7 +21,20 @@ func setup(dict:Dictionary):
 		add_lang(ch);
 
 func _on_ddm_language_index_pressed(index):
-	set_lang(languages[index]);
+	#set_lang(languages[index]);
+	var obj = languages[index];
+	set_lang_name(obj.lang_name);
+
+func set_lang_name(lname):
+	cur_efile.language = lname;
+	set_lang(get_lang_by_name(lname));
+
+func get_lang_by_name(lname):
+	for key in languages:
+		var obj = languages[key];
+		if obj.lang_name == lname:
+			return obj;
+	return null;
 
 func add_lang(obj):
 	var idx = ddm_language.item_count;	
@@ -39,4 +52,5 @@ func set_lang(obj):
 	
 func _on_comp_file_cur_efile_changed(efile):
 	cur_efile = efile;
-	set_lang(cur_language);
+	#set_lang(cur_language);
+	set_lang_name(cur_efile.language);
