@@ -35,11 +35,11 @@ extends Node
 #	I suspect that multiple array access has a landmine as it produces a needs_deref value
 # [FIXED bug]			"TAB DIRTY" 
 #	sometimes the wrong tab gets the filename*
-# [bug]					"CLEAR COMPILER" 
+# [FIXED bug]			"CLEAR COMPILER" 
 #	compiler and codegen do not clear data between runs
 # [enchancement]		"ARITY CHECK" 
 #	analyzer should check argument count
-# [enhancement]			"BUILD CPU RESET" 
+# [FIXED enhancement]	"BUILD CPU RESET" 
 #	compiling should also reset CPU and screen
 # [FIXED enhancement] 	"BUILD CLEAR CONSOLE" 
 #	compiling should clear the console

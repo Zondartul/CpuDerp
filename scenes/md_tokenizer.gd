@@ -1,24 +1,57 @@
 extends Node
 
-var cur_filename;
-var cur_path;
 const script_tokenizer = preload("res://scenes/word_boundary_tokenizer.gd")
 const lang = preload("res://scenes/lang_md.gd")
+signal tokens_ready;
+
+#constants
+const assign_ops = ["=", "+=", "-=", "*=", "/=", "%=","!="];
+
+const recombinations = [
+	["#", "/*"], ["+", "+"], ["-", "-"], ["+", "="], ["-", "="],
+	["!", "="], ["=", "="],
+	["/WORD", "/NUMBER"], ["/NUMBER", ".", "/NUMBER"],
+];
+
+const token_colors = {
+	"PREPROC":Color(0.91, 0.576, 0.109, 1.0),
+	"KEYWORD":Color(0.974, 0.22, 0.365, 1.0),
+	"IDENT":Color(0.693, 0.469, 0.946, 1.0),
+	"OP":Color(0.998, 0.998, 0.0, 1.0),
+	"NUMBER":Color(1.0, 1.0, 0.0, 1.0),
+	"STRING":Color(0.0, 0.827, 0.0, 1.0),
+	"PUNCT":Color(0.293, 0.506, 1.0, 1.0),
+};
+
+#state
 var tokenizer;
+var cur_filename;
+var cur_path;
 var cur_line = "";
 var cur_line_idx = 0;
 var error_code = 0;
 var output_tokens = [];
-signal tokens_ready;
 
-func _ready():
+
+func reset():
 	tokenizer = script_tokenizer.new();
 	tokenizer.ch_punct = lang.get_all_punct();
-
-func tokenize(text:String)->Array[Token]:
-	output_tokens.clear();
+	cur_filename = "";
+	cur_path = "";
 	cur_line = "";
 	cur_line_idx = 0;
+	error_code = 0;
+	output_tokens = [];
+
+
+func _ready():
+	reset();
+
+func tokenize(text:String)->Array[Token]:
+	reset();
+	#output_tokens.clear();
+	#cur_line = "";
+	#cur_line_idx = 0;
 	var tokens:Array[Token] = basic_tokenize(text);
 	#tokens_ready.emit(tokens);
 	recombine_tokens(tokens);
@@ -75,11 +108,7 @@ func remove_comments(line:String)->String:
 
 #------------------------------------------------------------
 
-const recombinations = [
-	["#", "/*"], ["+", "+"], ["-", "-"], ["+", "="], ["-", "="],
-	["!", "="], ["=", "="],
-	["/WORD", "/NUMBER"], ["/NUMBER", ".", "/NUMBER"],
-];
+
 
 func recombine_tokens(tokens:Array[Token]):
 	var i = 0;
@@ -119,7 +148,6 @@ func recombine_n(toks:Array[Token], idx:int, length:int):
 		toks[from].text += toks[from+1].text;
 		toks.remove_at(from+1);
 
-const assign_ops = ["=", "+=", "-=", "*=", "/=", "%=","!="];
 
 ## adjusts the token class based on a dictionary
 func reclassify_tokens(tokens:Array[Token]):
@@ -145,15 +173,6 @@ func filter_tokens(tokens:Array[Token])->Array[Token]:
 	return tokens.filter(func(tok:Token): return tok.tok_class not in filtered);
 
 
-const token_colors = {
-	"PREPROC":Color(0.91, 0.576, 0.109, 1.0),
-	"KEYWORD":Color(0.974, 0.22, 0.365, 1.0),
-	"IDENT":Color(0.693, 0.469, 0.946, 1.0),
-	"OP":Color(0.998, 0.998, 0.0, 1.0),
-	"NUMBER":Color(1.0, 1.0, 0.0, 1.0),
-	"STRING":Color(0.0, 0.827, 0.0, 1.0),
-	"PUNCT":Color(0.293, 0.506, 1.0, 1.0),
-};
 
 func colorize_tokens(toks:Array):
 	for tok in toks:

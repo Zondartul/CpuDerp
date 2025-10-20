@@ -1,35 +1,35 @@
 code_blocks: 
- cb_14: 
-  ir_name: cb_14
+ cb_1: 
+  ir_name: cb_1
   code: 
-   IF cb_16 imm_17 cb_18
-   ELSE_IF cb_20 imm_21 cb_22
-   ELSE cb_24
- cb_16: 
-  ir_name: cb_16
- cb_18: 
-  ir_name: cb_18
+   IF cb_3 imm_4 cb_5
+   ELSE_IF cb_7 imm_8 cb_9
+   ELSE cb_11
+ cb_3: 
+  ir_name: cb_3
+ cb_5: 
+  ir_name: cb_5
   code: 
-   MOV var_15__x imm_19
- cb_20: 
-  ir_name: cb_20
- cb_22: 
-  ir_name: cb_22
+   MOV var_2__x imm_6
+ cb_7: 
+  ir_name: cb_7
+ cb_9: 
+  ir_name: cb_9
   code: 
-   MOV var_15__x imm_23
- cb_24: 
-  ir_name: cb_24
+   MOV var_2__x imm_10
+ cb_11: 
+  ir_name: cb_11
   code: 
-   MOV var_15__x imm_25
+   MOV var_2__x imm_12
 scopes: 
- scp_13__global: 
-  ir_name: scp_13__global
+ scp_0__global: 
+  ir_name: scp_0__global
   user_name: global
   parent: none
   vars: 
-   var_15__x variable x NULL NULL NULL NULL NULL
-   imm_17 immediate NULL int NULL 1 NULL NULL
-   imm_19 immediate NULL int NULL 2 NULL NULL
-   imm_21 immediate NULL int NULL 3 NULL NULL
-   imm_23 immediate NULL int NULL 4 NULL NULL
-   imm_25 immediate NULL int NULL 5 NULL NULL
+   var_2__x variable x NULL NULL NULL NULL NULL
+   imm_4 immediate NULL int NULL 1 NULL NULL
+   imm_6 immediate NULL int NULL 2 NULL NULL
+   imm_8 immediate NULL int NULL 3 NULL NULL
+   imm_10 immediate NULL int NULL 4 NULL NULL
+   imm_12 immediate NULL int NULL 5 NULL NULL

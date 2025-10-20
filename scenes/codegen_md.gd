@@ -2,14 +2,41 @@ extends Node
 
 const uYaml = preload("res://scenes/uYaml.gd")
 
-var IR = {};
-var all_syms = {};
-#Wide strings handled in assembler now // const USE_WIDE_STRINGS = true; # true: expand each character into U32, false: normal strings
+# constants
 const ADD_DEBUG_TRACE = false; # in emitted assembly, specify where it came from.
 const ADD_IR_TRACE = true; # print the IR commands that are being generated
+const regs = ["EAX", "EBX", "ECX", "EDX"];
+# state
+var IR = {};
+var all_syms = {};
+var assy_block_stack = [];
+var cur_assy_block = null;
+var cur_stack_size = 0; # number of bytes in the current frame used for local variables
+var regs_in_use = {};
+var referenced_cbs = [];
+var cur_block = null
+var cb_stack = [];
+var entered_scopes = [];
+var cur_scope = null;
+
+
+func reset():
+	IR = {};
+	all_syms = {};
+	assy_block_stack = [];
+	cur_assy_block = null;
+	cur_stack_size = 0;
+	regs_in_use = {};
+	referenced_cbs = [];
+	cur_block = null;
+	cb_stack = [];
+	entered_scopes = [];
+	cur_scope = null;
+
 #---------- IR ingestion -------------------
 
 func parse_file(filename)->String:
+	reset();
 	var fp = FileAccess.open(filename, FileAccess.READ);
 	var text = fp.get_as_text();
 	fp.close();
@@ -70,17 +97,6 @@ func unescape_string(text):
 	return new_str;
 
 #-------------- Code generation -----------------
-#var if_block_continued = false;
-#var if_block_lbl_end = null;
-
-var assy_block_stack = [];
-var cur_assy_block = null;
-var cur_stack_size = 0; # number of bytes in the current frame used for local variables
-
-const regs = ["EAX", "EBX", "ECX", "EDX"];
-var regs_in_use = {};
-
-var referenced_cbs = [];
 
 func generate():
 	allocate_vars();
@@ -103,9 +119,6 @@ func generate():
 		assy_full += ab.code;
 	assy_full += generate_globals();
 	return assy_full;
-
-var cur_block = null
-var cb_stack = [];
 
 func generate_code_block(cb):
 	if cur_block:
@@ -157,8 +170,6 @@ func format_db_string(S):
 	#print("format db string: in ["+S+"], out ["+text+"]");
 	return text;
 
-var entered_scopes = [];
-var cur_scope = null;
 func enter_scope(new_scope):
 	if cur_scope:
 		entered_scopes.push_back(cur_scope);

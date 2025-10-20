@@ -15,10 +15,52 @@ signal sig_cprint(msg, col);
 @export var Editor:Node;
 
 func cprint(msg): sig_cprint.emit(msg, null);
-
+# constants
 const ast_bypass_list = ["start", "stmt_list", "stmt"];
 
+const  op_map = {
+	"+":"ADD",
+	"-":"SUB",
+	"*":"MUL",
+	"/":"DIV",
+	"%":"MOD",
+	"[":"INDEX",
+	">":"GREATER",
+	"<":"LESS",
+	"==":"EQUAL",
+	"!=":"NOT_EQUAL",
+	"&&":"AND",
+	"||":"OR",
+	"!":"NOT",
+	"and":"AND",
+	"or":"OR",
+	"not":"NOT",
+	"&":"B_AND",
+	"|":"B_OR",
+	"^":"B_XOR",
+	">>":"B_SHIFT_RIGHT",
+	"<<":"B_SHIFT_LEFT",
+	"~":"B_NOT",
+	"++":"INC",
+	"--":"DEC",
+};
+
+# state
+var error_code = "";
+var cur_line = "";
+var cur_line_idx = 0;
+var expr_stack = [];
+var control_flow_stack = []; #for break and continue
+
+func reset():
+	error_code = "";
+	cur_line = "";
+	cur_line_idx = 0;
+	expr_stack = [];
+	control_flow_stack = [];
+
 func analyze(ast):
+	reset();
 	erep.proxy = self;
 	error_code = "";
 	IR.clear_IR();
