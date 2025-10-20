@@ -7,19 +7,56 @@ signal sig_user_error;
 #----------- Anlysis ----------------------
 
 # error reporter support
-var error_code = "";
-var cur_line = "";
-var cur_line_idx = 0;
 #signal sig_highlight_line(line);
 signal sig_cprint(msg, col);
 @export var Editor:Node;
-
 func cprint(msg): sig_cprint.emit(msg, null);
-
+# constants
 const ast_bypass_list = ["start", "stmt_list", "stmt"];
 
-func analyze(ast):
+const  op_map = {
+	"+":"ADD",
+	"-":"SUB",
+	"*":"MUL",
+	"/":"DIV",
+	"%":"MOD",
+	"[":"INDEX",
+	">":"GREATER",
+	"<":"LESS",
+	"==":"EQUAL",
+	"!=":"NOT_EQUAL",
+	"&&":"AND",
+	"||":"OR",
+	"!":"NOT",
+	"and":"AND",
+	"or":"OR",
+	"not":"NOT",
+	"&":"B_AND",
+	"|":"B_OR",
+	"^":"B_XOR",
+	">>":"B_SHIFT_RIGHT",
+	"<<":"B_SHIFT_LEFT",
+	"~":"B_NOT",
+	"++":"INC",
+	"--":"DEC",
+};
+
+# state
+var error_code = "";
+var cur_line = "";
+var cur_line_idx = 0;
+var expr_stack = [];
+var control_flow_stack = []; #for break and continue
+
+func reset():
 	error_code = "";
+	cur_line = "";
+	cur_line_idx = 0;
+	expr_stack = [];
+	control_flow_stack = [];
+
+func analyze(ast):
+	reset();
 	IR.clear_IR();
 	analyze_one(ast);
 	IR_ready.emit(IR.IR);
@@ -84,35 +121,7 @@ func analyze_all(list):
 	if error_code != "": return;
 	for ast in list: analyze_one(ast);
 
-var expr_stack = [];
-var control_flow_stack = []; #for break and continue
 
-const  op_map = {
-	"+":"ADD",
-	"-":"SUB",
-	"*":"MUL",
-	"/":"DIV",
-	"%":"MOD",
-	"[":"INDEX",
-	">":"GREATER",
-	"<":"LESS",
-	"==":"EQUAL",
-	"!=":"NOT_EQUAL",
-	"&&":"AND",
-	"||":"OR",
-	"!":"NOT",
-	"and":"AND",
-	"or":"OR",
-	"not":"NOT",
-	"&":"B_AND",
-	"|":"B_OR",
-	"^":"B_XOR",
-	">>":"B_SHIFT_RIGHT",
-	"<<":"B_SHIFT_LEFT",
-	"~":"B_NOT",
-	"++":"INC",
-	"--":"DEC",
-};
 
 func analyze_expr_infix(ast):
 	if error_code != "": return;

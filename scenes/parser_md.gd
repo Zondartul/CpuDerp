@@ -1,22 +1,45 @@
 extends Node
-const lang = preload("res://scenes/lang_md.gd");
 signal sig_parse_ready(stack:Array[AST]);
 signal sig_user_error(msg:String);
 #signal sig_highlight_line(line_idx);
 signal sig_cprint(msg:String);
 @export var erep:ErrorReporter;
 #--- error reporter support ---
-var error_code = "";
 func user_error(msg): sig_user_error.emit(msg);
 func cprint(msg): sig_cprint.emit(msg);
+# constants
+const lang = preload("res://scenes/lang_md.gd");
+
+const list_types = {
+	"stmt_list":"stmt",
+	"expr_list":"expr",
+	};
+const dbg_to_console = false;
+const dbg_to_file = true;
+const dbg_filename = "log.txt";
+const dbg_prints_enabled = [
+	#"TOKENIZE",
+	#"PARSE",
+	#"ANALYZE",
+];
+# state
 var cur_line = "";
 var cur_line_idx = 0;
-#------------------------------
-
+var error_code = "";
+var run_i = 0;
+var dbg_fp = FileAccess.open(dbg_filename, FileAccess.WRITE);
 #-------- Parser ---------------------
+func reset():
+	cur_line = "";
+	cur_line_idx = 0;
+	error_code = "";
+	run_i = 0;
+	if(dbg_fp): dbg_fp.close();
+	dbg_fp = FileAccess.open(dbg_filename, FileAccess.WRITE);
 
 # LR(1) shift-reduce parser, always applies the first valid rule
 func parse(in_tokens:Array[Token]):
+	reset();
 	#tokens = tokens.duplicate();
 	var tokens:Array[AST] = [];
 	for tok in in_tokens:
@@ -65,7 +88,6 @@ func parse(in_tokens:Array[Token]):
 			#return ast;
 	#return stack[1];
 
-var run_i = 0;
 
 func rule_matches(stack:Array[AST], tok_lookahead:AST, rule:Array[String])->bool:
 	#var rule_result = rule[-1];
@@ -102,10 +124,6 @@ func apply_rule(stack:Array[AST], rule:Array[String])->void:
 	new_tok.children = toks;
 	stack.append(new_tok);
 
-const list_types = {
-	"stmt_list":"stmt",
-	"expr_list":"expr",
-	};
 
 func linearize_ast(ast:AST)->void:
 	for ch:AST in ast.children:
@@ -150,15 +168,7 @@ func stack_to_str(stack:Array, prefix:String)->String:
 	text = text.erase(len(text)-1); #remove the last \n
 	return text;
 
-var dbg_to_console = false;
-var dbg_to_file = true;
-var dbg_filename = "log.txt";
-var dbg_fp = FileAccess.open(dbg_filename, FileAccess.WRITE);
-var dbg_prints_enabled = [
-	#"TOKENIZE",
-	#"PARSE",
-	#"ANALYZE",
-];
+
 
 func dbg_print(print_class, msg):
 	if print_class in dbg_prints_enabled: 

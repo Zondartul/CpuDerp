@@ -1,7 +1,5 @@
 extends Node
 
-var cur_filename: set=set_cur_filename;
-var cur_path: set=set_cur_path;
 @onready var tokenizer = $tokenizer_md;
 @onready var parser = $parser_md;
 @onready var analyzer = $analyzer_md;
@@ -12,10 +10,18 @@ signal parse_ready;
 signal IR_ready;
 signal sig_user_error;
 signal open_file_request;
+#state
+var cur_filename: set=set_cur_filename;
+var cur_path: set=set_cur_path;
 var has_error = false;
 
-func compile(text):
+func reset():
+	cur_filename = "";
+	cur_path = "";
 	has_error = false;
+
+func compile(text):
+	reset();
 	var tokens = tokenizer.tokenize(text);		if has_error: return false;
 	if not tokens: return;
 	var ast = parser.parse(tokens);				if has_error: return false;

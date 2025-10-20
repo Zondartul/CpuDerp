@@ -3,9 +3,20 @@ extends Node
 # signals
 signal sig_cprint; # cprint(msg:String, col=null) - print a message to console
 signal sig_user_error; # user_error(msg:String) - print a user error message
+signal tokens_ready;
 #signal sig_highlight_line; #highlight_line(line_idx:int) - scroll to and highlight a row of text
 @export var erep:ErrorReporter;
-# globals
+
+# constants
+const ISA = preload("res://lang_zvm.gd");
+const USE_32BIT_BY_DEFAULT = true;
+const USE_WIDE_STRINGS = true;
+const cmd_size = 8;
+const ch_punct = ".,:[]+;";
+const ch_alphabet = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_";
+const ch_digits = "1234567890";
+
+# state
 var cur_filename:String = ""
 var cur_path:String = ""
 var code:Array[int] = [];
@@ -15,62 +26,31 @@ var labels = {};
 var final_labels = {};
 var label_refs = {};
 var label_toks = {};
-const ISA = preload("res://lang_zvm.gd");
-const USE_32BIT_BY_DEFAULT = true;
-const USE_WIDE_STRINGS = true;
 # error reporting
 var lines:PackedStringArray;
 var cur_line:String = "";
 var cur_line_idx:int = 0;
 var error_code:String; #:set = set_error;
-
 #debug info
 var op_locations = []
-signal tokens_ready;
 var output_tokens = [];
 
-#class Iter:
-	#var tokens:Array;
-	#var pos:int;
-	#func _init(new_tokens:Array, new_pos:int):
-		#tokens = new_tokens;
-		#pos = new_pos;
-	#func duplicate()->Iter:
-		#return Iter.new(tokens,pos);
-
-#class Token:
-	#var tok_class:String;
-	#var text:String;
-	#var line:String;
-	#var line_idx:int;
-	#var col:int;
-	#func _init(dict=null):
-		#if dict:
-			#for key in dict:
-				#set(key, dict[key]);
-	#func duplicate()->Token:
-		#var tok2 = Token.new();
-		#G.duplicate_shallow(self, tok2);
-		#return tok2;
-
-#class Chunk:
-	#var code:Array[int];
-	#var shadow:Array[int];
-	#var labels:Dictionary;
-	#var refs:Dictionary;
-	#var label_toks:Dictionary;
-	#var error:bool;
-	#func _init(dict=null):
-		#if dict:
-			#for key in dict:
-				#set(key, dict[key]);
-	#func to_bool()->bool: return not error;
-	#func duplicate()->Chunk:
-		#var chunk2:Chunk = Chunk.new();
-		#G.duplicate_deep(self, chunk2);
-		#return chunk2;
-	#static func null_val():
-		#return Chunk.new({"error":true});
+func reset():
+	cur_filename = "";
+	cur_path = "";
+	code = [];
+	shadow = [];
+	write_pos = 0;
+	labels = {};
+	final_labels = {};
+	label_refs = {};
+	label_toks = {};
+	lines.clear();
+	cur_line = "";
+	cur_line_idx = 0;
+	error_code = "";
+	op_locations = [];
+	output_tokens = [];	
 
 func new_chunk()->Chunk: 
 	var res:Chunk = Chunk.new();
@@ -81,19 +61,18 @@ func duplicate_chunk(in_chunk:Chunk)->Chunk:
 	G.duplicate_deep(in_chunk, out_chunk);
 	return out_chunk;
 
-
-
 func clear()->void:
-	cur_filename = "";
-	cur_path = "";
-	code.clear();
-	shadow.clear();
-	write_pos = 0;
-	labels.clear();
-	label_refs.clear();
-	cur_line = "";
-	cur_line_idx = 0;
-	error_code = "";
+	reset();
+	#cur_filename = "";
+	#cur_path = "";
+	#code.clear();
+	#shadow.clear();
+	#write_pos = 0;
+	#labels.clear();
+	#label_refs.clear();
+	#cur_line = "";
+	#cur_line_idx = 0;
+	#error_code = "";
 
 func assemble(source:String)->Chunk:
 	clear();
@@ -220,7 +199,7 @@ func patch_ref(out_code:Array, ref:int, lbl_pos:int, out_shadow:Array, lbl_tok:T
 # command structure:
 # bytes	0		1		2		3	4	5	6	7 
 #	  [cmd]	[ flags ][reg1|reg2][immediate u32][pad]
-const cmd_size = 8;
+
 # decoding code for reference:
 	#var op:int = cmd[0];
 	#var flags:int = cmd[1];
@@ -356,9 +335,6 @@ func filter_tokens(tok:Token):
 	if tok.tok_class in ["SPACE", "ENDSTRING"]: return false;
 	return true;
 
-const ch_punct = ".,:[]+;";
-const ch_alphabet = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_";
-const ch_digits = "1234567890";
 
 func tok_is_punct(ch:String)->bool: return ch in ch_punct;
 func tok_is_word(ch:String)->bool: return ch in ch_alphabet;

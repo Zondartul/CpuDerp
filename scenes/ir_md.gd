@@ -1,11 +1,21 @@
 extends Node
 
+# constants
+const uYaml = preload("res://scenes/uYaml.gd");
+# state
 var IR = null;
 var cur_scope = null;
 var cur_code_block = null;
-const uYaml = preload("res://scenes/uYaml.gd");
+var val_idx = 0;
+
+func reset():
+	IR = null;
+	cur_scope = null;
+	cur_code_block = null;
+	val_idx = 0;
 
 func clear_IR():
+	reset();
 	IR = {
 		"code_blocks":{},
 		"scopes":{},
@@ -18,7 +28,6 @@ func clear_IR():
 func is_cur_scope_global():
 	return cur_scope.user_name == "global";
 
-var val_idx = 0;
 func make_unique_IR_name(type, text=null):
 	var val_name = type+"_"+str(val_idx);
 	if text: val_name += "__"+text;
