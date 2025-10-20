@@ -96,6 +96,7 @@ func clear()->void:
 	error_code = "";
 
 func assemble(source:String)->Chunk:
+	erep.proxy = self;
 	clear();
 	output_tokens.clear();
 	lines = source.split("\n",true);

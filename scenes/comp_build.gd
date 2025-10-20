@@ -96,6 +96,8 @@ func add_screen_region():
 
 func _on_build_index_pressed(index):
 	if index == 0: # "compile"
+		await Editor.save();
+		Editor.clear_console();
 		var res = compile();
 		#var code = compile();
 		if res: 

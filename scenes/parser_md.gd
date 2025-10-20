@@ -17,6 +17,7 @@ var cur_line_idx = 0;
 
 # LR(1) shift-reduce parser, always applies the first valid rule
 func parse(in_tokens:Array[Token]):
+	erep.proxy = self;
 	#tokens = tokens.duplicate();
 	var tokens:Array[AST] = [];
 	for tok in in_tokens:

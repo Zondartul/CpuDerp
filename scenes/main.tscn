@@ -453,6 +453,7 @@ script = ExtResource("19_a20q3")
 [connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_build" method="_on_comp_file_cur_efile_changed"]
 [connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_save" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_save_file_selected"]
 [connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_load" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_load_file_selected"]
+[connection signal="sig_highlight_line" from="Panel/TabContainer/Editor/comp_erep" to="Panel/TabContainer/Editor" method="_on_highlight_line"]
 [connection signal="sig_highlight_line" from="Panel/TabContainer/Editor/comp_search" to="Panel/TabContainer/Editor" method="_on_highlight_line"]
 [connection signal="close_requested" from="Panel/TabContainer/Editor/window_debug" to="Panel/TabContainer/Editor/window_debug" method="hide"]
 [connection signal="set_highlight" from="Panel/TabContainer/Editor/window_debug/debug_panel" to="Panel/TabContainer/Editor/comp_build" method="_on_debug_panel_set_highlight"]

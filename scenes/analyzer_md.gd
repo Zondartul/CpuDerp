@@ -19,6 +19,7 @@ func cprint(msg): sig_cprint.emit(msg, null);
 const ast_bypass_list = ["start", "stmt_list", "stmt"];
 
 func analyze(ast):
+	erep.proxy = self;
 	error_code = "";
 	IR.clear_IR();
 	analyze_one(ast);

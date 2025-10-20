@@ -38,11 +38,17 @@ func print_console(text, col=Color.GRAY):
 	#scroll to bottom
 	#console.scroll_vertical = console.get_line_count();
 
+func clear_console():
+	console.text = "";
+
 func _process(_delta):
 	if Input.is_action_just_pressed("action_save"):
 		await $comp_file.async_save_file();
 	if Input.is_action_just_pressed("action_search"):
 		$comp_search.popup();
+
+func save():
+	await $comp_file.async_save_file();
 
 func _on_view_index_pressed(index: int) -> void:
 	match index:
@@ -50,13 +56,20 @@ func _on_view_index_pressed(index: int) -> void:
 		1: $win_parse.popup();
 		2: $win_IR.popup();
 
+## signal receiver for "user error" - prints an error message to console
 func _on_user_error(msg)->void:
 	print_console(msg, Color.RED);
 
+## signal receiver for "cprint" - prints to console
 func _on_cprint(msg, col=null)->void:
 	if col == null: col = Color.GRAY;
 	print_console(msg,col);
 
+## signal receiver for "cclear" - clears the console
+func _on_cclear()->void:
+	clear_console();
+
+## signal receiver for "highlight_line" - highlights a region in the text editor
 func _on_highlight_line(line_idx, col=-1, length=-1)->void:
 	$comp_file.highlight_line(line_idx, col, length);
 
