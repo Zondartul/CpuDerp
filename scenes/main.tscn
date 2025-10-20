@@ -293,8 +293,9 @@ script = ExtResource("7_8jmkd")
 [node name="lang_md" type="Node" parent="Panel/TabContainer/Editor/comp_highlight"]
 script = ExtResource("8_gqmmt")
 
-[node name="comp_build" type="Node" parent="Panel/TabContainer/Editor" node_paths=PackedStringArray("win_tokens")]
+[node name="comp_build" type="Node" parent="Panel/TabContainer/Editor" node_paths=PackedStringArray("n_VM", "win_tokens")]
 script = ExtResource("8_jurei")
+n_VM = NodePath("../../../../VM")
 win_tokens = NodePath("../win_token_view")
 
 [node name="comp_asm_zd" type="Node" parent="Panel/TabContainer/Editor/comp_build" node_paths=PackedStringArray("erep")]

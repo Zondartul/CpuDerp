@@ -2,7 +2,7 @@ extends Node
 
 # Todo
 # [FIXED bug] "CTRL-S" ctrl-s doesn't save
-# [bug] "BUILD SAVE" build doesn't save
+# [FIXED bug] "BUILD SAVE" build doesn't save
 # [FIXED bug] "TAB COMPILE" opening another file and then tabbing back makes it not compile
 #
 # [refactor] "ASSEMBLER SPLIT" split assembler into low-lvl and high-lvl
@@ -25,7 +25,7 @@ extends Node
 # [FIXED bug] "TAB DIRTY" sometimes the wrong tab gets the filename*
 # [FIXED bug] "CLEAR COMPILER" compiler and codegen do not clear data between runs
 # [enchancement] "ARITY CHECK" analyzer should check argument count
-# [enhancement] "BUILD CPU RESET" compiling should also reset CPU and screen
+# [FIXED enhancement] "BUILD CPU RESET" compiling should also reset CPU and screen
 # [enhancement] "BUILD CLEAR CONSOLE" compiling should clear the console
 # [FIXED enhancement] "SEARCH GUI" the editor needs a Search (ctrl+F) function (GUI)
 # [feature] "ERROR PRODUCTIONS" parser should report errors:

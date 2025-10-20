@@ -2,12 +2,14 @@ extends Node
 
 @onready var n_assembler = $comp_asm_zd
 @onready var n_compiler = $comp_compile_md
+@export var n_VM:Node;
 @export var win_tokens:Node;
 var cur_efile;
 var Memory;
 var Editor;
 var view_Memory;
 var cur_lang = "";
+
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -96,6 +98,7 @@ func add_screen_region():
 
 func _on_build_index_pressed(index):
 	if index == 0: # "compile"
+		n_VM.reset();
 		var res = compile();
 		#var code = compile();
 		if res: 
