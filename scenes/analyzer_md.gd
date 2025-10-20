@@ -7,9 +7,6 @@ signal sig_user_error;
 #----------- Anlysis ----------------------
 
 # error reporter support
-var error_code = "";
-var cur_line = "";
-var cur_line_idx = 0;
 #signal sig_highlight_line(line);
 signal sig_cprint(msg, col);
 @export var Editor:Node;
@@ -126,36 +123,6 @@ func analyze_one(ast):
 func analyze_all(list):
 	if error_code != "": return;
 	for ast in list: analyze_one(ast);
-
-var expr_stack = [];
-var control_flow_stack = []; #for break and continue
-
-const  op_map = {
-	"+":"ADD",
-	"-":"SUB",
-	"*":"MUL",
-	"/":"DIV",
-	"%":"MOD",
-	"[":"INDEX",
-	">":"GREATER",
-	"<":"LESS",
-	"==":"EQUAL",
-	"!=":"NOT_EQUAL",
-	"&&":"AND",
-	"||":"OR",
-	"!":"NOT",
-	"and":"AND",
-	"or":"OR",
-	"not":"NOT",
-	"&":"B_AND",
-	"|":"B_OR",
-	"^":"B_XOR",
-	">>":"B_SHIFT_RIGHT",
-	"<<":"B_SHIFT_LEFT",
-	"~":"B_NOT",
-	"++":"INC",
-	"--":"DEC",
-};
 
 func analyze_expr_infix(ast):
 	if error_code != "": return;

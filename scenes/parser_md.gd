@@ -1,17 +1,14 @@
 extends Node
-const lang = preload("res://scenes/lang_md.gd");
 signal sig_parse_ready(stack:Array[AST]);
 signal sig_user_error(msg:String);
 #signal sig_highlight_line(line_idx);
 signal sig_cprint(msg:String);
 @export var erep:ErrorReporter;
 #--- error reporter support ---
-var error_code = "";
 func user_error(msg): sig_user_error.emit(msg);
 func cprint(msg): sig_cprint.emit(msg);
 # constants
 const lang = preload("res://scenes/lang_md.gd");
-
 const list_types = {
 	"stmt_list":"stmt",
 	"expr_list":"expr",
