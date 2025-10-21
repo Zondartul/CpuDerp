@@ -48,6 +48,8 @@ var cur_line = "";
 var cur_line_idx = 0;
 var expr_stack = [];
 var control_flow_stack = []; #for break and continue
+var sym_table = null;
+#------------------------------------------------------------
 
 func reset():
 	error_code = "";
@@ -65,6 +67,7 @@ func analyze(ast):
 	IR_ready.emit(IR.IR);
 	#print(IR);
 	IR.to_file("IR.txt");
+	prepare_sym_table();
 	return IR;
 
 func user_error(msg):
@@ -77,6 +80,33 @@ func internal_error(msg):
 #	error_code = msg;
 #	push_error(msg);
 #	# no sig_user_error
+
+func prepare_sym_table():
+	sym_table = {"global":null, "funcs":[]};
+	var scp_global_key = IR.IR.scopes.keys()[0];
+	var scp_global = IR.IR.scopes[scp_global_key];
+	var cb_global_key = IR.IR.code_blocks.keys()[0];
+	var cb_global = IR.IR.code_blocks[cb_global_key];
+	var global_handle = sym_table_append_scope("global", scp_global_key, scp_global, cb_global);
+	sym_table.global = global_handle;
+	for fun in scp_global.funcs:
+		var cb = IR.IR.code_blocks[fun.code];
+		var scp = IR.IR.scopes[fun.scope];
+		var fun_handle = sym_table_append_scope(fun.user_name, fun.ir_name, scp, cb);
+		sym_table.funcs.append(fun_handle);
+
+func sym_table_append_scope(user_name, ir_name, scp, cb):
+	var fun_handle = {"user_name":user_name, "ir_name":ir_name, "lbl":null, "args":[], "vars":[], "constants":[]};
+	fun_handle.lbl = {"from":cb.lbl_from, "to":cb.lbl_to};
+	for ir_var in scp.vars:
+		var handle = {"user_name":ir_var.user_name, "ir_name":ir_var.ir_name, "pos":"query"};
+		match ir_var.val_type:
+			"arg": fun_handle.args.append(handle);
+			"variable": fun_handle.vars.append(handle);
+			"immediate": fun_handle.constants.append(handle);
+			"temporary": pass;
+			_: assert(false, "unknown val type [%s]" % str(ir_var.val_type));
+	return fun_handle;
 
 func analyze_expr(ast):
 	assert(ast.tok_class == "expr");

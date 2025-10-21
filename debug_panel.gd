@@ -6,6 +6,7 @@ const ISA = preload("res://lang_zvm.gd")
 @onready var n_locals = $V/TabContainer/local_view/V/locals
 @onready var n_stackview = $V/TabContainer/stack_view
 @onready var n_indicator = $V/TabContainer/local_view/V/H/indicator
+@onready var n_hl_locals = $V/TabContainer/HL_locals/V/hl_locals
 @onready var win = get_parent();
 
 const class_PerfLimitDirectory = preload("res://PerfLimitDirectory.gd");
@@ -66,6 +67,7 @@ var editor;
 var is_setup = false;
 var mode_hex = false;
 var stack_items = [];
+var cur_sym_table = null;
 
 signal set_highlight(from_line, from_col, to_line, to_col);
 # Called when the node enters the scene tree for the first time.
@@ -149,6 +151,7 @@ func update_cpu():
 	update_ip_highlight();
 	update_pointers();
 	update_locals();
+	update_HL_locals();
 	
 func read32(adr):
 	var buff = PackedByteArray([0,0,0,0]);
@@ -475,13 +478,13 @@ func update_locals():
 			var local =group[0];
 			format_local_main_word(local, col_main);
 			format_local_val_word(local, col_main);
-			complete_line();
+			complete_line(n_locals);
 			# other lines
 			for local2 in group:
 				format_local_access_word(local2, col_acc);
 				n_locals.add_item(" ");
 				format_local_ip_word(local2, col_acc);
-				complete_line();
+				complete_line(n_locals);
 	elif view_type == "access ip":
 		n_locals.max_columns = 4;
 		format_intro_line(cur_func);
@@ -524,7 +527,7 @@ func format_intro_line(cur_func:String):
 	if cur_func != locals_func:
 		n_locals.add_item("Current:");
 		n_locals.add_item(cur_func);
-	complete_line();
+	complete_line(n_locals);
 
 func format_local_val_word(local, col):
 	var val = 0;
@@ -548,9 +551,10 @@ func format_local_ip_word(local, col):
 	var idx = n_locals.add_item(str(local.ip));
 	n_locals.set_item_custom_fg_color(idx, col);
 
-func complete_line():
-	var n = n_locals.max_columns-1 - ((n_locals.item_count-1) % n_locals.max_columns);
-	for i in range(n): n_locals.add_item(" ");
+## performs a "newline" function for ItemList widgets
+func complete_line(item_list:ItemList):
+	var n = item_list.max_columns-1 - ((item_list.item_count-1) % item_list.max_columns);
+	for i in range(n): item_list.add_item(" ");
 
 func get_cur_func_name():
 	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
@@ -794,3 +798,22 @@ func print_cpu_hist(n_events):
 		if event.type == "cpu":
 			S += " %d" % event.state.regs[cpu.ISA.REG_IP];
 		print(S);
+
+func on_sym_table_ready(sym_table) -> void:
+	cur_sym_table = sym_table;
+
+func update_HL_locals():
+	n_hl_locals.clear();
+	if not cur_sym_table:
+		n_hl_locals.add_item("No symbol table");
+		return;
+	var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
+	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
+	var cur_func_name = decode_ip(cur_ip);
+	n_hl_locals.add_item(cur_func_name);
+	complete_line(n_hl_locals);
+	if cur_func_name not in cur_sym_table:
+		n_hl_locals.add_item("[No symbols for this function]");
+		return;
+	var fun_handle = cur_sym_table[cur_func_name];
+	

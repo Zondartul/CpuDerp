@@ -10,6 +10,7 @@ signal parse_ready;
 signal IR_ready;
 signal sig_user_error;
 signal open_file_request;
+signal sym_table_ready;
 #state
 var cur_filename: set=set_cur_filename;
 var cur_path: set=set_cur_path;
@@ -28,6 +29,8 @@ func compile(text):
 	if not ast: return;
 	var _IR = analyzer.analyze(ast);			if has_error: return false;
 	var _assy = codegen.parse_file("IR.txt");	if has_error: return false;
+	codegen.fixup_symtable(analyzer.sym_table); if has_error: return false;
+	sym_table_ready.emit(analyzer.sym_table);
 	#print(_assy);
 	save_file(_assy, "a.zd");
 	open_file_request.emit("a.zd");

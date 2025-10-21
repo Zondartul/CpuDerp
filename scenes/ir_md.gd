@@ -138,7 +138,7 @@ func pop_code_block(old_block):
 	return popped_block;
 
 func new_code_block():
-	var cb = {"ir_name":make_unique_IR_name("cb"), "code":[]};
+	var cb = {"ir_name":make_unique_IR_name("cb"), "code":[], "lbl_from":make_unique_IR_name("lbl_from"), "lbl_to":make_unique_IR_name("lbl_to")};
 	IR.code_blocks[cb.ir_name] = cb;
 	return cb;
 
@@ -191,7 +191,8 @@ func get_func(fun_name:String):
 	return null;
 
 func serialize_full()->String:
-	var sIR = IR.duplicate();
+	var sIR = {};
+	G.duplicate_deep(IR, sIR); #IR.duplicate();
 	for key in sIR.scopes:
 		var scope = sIR.scopes[key];
 		serialize_vals(scope.vars);

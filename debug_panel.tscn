@@ -33,7 +33,7 @@ grow_vertical = 2
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
-current_tab = 2
+current_tab = 4
 
 [node name="stack_view" type="ItemList" parent="V/TabContainer"]
 visible = false
@@ -121,6 +121,7 @@ allow_lesser = true
 alignment = 1
 
 [node name="reg_view" type="ItemList" parent="V/TabContainer"]
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 max_columns = 8
@@ -172,6 +173,35 @@ size_flags_vertical = 4
 script = ExtResource("2_x1thd")
 
 [node name="locals" type="ItemList" parent="V/TabContainer/local_view/V"]
+layout_mode = 2
+size_flags_vertical = 3
+max_columns = 3
+same_column_width = true
+
+[node name="HL_locals" type="Control" parent="V/TabContainer"]
+layout_mode = 2
+metadata/_tab_index = 4
+
+[node name="V" type="VBoxContainer" parent="V/TabContainer/HL_locals"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="H" type="HBoxContainer" parent="V/TabContainer/HL_locals/V"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="V/TabContainer/HL_locals/V/H"]
+layout_mode = 2
+text = "High-level locals"
+
+[node name="Control" type="Control" parent="V/TabContainer/HL_locals/V/H"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="hl_locals" type="ItemList" parent="V/TabContainer/HL_locals/V"]
 layout_mode = 2
 size_flags_vertical = 3
 max_columns = 3

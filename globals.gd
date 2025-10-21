@@ -13,17 +13,34 @@ func duplicate_val(obj)->Variant:
 	if (obj is Object):
 		if "duplicate" in obj:
 			return obj.duplicate();
+	elif (obj is Dictionary):
+		var res = {};
+		duplicate_deep(obj, res);
+		return res;
+	elif (obj is Array):
+		return obj.duplicate();
 	return obj;
 
 const duplication_blacklist = ["RefCounted", "script", "Built-in script"];
 ## Creates a deep copy of an object by duplicating each property
 func duplicate_deep(src, dest)->void:
-	for key in src.get_property_list():
-		if key.name in duplication_blacklist: continue;
-		#print("duplicate "+str(key));
-		var old_val = src.get(key.name);
-		var new_val = duplicate_val(old_val);
-		dest.set(key.name, new_val);
+	if src is Object:
+		assert(dest is Object);
+		for key in src.get_property_list():
+			if key.name in duplication_blacklist: continue;
+			#print("duplicate "+str(key));
+			var old_val = src.get(key.name);
+			var new_val = duplicate_val(old_val);
+			dest.set(key.name, new_val);
+	elif src is Dictionary:
+		assert(dest is Dictionary);
+		for key in src:
+			var val = src[key];
+			dest[key] = duplicate_val(val);
+	elif src is Array:
+		assert(dest is Array);
+		var res = duplicate_val(src);
+		dest.assign(res);
 ## creats a shallow copy of an object by duplicating each property
 func duplicate_shallow(src, dest)->void:
 	for key in src.get_property_list():

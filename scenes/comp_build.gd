@@ -105,11 +105,12 @@ func _on_build_index_pressed(index):
 		#var code = compile();
 		if res: 
 			Editor.print_console("Compiled successfully");
-			upload(res.code);
-			upload_shadow(res.shadow);
-			add_stack_region();
-			add_screen_region();
-			Editor.print_console("Code uploaded to memory");
+			if not (res.code.is_empty()):
+				upload(res.code);
+				upload_shadow(res.shadow);
+				add_stack_region();
+				add_screen_region();
+				Editor.print_console("Code uploaded to memory");
 		else: 
 			Editor.print_console("Failed to compile");
 			push_error("Code did not compile - not uploading")

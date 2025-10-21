@@ -1,7 +1,6 @@
 extends Node
 
 const uYaml = preload("res://scenes/uYaml.gd")
-
 # constants
 const ADD_DEBUG_TRACE = false; # in emitted assembly, specify where it came from.
 const ADD_IR_TRACE = true; # print the IR commands that are being generated
@@ -18,7 +17,6 @@ var cur_block = null
 var cb_stack = [];
 var entered_scopes = [];
 var cur_scope = null;
-
 
 func reset():
 	IR = {};
@@ -644,3 +642,24 @@ func fixup_enter_leave(assy_block):
 		S = S.replace("__ENTER_%s" % scp_name, "sub ESP, %d" % -stack_bytes);
 		S = S.replace("__LEAVE_%s" % scp_name, "sub ESP, %d" % stack_bytes);
 		assy_block.code = S;
+
+func fixup_symtable(sym_table):
+	fixup_symtable_scope(sym_table.global);
+	for fun in sym_table.funcs:
+		fixup_symtable_scope(fun);
+	print(sym_table);
+	pass;
+
+func fixup_symtable_scope(fun):
+	for cat in [fun.args, fun.vars, fun.constants]:
+		for h2 in cat: fixup_symtable_val(h2);
+
+func fixup_symtable_val(val):
+	var sym = all_syms[val.ir_name];
+	match sym.storage.type:
+		"global": val.pos = {"type":"global", "lbl":val.ir_name};
+		"stack": val.pos = {"type":"stack", "pos":sym.storage.pos};
+		"immediate": val.pos = {"type":"immediate", "val":sym.value};
+		_: assert(false, "unexpected sym storage type [%s]" % str(sym.storage.type));
+	if val.user_name == null:
+		val.pos["val"] = sym.value;

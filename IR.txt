@@ -2,34 +2,161 @@ code_blocks:
  cb_1: 
   ir_name: cb_1
   code: 
-   IF cb_3 imm_4 cb_5
-   ELSE_IF cb_7 imm_8 cb_9
-   ELSE cb_11
- cb_3: 
-  ir_name: cb_3
- cb_5: 
-  ir_name: cb_5
+   MOV var_9__adr_scr imm_10
+   MOV var_11__scr_I imm_12
+   CALL func_4__main [ ] tmp_13
+   CALL func_7__infloop [ ] tmp_14
+  lbl_from: lbl_from_2
+  lbl_to: lbl_to_3
+ cb_15: 
+  ir_name: cb_15
   code: 
-   MOV var_2__x imm_6
- cb_7: 
-  ir_name: cb_7
- cb_9: 
-  ir_name: cb_9
+   ENTER scp_18__NULL
+   CALL func_5__print [ imm_22 imm_21 imm_20 imm_19 ] tmp_23
+   LEAVE
+  lbl_from: lbl_from_16
+  lbl_to: lbl_to_17
+ cb_24: 
+  ir_name: cb_24
   code: 
-   MOV var_2__x imm_10
- cb_11: 
-  ir_name: cb_11
+   ENTER scp_27__NULL
+   MOV var_32__i imm_33
+   OP INDEX var_31__str var_32__i tmp_35
+   MOV var_34__c tmp_35
+   WHILE cb_38 var_34__c cb_41 lbl_36__while_next lbl_37__while_end
+   LEAVE
+  lbl_from: lbl_from_25
+  lbl_to: lbl_to_26
+ cb_38: 
+  ir_name: cb_38
+  lbl_from: lbl_from_39
+  lbl_to: lbl_to_40
+ cb_41: 
+  ir_name: cb_41
   code: 
-   MOV var_2__x imm_12
+   OP MUL var_32__i imm_44 tmp_45
+   OP INDEX var_31__str tmp_45 tmp_46
+   MOV var_34__c tmp_46
+   OP INC var_32__i none tmp_47
+   CALL func_6__putch [ var_28__b var_29__g var_30__r var_34__c ] tmp_48
+  lbl_from: lbl_from_42
+  lbl_to: lbl_to_43
+ cb_49: 
+  ir_name: cb_49
+  code: 
+   ENTER scp_52__NULL
+   CALL func_8__scr_push_byte [ var_56__c ] tmp_57
+   CALL func_8__scr_push_byte [ var_55__r ] tmp_58
+   CALL func_8__scr_push_byte [ var_54__g ] tmp_59
+   CALL func_8__scr_push_byte [ var_53__b ] tmp_60
+   CALL func_8__scr_push_byte [ imm_61 ] tmp_62
+   CALL func_8__scr_push_byte [ imm_63 ] tmp_64
+   CALL func_8__scr_push_byte [ imm_65 ] tmp_66
+   LEAVE
+  lbl_from: lbl_from_50
+  lbl_to: lbl_to_51
+ cb_67: 
+  ir_name: cb_67
+  code: 
+   ENTER scp_70__NULL
+   OP INDEX var_9__adr_scr var_11__scr_I tmp_72
+   MOV tmp_72 var_71__b
+   OP INC var_11__scr_I none tmp_73
+   LEAVE
+  lbl_from: lbl_from_68
+  lbl_to: lbl_to_69
+ cb_74: 
+  ir_name: cb_74
+  code: 
+   ENTER scp_77__NULL
+   WHILE cb_80 imm_83 cb_84 lbl_78__while_next lbl_79__while_end
+   LEAVE
+  lbl_from: lbl_from_75
+  lbl_to: lbl_to_76
+ cb_80: 
+  ir_name: cb_80
+  lbl_from: lbl_from_81
+  lbl_to: lbl_to_82
+ cb_84: 
+  ir_name: cb_84
+  lbl_from: lbl_from_85
+  lbl_to: lbl_to_86
 scopes: 
  scp_0__global: 
   ir_name: scp_0__global
   user_name: global
   parent: none
   vars: 
-   var_2__x variable x NULL NULL NULL NULL NULL
-   imm_4 immediate NULL int NULL 1 NULL NULL
-   imm_6 immediate NULL int NULL 2 NULL NULL
-   imm_8 immediate NULL int NULL 3 NULL NULL
-   imm_10 immediate NULL int NULL 4 NULL NULL
-   imm_12 immediate NULL int NULL 5 NULL NULL
+   var_9__adr_scr variable adr_scr int NULL NULL NULL NULL
+   imm_10 immediate NULL int NULL 67536 NULL NULL
+   var_11__scr_I variable scr_I int NULL NULL NULL NULL
+   imm_12 immediate NULL int NULL 0 NULL NULL
+   tmp_13 temporary NULL NULL NULL NULL NULL NULL
+   tmp_14 temporary NULL NULL NULL NULL NULL NULL
+  funcs: 
+   func_4__main func main NULL NULL NULL scp_18__NULL cb_15
+   func_5__print func print NULL NULL NULL scp_27__NULL cb_24
+   func_6__putch func putch NULL NULL NULL scp_52__NULL cb_49
+   func_7__infloop func infloop NULL NULL NULL scp_77__NULL cb_74
+   func_8__scr_push_byte func scr_push_byte NULL NULL NULL scp_70__NULL cb_67
+ scp_18__NULL: 
+  ir_name: scp_18__NULL
+  user_name: NULL
+  parent: scp_0__global
+  vars: 
+   imm_19 immediate NULL string NULL Hello%032World%033 NULL NULL
+   imm_20 immediate NULL int NULL 128 NULL NULL
+   imm_21 immediate NULL int NULL 255 NULL NULL
+   imm_22 immediate NULL int NULL 0 NULL NULL
+   tmp_23 temporary NULL NULL NULL NULL NULL NULL
+ scp_27__NULL: 
+  ir_name: scp_27__NULL
+  user_name: NULL
+  parent: scp_0__global
+  vars: 
+   var_28__b variable b NULL arg NULL NULL NULL
+   var_29__g variable g NULL arg NULL NULL NULL
+   var_30__r variable r NULL arg NULL NULL NULL
+   var_31__str variable str NULL arg NULL NULL NULL
+   var_32__i variable i int NULL NULL NULL NULL
+   imm_33 immediate NULL int NULL 0 NULL NULL
+   var_34__c variable c NULL NULL NULL NULL NULL
+   tmp_35 temporary NULL NULL NULL NULL NULL NULL
+   imm_44 immediate NULL int NULL 4 NULL NULL
+   tmp_45 temporary NULL NULL NULL NULL NULL NULL
+   tmp_46 temporary NULL NULL NULL NULL NULL NULL
+   tmp_47 temporary NULL NULL NULL NULL NULL NULL
+   tmp_48 temporary NULL NULL NULL NULL NULL NULL
+ scp_52__NULL: 
+  ir_name: scp_52__NULL
+  user_name: NULL
+  parent: scp_0__global
+  vars: 
+   var_53__b variable b NULL arg NULL NULL NULL
+   var_54__g variable g NULL arg NULL NULL NULL
+   var_55__r variable r NULL arg NULL NULL NULL
+   var_56__c variable c NULL arg NULL NULL NULL
+   tmp_57 temporary NULL NULL NULL NULL NULL NULL
+   tmp_58 temporary NULL NULL NULL NULL NULL NULL
+   tmp_59 temporary NULL NULL NULL NULL NULL NULL
+   tmp_60 temporary NULL NULL NULL NULL NULL NULL
+   imm_61 immediate NULL int NULL 0 NULL NULL
+   tmp_62 temporary NULL NULL NULL NULL NULL NULL
+   imm_63 immediate NULL int NULL 0 NULL NULL
+   tmp_64 temporary NULL NULL NULL NULL NULL NULL
+   imm_65 immediate NULL int NULL 0 NULL NULL
+   tmp_66 temporary NULL NULL NULL NULL NULL NULL
+ scp_70__NULL: 
+  ir_name: scp_70__NULL
+  user_name: NULL
+  parent: scp_0__global
+  vars: 
+   var_71__b variable b NULL arg NULL NULL NULL
+   tmp_72 temporary NULL NULL NULL NULL NULL NULL
+   tmp_73 temporary NULL NULL NULL NULL NULL NULL
+ scp_77__NULL: 
+  ir_name: scp_77__NULL
+  user_name: NULL
+  parent: scp_0__global
+  vars: 
+   imm_83 immediate NULL int NULL 1 NULL NULL

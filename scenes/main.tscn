@@ -442,6 +442,7 @@ script = ExtResource("19_a20q3")
 [connection signal="open_file_request" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="." method="_on_comp_compile_md_open_file_request"]
 [connection signal="parse_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor/win_parse" method="_on_comp_compile_md_parse_ready"]
 [connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor" method="_on_user_error"]
+[connection signal="sym_table_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="on_sym_table_ready"]
 [connection signal="tokens_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/tokenizer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_tokenizer_md_tokens_ready"]
 [connection signal="sig_cprint" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor" method="_on_cprint"]
 [connection signal="sig_parse_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_parser_md_sig_parse_ready"]
