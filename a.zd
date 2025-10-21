@@ -1,4 +1,5 @@
 # Begin code block cb_1
+:lbl_from_2:
 # IR: MOV var_9__adr_scr imm_10
 mov EAX, 67536;
 mov *var_9__adr_scr, EAX;
@@ -13,6 +14,7 @@ mov *tmp_13, eax;
 call func_7__infloop;
 add ESP, 0;
 mov *tmp_14, eax;
+:lbl_to_3:
 # End code block cb_1
 # Begin code block cb_15
 :func_4__main:
@@ -29,6 +31,7 @@ mov EBP[-19], eax;
 # IR: LEAVE
 sub ESP, -23;
 ret;
+:lbl_to_17:
 # End code block cb_15
 # Begin code block cb_74
 :func_7__infloop:
@@ -37,12 +40,16 @@ sub ESP, 11;
 # IR: WHILE cb_80 imm_83 cb_84 lbl_78__while_next lbl_79__while_end
 :lbl_78__while_next:
 # Begin code block cb_80
+:lbl_from_81:
+:lbl_to_82:
 # End code block cb_80
 
 mov EAX, 0;
 cmp 1, EAX;
 jz lbl_79__while_end;
 # Begin code block cb_84
+:lbl_from_85:
+:lbl_to_86:
 # End code block cb_84
 
 jmp lbl_78__while_next;
@@ -50,6 +57,7 @@ jmp lbl_78__while_next;
 # IR: LEAVE
 sub ESP, -11;
 ret;
+:lbl_to_76:
 # End code block cb_74
 # Begin code block cb_24
 :func_5__print:
@@ -70,12 +78,15 @@ mov EBP[-11], EAX;
 # IR: WHILE cb_38 var_34__c cb_41 lbl_36__while_next lbl_37__while_end
 :lbl_36__while_next:
 # Begin code block cb_38
+:lbl_from_39:
+:lbl_to_40:
 # End code block cb_38
 
 mov EAX, 0;
 cmp EBP[-11], EAX;
 jz lbl_37__while_end;
 # Begin code block cb_41
+:lbl_from_42:
 # IR: OP MUL var_32__i imm_44 tmp_45
 mov EAX, EBP[-3];
 mov EBX, 4;
@@ -102,6 +113,7 @@ push EBP[9];
 call func_6__putch;
 add ESP, 16;
 mov EBP[-35], eax;
+:lbl_to_43:
 # End code block cb_41
 
 jmp lbl_36__while_next;
@@ -109,6 +121,7 @@ jmp lbl_36__while_next;
 # IR: LEAVE
 sub ESP, -43;
 ret;
+:lbl_to_26:
 # End code block cb_24
 # Begin code block cb_49
 :func_6__putch:
@@ -152,6 +165,7 @@ mov EBP[-39], eax;
 # IR: LEAVE
 sub ESP, -43;
 ret;
+:lbl_to_51:
 # End code block cb_49
 # Begin code block cb_67
 :func_8__scr_push_byte:
@@ -173,6 +187,7 @@ inc *var_11__scr_I;
 # IR: LEAVE
 sub ESP, -11;
 ret;
+:lbl_to_69:
 # End code block cb_67
 :var_9__adr_scr: db 0;
 :var_11__scr_I: db 0;

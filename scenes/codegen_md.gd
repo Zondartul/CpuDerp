@@ -126,13 +126,15 @@ func generate_code_block(cb):
 	assy_block_stack.push_back(cur_assy_block);
 	cur_assy_block = {"code":""};
 	emit_raw("# Begin code block %s\n" % cb.ir_name, "generate_code_block.intro");
-	maybe_emit_func_label(cb.ir_name);
+	emit_raw(":%s:\n" % cb.lbl_from, "generate_code_block.lbl_from");
+	#maybe_emit_func_label(cb.ir_name);
 	if "code" in cb:
 		for i in range(len(cb.code)):
 			var cmd = cb.code[i];
 			check_if_block_continued(i, cb.code);
 			generate_cmd(cmd);
 	maybe_emit_func_ret(cb.ir_name);
+	emit_raw(":%s:\n" % cb.lbl_to, "generate_code_block.lbl_to");
 	emit_raw("# End code block %s\n" % cb.ir_name, "generate_code_block.exit");
 	var res = cur_assy_block;
 	cur_assy_block = assy_block_stack.pop_back();
@@ -176,9 +178,9 @@ func leave_scope():
 	cur_scope = entered_scopes.pop_back();
 
 
-func maybe_emit_func_label(ir_name:String):
-	var calling_func = is_referenced_by_func(ir_name);
-	if calling_func:	emit_raw(":%s:\n" % calling_func, "maybe_emit_func_label(%s)" % ir_name);
+#func maybe_emit_func_label(ir_name:String):
+	#var calling_func = is_referenced_by_func(ir_name);
+	#if calling_func:	emit_raw(":%s:\n" % calling_func, "maybe_emit_func_label(%s)" % ir_name);
 
 func maybe_emit_func_ret(ir_name:String):
 	var calling_func = is_referenced_by_func(ir_name);
@@ -645,7 +647,8 @@ func fixup_enter_leave(assy_block):
 
 func fixup_symtable(sym_table):
 	fixup_symtable_scope(sym_table.global);
-	for fun in sym_table.funcs:
+	for key in sym_table.funcs:
+		var fun = sym_table.funcs[key];
 		fixup_symtable_scope(fun);
 	print(sym_table);
 	pass;

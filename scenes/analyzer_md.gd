@@ -64,6 +64,7 @@ func analyze(ast):
 	error_code = "";
 	IR.clear_IR();
 	analyze_one(ast);
+	fixup_cb_lbls();
 	IR_ready.emit(IR.IR);
 	#print(IR);
 	IR.to_file("IR.txt");
@@ -81,8 +82,18 @@ func internal_error(msg):
 #	push_error(msg);
 #	# no sig_user_error
 
+## makes sure the function name and code block begin are the same label
+func fixup_cb_lbls():
+	var scp_global_key = IR.IR.scopes.keys()[0];
+	var scp_global = IR.IR.scopes[scp_global_key];
+	for fun in scp_global.funcs:
+		#var fun = scp_global.funcs[fun_key];
+		var cb_key = fun.code;
+		var cb = IR.IR.code_blocks[cb_key];
+		cb.lbl_from = fun.ir_name;
+
 func prepare_sym_table():
-	sym_table = {"global":null, "funcs":[]};
+	sym_table = {"global":null, "funcs":{}};
 	var scp_global_key = IR.IR.scopes.keys()[0];
 	var scp_global = IR.IR.scopes[scp_global_key];
 	var cb_global_key = IR.IR.code_blocks.keys()[0];
@@ -93,7 +104,7 @@ func prepare_sym_table():
 		var cb = IR.IR.code_blocks[fun.code];
 		var scp = IR.IR.scopes[fun.scope];
 		var fun_handle = sym_table_append_scope(fun.user_name, fun.ir_name, scp, cb);
-		sym_table.funcs.append(fun_handle);
+		sym_table.funcs[fun.ir_name] = fun_handle;
 
 func sym_table_append_scope(user_name, ir_name, scp, cb):
 	var fun_handle = {"user_name":user_name, "ir_name":ir_name, "lbl":null, "args":[], "vars":[], "constants":[]};

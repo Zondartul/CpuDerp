@@ -68,6 +68,8 @@ var is_setup = false;
 var mode_hex = false;
 var stack_items = [];
 var cur_sym_table = null;
+var symtable_label_ips = [];
+var symtable_label_names = [];
 
 signal set_highlight(from_line, from_col, to_line, to_col);
 # Called when the node enters the scene tree for the first time.
@@ -188,14 +190,37 @@ func update_labels():
 		label_names.append(v);
 		label_ips.append(k);
 
+func assert_materialized(lbl):
+	assert(lbl in assembler.final_labels, "Label [%s] not materialized" % str(lbl));
+
+func update_labels_from_sym_table():
+	for key in cur_sym_table.funcs:
+		var fun = cur_sym_table.funcs[key];
+		assert_materialized(fun.lbl.from);
+		assert_materialized(fun.lbl.to);
+		var ip_from = assembler.final_labels[fun.lbl.from];
+		var ip_to = assembler.final_labels[fun.lbl.to];
+		symtable_label_ips.append(ip_from);
+		symtable_label_names.append(fun.ir_name);
+		symtable_label_ips.append(ip_to);
+		symtable_label_names.append("(between)");
+
 func decode_ip(ip):
 	if(not assembler or (assembler.final_labels.size() == 0)):
 		return "(no data)";
 	else:
 		update_labels();
-		var idx = label_ips.bsearch(ip, false)-1;
-		if(idx < 0): return "(null)";
-		return label_names[idx];
+		var res = null;
+		if cur_sym_table:
+			update_labels_from_sym_table();
+			var idx = symtable_label_ips.bsearch(ip, false)-1;
+			if idx != -1: res = symtable_label_names[idx];
+			if (idx % 2) == 1: res = "(null)"
+		if res == null:
+			var idx = label_ips.bsearch(ip, false)-1;
+			if idx != -1: res = label_names[idx];
+		if res: return res;
+		else: return "(null)";
 	#return "(no data)";
 
 func update_stack():
@@ -812,8 +837,32 @@ func update_HL_locals():
 	var cur_func_name = decode_ip(cur_ip);
 	n_hl_locals.add_item(cur_func_name);
 	complete_line(n_hl_locals);
-	if cur_func_name not in cur_sym_table:
+	if cur_func_name == "(null)": cur_func_name = "global";
+	if cur_func_name not in cur_sym_table.funcs:
 		n_hl_locals.add_item("[No symbols for this function]");
 		return;
-	var fun_handle = cur_sym_table[cur_func_name];
-	
+	var fun_handle;
+	if cur_func_name == "global":
+		fun_handle = cur_sym_table.global;
+	else:
+		fun_handle = cur_sym_table.funcs[cur_func_name];
+	var count = len(fun_handle.args) + len(fun_handle.vars);
+	n_hl_locals.add_item("%d symbols" % count); complete_line(n_hl_locals);
+	for cat in [fun_handle.args, fun_handle.vars]:
+		for val in cat:
+			n_hl_locals.add_item(val.user_name);
+			var value = read_hl_local(val, cur_ebp);
+			n_hl_locals.add_item(str(value));
+
+func read_hl_local(val, cur_ebp):
+	if "value" in val.pos: return val.pos.value;
+	match val.pos.type:
+		"global":pass;
+		"stack":
+			var adr = cur_ebp + val.pos.pos;
+			var data = read32(adr);
+			return data;
+		"immediate": pass;
+		"temporary": pass;
+		_: assert(false, "unknown hl_local pos type [%s]" % str(val.pos.type));
+	return "<error>";

@@ -70,5 +70,6 @@ extends Node
 #	split analyzer into parse/generate or parse/typecheck/generate
 # [enhancement]			"HIGHLIGHT FILE"
 #	highlighter and error-reporter should specify filename
-#
+# [bug]					"DEBUG LOCALS FLICKER"
+#	maybe a race condition, it sometimes shows "null" function
 #
