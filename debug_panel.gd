@@ -194,6 +194,8 @@ func assert_materialized(lbl):
 	assert(lbl in assembler.final_labels, "Label [%s] not materialized" % str(lbl));
 
 func update_labels_from_sym_table():
+	symtable_label_ips.clear();
+	symtable_label_names.clear();
 	for key in cur_sym_table.funcs:
 		var fun = cur_sym_table.funcs[key];
 		assert_materialized(fun.lbl.from);
