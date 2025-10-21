@@ -3,9 +3,7 @@ class_name Token
 
 var tok_class:String;
 var text:String;
-var line:String;
-var line_idx:int;
-var col:int;
+var loc:LocationRange;
 
 func _init(dict=null):
 	if dict:

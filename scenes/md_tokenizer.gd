@@ -64,10 +64,13 @@ func tokenize(text:String)->Array[Token]:
 	return output_tokens;
 
 func basic_tokenize(text:String)->Array[Token]:
+	var cur_loc:Location = Location.new({"filename":cur_filename})
 	var tokens:Array[Token] = [];
 	var lines:PackedStringArray = text.split("\n",true);
 	for line:String in lines:
 		cur_line = line;
+		cur_loc.line = cur_line;
+		cur_loc.line_idx = cur_line_idx;
 		if line == "": 
 			cur_line_idx += 1;
 			continue;
@@ -75,8 +78,11 @@ func basic_tokenize(text:String)->Array[Token]:
 		var line_tokens:Array[Token] = tokenizer.tokenize(line);
 		for tok:Token in line_tokens:
 			tok.set_meta("token_viewer_line", cur_line_idx)
-			tok.line = line;
-			tok.line_idx = cur_line_idx;
+			#tok.line = line;
+			#tok.line_idx = cur_line_idx;
+			for prop in ["filename", "line", "line_idx"]:
+				for dest in [tok.loc.from, tok.loc.to]:
+					dest.set(prop, cur_loc.get(prop));
 		tokens.append_array(line_tokens);
 		cur_line_idx += 1;
 		if error_code: return [];

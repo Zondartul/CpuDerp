@@ -1,6 +1,8 @@
 extends Node
 
 const class_Iter = preload("res://class_Iter.gd");
+const class_Location = preload("res://class_Location.gd");
+const class_LocationRange = preload("res://class_Location.gd");
 const class_Token = preload("res://class_Token.gd");
 const class_Chunk = preload("res://class_Chunk.gd");
 const class_ErrorReporter = preload("res://class_ErrorReporter.gd");
@@ -127,3 +129,11 @@ func str_to_row_col_arr(positions:Array, text:String)->Array:
 		res.append([line_idx, pos]);
 	assert(len(res) == len(positions));
 	return res;
+
+func comparison(A:Object, B:Object, prop_list:Array)->bool:
+	for prop in prop_list:
+		var val_A = A.get(prop);
+		var val_B = B.get(prop);
+		if val_A < val_B: return true;
+		elif val_A > val_B: return false;
+	return false;

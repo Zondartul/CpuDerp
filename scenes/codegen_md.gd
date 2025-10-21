@@ -58,6 +58,14 @@ func deserialize(text):
 		for val in scope.vars: all_syms[val.ir_name] = val;
 		for val in scope.funcs: all_syms[val.ir_name] = val;
 	#print(all_syms.keys());
+	#inflate locations
+	for key in IR.code_blocks: 
+		var cb = IR.code_blocks[key];
+		if "code" not in cb: continue;
+		for cmd in cb.code:
+			var loc_str = cmd.pop_back();
+			loc_str = unescape_string(loc_str);
+			print(loc_str);
 
 func inflate_vals(arr):
 	const props = ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code"];

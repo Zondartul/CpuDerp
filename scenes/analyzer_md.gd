@@ -175,7 +175,7 @@ func analyze_expr_infix(ast):
 	assert(expr2.tok_class == "expr");
 	#var erep = ErrorReporter.new(self, op);
 	erep.context = op;
-	if op.text in op_map: analyze_expr_infix_op(expr1, expr2, op_map[op.text]);
+	if op.text in op_map: analyze_expr_infix_op(expr1, expr2, op_map[op.text], ast.get_location());
 	else: erep.error(E.ERR_31 % op.text); return;
 	return;
 
@@ -186,10 +186,15 @@ func analyze_expr_postfix(ast):
 	assert(expr1.tok_class == "expr");
 	var op = ast.children[1];
 	
-	if op.text in op_map: analyze_expr_postfix_op(expr1, op_map[op.text]);
+	if op.text in op_map: analyze_expr_postfix_op(expr1, op_map[op.text], ast.get_location());
 	else: internal_error(E.ERR_25 % op.text); return;
 
-func analyze_expr_infix_op(expr1, expr2, op):
+#func get_location(asts:Array[AST]):
+	#var virt_ast = AST.new();
+	#virt_ast.children.assign(asts);
+	#return virt_ast.get_location();
+
+func analyze_expr_infix_op(expr1, expr2, op, loc:LocationRange):
 	if error_code != "": return;
 	analyze_expr(expr1);
 	analyze_expr(expr2);
@@ -197,16 +202,16 @@ func analyze_expr_infix_op(expr1, expr2, op):
 	var arg1 = expr_stack.pop_back();
 	var res = IR.new_val_temp();
 	IR.save_variable(res);
-	IR.emit_IR(["OP", op, arg1, arg2, res]);
+	IR.emit_IR(["OP", op, arg1, arg2, res], loc);
 	expr_stack.push_back(res);
 
-func analyze_expr_postfix_op(expr1, op):
+func analyze_expr_postfix_op(expr1, op, loc:LocationRange):
 	if error_code != "": return;
 	analyze_expr(expr1);
 	var arg = expr_stack.pop_back();
 	var res = IR.new_val_temp();
 	IR.save_variable(res);
-	IR.emit_IR(["OP", op, arg, IR.new_val_none(), res]);
+	IR.emit_IR(["OP", op, arg, IR.new_val_none(), res], loc);
 	expr_stack.push_back(res);
 
 func analyze_expr_call(ast):
@@ -232,7 +237,7 @@ func analyze_expr_call(ast):
 			internal_error(E.ERR_26); return;
 	var res = IR.new_val_temp();
 	IR.save_variable(res);
-	IR.emit_IR(["CALL", fun, args, res]);
+	IR.emit_IR(["CALL", fun, args, res], ast.get_location());
 	expr_stack.push_back(res);
 
 func analyze_expr_list(expr_list):
@@ -345,7 +350,7 @@ func analyze_while_stmt(ast):
 	analyze_one(stmt_block);
 	var code_block = IR.pop_code_block(ocb);
 	control_flow_stack.pop_back();
-	IR.emit_IR(["WHILE", code_condition, arg, code_block, label_next, label_end]);
+	IR.emit_IR(["WHILE", code_condition, arg, code_block, label_next, label_end], ast.get_location());
 
 
 func analyze_assignment_stmt(ast):
@@ -371,7 +376,7 @@ func analyze_assignment_stmt(ast):
 	analyze_expr(rhs_expr);
 	var arg = expr_stack.pop_back();
 	RHS = arg;
-	IR.emit_IR(["MOV", LHS, RHS]);
+	IR.emit_IR(["MOV", LHS, RHS], ast.get_location());
 	expr_stack.push_back(arg);
 
 func analyze_expr_immediate(ast):
@@ -472,7 +477,7 @@ func analyze_if_block(ast):
 	
 	var cmd = "IF"; if is_elif: cmd = "ELSE_IF";
 	
-	IR.emit_IR([cmd, code_cond, arg, code_block]);
+	IR.emit_IR([cmd, code_cond, arg, code_block], ast.get_location());
 
 func analyze_if_else_block(ast):
 	if error_code != "": return;
@@ -486,7 +491,7 @@ func analyze_if_else_block(ast):
 	var ocb = IR.push_code_block();
 	analyze_block(block);
 	var code_block = IR.pop_code_block(ocb);
-	IR.emit_IR(["ELSE", code_block]);
+	IR.emit_IR(["ELSE", code_block], ast.get_location());
 
 func analyze_func_def_stmt(ast):
 	if error_code != "": return;
@@ -528,13 +533,13 @@ func analyze_func_def_stmt(ast):
 				#internal_error(E.ERR_28); return;
 	var ocb = IR.push_code_block();
 	var osc = IR.push_scope();
-	IR.emit_IR(["ENTER", IR.cur_scope.ir_name]);
+	IR.emit_IR(["ENTER", IR.cur_scope.ir_name], ast.get_location());
 	for arg_name in arg_names:
 		var arg_handle = IR.new_val_var(arg_name);
 		arg_handle.storage = "arg";
 		IR.save_variable(arg_handle);
 	analyze_block(block);
-	IR.emit_IR(["LEAVE"]);
+	IR.emit_IR(["LEAVE"], ast.get_location());
 	var fun_scope = IR.pop_scope(osc);
 	var fun_code = IR.pop_code_block(ocb);
 	var fun_handle = IR.get_func(fun_name);
@@ -564,11 +569,11 @@ func analyze_flow_stmt(ast):
 		"break":
 			if len(control_flow_stack):
 				var cur_loop = control_flow_stack.back();
-				IR.emit_IR(["GOTO", cur_loop.end]);
+				IR.emit_IR(["GOTO", cur_loop.end], ast.get_location());
 		"continue":
 			if len(control_flow_stack):
 				var cur_loop = control_flow_stack.back();
-				IR.emit_IR(["GOTO", cur_loop.next]);
+				IR.emit_IR(["GOTO", cur_loop.next], ast.get_location());
 			else:
 				erep.error(E.ERR_30);
 				return;
@@ -578,7 +583,11 @@ func analyze_flow_stmt(ast):
 				assert(expr.tok_class == "expr");
 				analyze_expr(expr);
 				var res = expr_stack.pop_back();
-				IR.emit_IR(["RETURN", res]);
+				IR.emit_IR(["RETURN", res], ast.get_location());
 			else:
-				IR.emit_IR(["RETURN"]);
+				IR.emit_IR(["RETURN"], ast.get_location());
+		
+func get_location(asts):
+	for ast in asts:
+		assert(ast is AST);
 		

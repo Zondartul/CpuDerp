@@ -18,3 +18,17 @@ func duplicate()->AST:
 	var ast2 = AST.new();
 	G.duplicate_shallow(self, ast2);
 	return ast2;
+
+func get_location()->LocationRange:
+	var res;
+	if loc:
+		res = loc.duplicate();
+	elif len(children):
+		res = children[0].get_location();
+	else:
+		res = LocationRange.new();
+	for ch in children:
+		var ch_loc = ch.get_location();
+		if ch_loc.from.less_than(res.from): res.from = ch_loc.from;
+		if res.to.less_than(ch_loc.to): res.to = ch_loc.to;
+	return res;

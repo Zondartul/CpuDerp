@@ -93,12 +93,13 @@ func new_val_lbl(lbl_name=null):
 	val.user_name = lbl_name;
 	return val;
 
-func emit_IR(cmd:Array):
+func emit_IR(cmd:Array, loc:LocationRange):
 	#IR.commands.append(cmd);
 	var cmd_translated = [];
 	assert(cmd[0] is String);
 	for i in range(len(cmd)):
 		cmd_translated.append_array(serialize_ir_arg(cmd[i]));
+	cmd_translated.append_array(serialize_ir_arg(loc));
 	cur_code_block.code.append(cmd_translated);
 
 func serialize_ir_arg(arg):
@@ -113,6 +114,8 @@ func serialize_ir_arg(arg):
 			res.append_array(serialize_ir_arg(sub_arg));
 		res.append("]");
 		return res;
+	elif arg is LocationRange:
+		return [escape_string(str(arg))];
 	else:
 		push_error("can't serialize IR argument ["+str(arg)+"]");
 		return [];

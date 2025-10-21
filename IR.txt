@@ -2,29 +2,29 @@ code_blocks:
  cb_1: 
   ir_name: cb_1
   code: 
-   MOV var_9__adr_scr imm_10
-   MOV var_11__scr_I imm_12
-   CALL func_4__main [ ] tmp_13
-   CALL func_7__infloop [ ] tmp_14
+   MOV var_9__adr_scr imm_10 %064%058510%126%064%058523
+   MOV var_11__scr_I imm_12 %064%05868%126%064%058613
+   CALL func_4__main [ ] tmp_13 %064%05883%126%064%05887
+   CALL func_7__infloop [ ] tmp_14 %064%05896%126%064%058913
   lbl_from: lbl_from_2
   lbl_to: lbl_to_3
  cb_15: 
   ir_name: cb_15
   code: 
-   ENTER scp_18__NULL
-   CALL func_5__print [ imm_22 imm_21 imm_20 imm_19 ] tmp_23
-   LEAVE
+   ENTER scp_18__NULL %064%058134%126%064%058141
+   CALL func_5__print [ imm_22 imm_21 imm_20 imm_19 ] tmp_23 %064%058134%126%064%0581332
+   LEAVE %064%058134%126%064%058141
   lbl_from: func_4__main
   lbl_to: lbl_to_17
  cb_24: 
   ir_name: cb_24
   code: 
-   ENTER scp_27__NULL
-   MOV var_32__i imm_33
-   OP INDEX var_31__str var_32__i tmp_35
-   MOV var_34__c tmp_35
-   WHILE cb_38 var_34__c cb_41 lbl_36__while_next lbl_37__while_end
-   LEAVE
+   ENTER scp_27__NULL %064%058200%126%064%058241
+   MOV var_32__i imm_33 %064%058174%126%064%058179
+   OP INDEX var_31__str var_32__i tmp_35 %064%0581810%126%064%0581814
+   MOV var_34__c tmp_35 %064%058184%126%064%0581814
+   WHILE cb_38 var_34__c cb_41 lbl_36__while_next lbl_37__while_end %064%058200%126%064%058231
+   LEAVE %064%058200%126%064%058241
   lbl_from: func_5__print
   lbl_to: lbl_to_26
  cb_38: 
@@ -34,43 +34,43 @@ code_blocks:
  cb_41: 
   ir_name: cb_41
   code: 
-   OP MUL var_32__i imm_44 tmp_45
-   OP INDEX var_31__str tmp_45 tmp_46
-   MOV var_34__c tmp_46
-   OP INC var_32__i none tmp_47
-   CALL func_6__putch [ var_28__b var_29__g var_30__r var_34__c ] tmp_48
+   OP MUL var_32__i imm_44 tmp_45 %064%058208%126%064%0582011
+   OP INDEX var_31__str tmp_45 tmp_46 %064%058206%126%064%0582012
+   MOV var_34__c tmp_46 %064%058200%126%064%0582012
+   OP INC var_32__i none tmp_47 %064%058210%126%064%058212
+   CALL func_6__putch [ var_28__b var_29__g var_30__r var_34__c ] tmp_48 %064%058224%126%064%0582215
   lbl_from: lbl_from_42
   lbl_to: lbl_to_43
  cb_49: 
   ir_name: cb_49
   code: 
-   ENTER scp_52__NULL
-   CALL func_8__scr_push_byte [ var_56__c ] tmp_57
-   CALL func_8__scr_push_byte [ var_55__r ] tmp_58
-   CALL func_8__scr_push_byte [ var_54__g ] tmp_59
-   CALL func_8__scr_push_byte [ var_53__b ] tmp_60
-   CALL func_8__scr_push_byte [ imm_61 ] tmp_62
-   CALL func_8__scr_push_byte [ imm_63 ] tmp_64
-   CALL func_8__scr_push_byte [ imm_65 ] tmp_66
-   LEAVE
+   ENTER scp_52__NULL %064%0583312%126%064%058341
+   CALL func_8__scr_push_byte [ var_56__c ] tmp_57 %064%0582712%126%064%0582725
+   CALL func_8__scr_push_byte [ var_55__r ] tmp_58 %064%0582812%126%064%0582825
+   CALL func_8__scr_push_byte [ var_54__g ] tmp_59 %064%0582912%126%064%0582925
+   CALL func_8__scr_push_byte [ var_53__b ] tmp_60 %064%0583012%126%064%0583025
+   CALL func_8__scr_push_byte [ imm_61 ] tmp_62 %064%0583112%126%064%0583125
+   CALL func_8__scr_push_byte [ imm_63 ] tmp_64 %064%0583212%126%064%0583225
+   CALL func_8__scr_push_byte [ imm_65 ] tmp_66 %064%0583312%126%064%0583325
+   LEAVE %064%0583312%126%064%058341
   lbl_from: func_6__putch
   lbl_to: lbl_to_51
  cb_67: 
   ir_name: cb_67
   code: 
-   ENTER scp_70__NULL
-   OP INDEX var_9__adr_scr var_11__scr_I tmp_72
-   MOV tmp_72 var_71__b
-   OP INC var_11__scr_I none tmp_73
-   LEAVE
+   ENTER scp_70__NULL %064%058376%126%064%058381
+   OP INDEX var_9__adr_scr var_11__scr_I tmp_72 %064%058376%126%064%0583717
+   MOV tmp_72 var_71__b %064%058376%126%064%0583718
+   OP INC var_11__scr_I none tmp_73 %064%0583724%126%064%0583729
+   LEAVE %064%058376%126%064%058381
   lbl_from: func_8__scr_push_byte
   lbl_to: lbl_to_69
  cb_74: 
   ir_name: cb_74
   code: 
-   ENTER scp_77__NULL
-   WHILE cb_80 imm_83 cb_84 lbl_78__while_next lbl_79__while_end
-   LEAVE
+   ENTER scp_77__NULL %064%058403%126%064%0584026
+   WHILE cb_80 imm_83 cb_84 lbl_78__while_next lbl_79__while_end %064%0584019%126%064%0584025
+   LEAVE %064%058403%126%064%0584026
   lbl_from: func_7__infloop
   lbl_to: lbl_to_76
  cb_80: 

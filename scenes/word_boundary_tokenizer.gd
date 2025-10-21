@@ -7,7 +7,7 @@ func tokenize(line:String)->Array[Token]:
 	var tok_class = "";
 	var cur_tok = "";
 	var col = 0;
-	
+	var cur_loc:Location = Location.new({"col":0});
 	for ch in line:
 		var new_tok_class = tok_ch_class(ch);
 		if should_split_on_transition(new_tok_class, tok_class):
@@ -15,13 +15,18 @@ func tokenize(line:String)->Array[Token]:
 				new_tok_class = "ENDSTRING";
 				cur_tok = cur_tok.substr(1); #remove the leading \"
 			if cur_tok != "":
-				tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "col":col-1}));
+				cur_loc.col -= 1;
+				var tok_loc = LocationRange.from_loc_len(cur_loc, len(cur_tok));
+				tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "loc":tok_loc}));#"col":col-1}));
 				cur_tok = "";
 			tok_class = new_tok_class;
 		cur_tok += ch;
 		col += 1;
+		cur_loc.col = col;
 	if cur_tok != "":
-		tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "col":col-1}));
+		cur_loc.col -= 1;
+		var tok_loc = LocationRange.from_loc_len(cur_loc, len(cur_tok));
+		tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "loc":tok_loc}));
 		cur_tok = "";
 	#tokens = tokens.filter(filter_tokens);
 	return tokens;
