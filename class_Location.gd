@@ -21,4 +21,15 @@ func less_than(other:Location)->bool:
 	return G.comparison(self, other, ["filename", "line", "line_idx", "col"]);
 	
 func _to_string()->String:
-	return "@%s:%d%d" % [filename, line_idx, col];
+	return "@%s:%d:%d" % [filename, line_idx, col];
+
+static func from_string(S:String)->Location:
+	var regex:RegEx = RegEx.new();
+	regex.compile("\\@([^:]*)\\:([^:]*)\\:([^:]*)");
+	var res:RegExMatch = regex.search(S);
+	if res:
+		var loc = Location.new({"filename":res.get_string(1), "line_idx":res.get_string(2), "col":res.get_string(3)});
+		return loc;
+	else:
+		return Location.new();
+		

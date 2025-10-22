@@ -58,8 +58,9 @@ func reset():
 	expr_stack = [];
 	control_flow_stack = [];
 
-func analyze(ast):
+func analyze(input):
 	reset();
+	var ast = input.ast;
 	erep.proxy = self;
 	error_code = "";
 	IR.clear_IR();

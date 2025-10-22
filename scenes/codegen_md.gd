@@ -5,6 +5,7 @@ const uYaml = preload("res://scenes/uYaml.gd")
 const ADD_DEBUG_TRACE = false; # in emitted assembly, specify where it came from.
 const ADD_IR_TRACE = true; # print the IR commands that are being generated
 const regs = ["EAX", "EBX", "ECX", "EDX"];
+const cmd_size = 8; # size in bytes of an assembly instruction
 # state
 var IR = {};
 var all_syms = {};
@@ -17,6 +18,7 @@ var cur_block = null
 var cb_stack = [];
 var entered_scopes = [];
 var cur_scope = null;
+var location_map = {};
 
 func reset():
 	IR = {};
@@ -33,8 +35,9 @@ func reset():
 
 #---------- IR ingestion -------------------
 
-func parse_file(filename)->String:
+func parse_file(input)->String:
 	reset();
+	var filename = input.filename;
 	var fp = FileAccess.open(filename, FileAccess.READ);
 	var text = fp.get_as_text();
 	fp.close();
@@ -65,7 +68,8 @@ func deserialize(text):
 		for cmd in cb.code:
 			var loc_str = cmd.pop_back();
 			loc_str = unescape_string(loc_str);
-			print(loc_str);
+			var loc = Location.from_string(loc_str);
+			cmd.push_back(loc);
 
 func inflate_vals(arr):
 	const props = ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code"];
@@ -132,9 +136,9 @@ func generate_code_block(cb):
 	cur_block = cb;
 	cb["if_block_continued"] = false;
 	assy_block_stack.push_back(cur_assy_block);
-	cur_assy_block = {"code":""};
-	emit_raw("# Begin code block %s\n" % cb.ir_name, "generate_code_block.intro");
-	emit_raw(":%s:\n" % cb.lbl_from, "generate_code_block.lbl_from");
+	cur_assy_block = {"code":"", "write_pos":0, "location_map":{"begin":{}, "end":{}}};
+	emit_raw("# Begin code block %s\n" % cb.ir_name,  0, "generate_code_block.intro");
+	emit_raw(":%s:\n" % cb.lbl_from, 0, "generate_code_block.lbl_from");
 	#maybe_emit_func_label(cb.ir_name);
 	if "code" in cb:
 		for i in range(len(cb.code)):
@@ -142,8 +146,8 @@ func generate_code_block(cb):
 			check_if_block_continued(i, cb.code);
 			generate_cmd(cmd);
 	maybe_emit_func_ret(cb.ir_name);
-	emit_raw(":%s:\n" % cb.lbl_to, "generate_code_block.lbl_to");
-	emit_raw("# End code block %s\n" % cb.ir_name, "generate_code_block.exit");
+	emit_raw(":%s:\n" % cb.lbl_to, 0, "generate_code_block.lbl_to");
+	emit_raw("# End code block %s\n" % cb.ir_name, 0, "generate_code_block.exit");
 	var res = cur_assy_block;
 	cur_assy_block = assy_block_stack.pop_back();
 	cur_block = cb_stack.pop_back();
@@ -192,7 +196,7 @@ func leave_scope():
 
 func maybe_emit_func_ret(ir_name:String):
 	var calling_func = is_referenced_by_func(ir_name);
-	if calling_func:	emit_raw("ret;\n", "maybe_emit_func_ret(%s)" % ir_name);
+	if calling_func:	emit_raw("ret;\n", cmd_size, "maybe_emit_func_ret(%s)" % ir_name);
 
 func is_referenced_by_func(ir_name:String):
 	for key in all_syms:
@@ -210,7 +214,7 @@ func check_if_block_continued(i, code):
 			cur_block.if_block_continued = true;
 
 func generate_cmd(cmd:Array):
-	if ADD_IR_TRACE: emit_raw("# IR: %s\n" % " ".join(PackedStringArray(cmd)), "generate_cmd.trace");
+	if ADD_IR_TRACE: emit_raw("# IR: %s\n" % " ".join(PackedStringArray(cmd)), 0, "generate_cmd.trace");
 	match cmd[0]:
 		"MOV": generate_cmd_mov(cmd);
 		"OP": generate_cmd_op(cmd);
@@ -225,11 +229,13 @@ func generate_cmd(cmd:Array):
 		_: push_error("codegen: unknown IR command ["+str(cmd[0])+"]");
 
 func generate_cmd_mov(cmd):
+	var loc:LocationRange = cmd.pop_back();
 	#MOV dest src
 	var dest = cmd[1];
 	var src = cmd[2];
-	emit("mov ^%s, $%s;\n" % [dest, src], "generate_cmd_mov");
-
+	mark_loc_begin(loc);
+	emit("mov ^%s, $%s;\n" % [dest, src], cmd_size, "generate_cmd_mov");
+	mark_loc_end(loc);
 
 const op_map = {
 	"ADD":"add %a, %b;\n",
@@ -260,18 +266,19 @@ func generate_cmd_op(cmd):
 	const mono_ops = ["INC", "DEC"];
 	if op in mono_ops:
 		tmpA = "^%s" % arg1;
-		emit("mov ^%s, $%s;\n" % [res, arg1], "generate_cmd_op.result2");
+		emit("mov ^%s, $%s;\n" % [res, arg1], cmd_size, "generate_cmd_op.result2");
 	else:
 		tmpA = alloc_temporary();
-		emit("mov %s, $%s;\n" % [tmpA, arg1], "generate_cmd_op.arg1");
+		emit("mov %s, $%s;\n" % [tmpA, arg1], cmd_size, "generate_cmd_op.arg1");
 	
 	op_str = op_str.replace("%a", tmpA);
 	if op_str.find("%b") != -1:
 		tmpB = alloc_temporary();
-		emit("mov %s, $%s;\n" % [tmpB, arg2], "generate_cmd_op.find_b");
+		emit("mov %s, $%s;\n" % [tmpB, arg2], cmd_size, "generate_cmd_op.find_b");
 		op_str = op_str.replace("%b", tmpB);
-	emit(op_str, "generate_cmd_op.op_str");
-	if op not in mono_ops: emit("mov ^%s, %s;\n" % [res, tmpA], "generate_cmd_op.result1");
+	var op_cmd_size = cmd_size * op_str.count(";");
+	emit(op_str, op_cmd_size, "generate_cmd_op.op_str");
+	if op not in mono_ops: emit("mov ^%s, %s;\n" % [res, tmpA], cmd_size, "generate_cmd_op.result1");
 	var res_handle = all_syms[res];
 	if op == "INDEX": res_handle.needs_deref = true;
 	free_val(tmpA);
@@ -302,16 +309,16 @@ func generate_cmd_if(cmd):
 	var imm_0_handle = new_imm(0);
 	allocate_value(imm_0_handle, cur_scope);
 	var imm_0 = imm_0_handle.ir_name;
-	emit("$%s\n" % cb_cond, "generate_cmd_if.cb_cond");
-	emit("cmp $%s, $%s;\n" % [res, imm_0], "generate_cmd_if.cmp");
-	emit("jz %s;\n" % lbl_else, "generate_cmd_if.jz_else");
-	emit("$%s\n" % cb_block, "generate_cmd_if.cb_block");
-	emit("jmp %s;\n" % lbl_end, "generate_cmd_if.end_then");
-	emit(":%s:\n" % lbl_else, "generate_cmd_if.lbl_else");
+	emit("$%s\n" % cb_cond, get_cb_cmd_size(cb_cond), "generate_cmd_if.cb_cond");
+	emit("cmp $%s, $%s;\n" % [res, imm_0], cmd_size, "generate_cmd_if.cmp");
+	emit("jz %s;\n" % lbl_else, cmd_size, "generate_cmd_if.jz_else");
+	emit("$%s\n" % cb_block, get_cb_cmd_size(cb_block), "generate_cmd_if.cb_block");
+	emit("jmp %s;\n" % lbl_end, cmd_size, "generate_cmd_if.end_then");
+	emit(":%s:\n" % lbl_else, 0, "generate_cmd_if.lbl_else");
 	if cur_block.if_block_continued:
 		cur_block["if_block_lbl_end"] = lbl_end;
 	else:
-		emit(":%s:\n" % lbl_end, "generate_cmd_if.end_if");
+		emit(":%s:\n" % lbl_end, 0, "generate_cmd_if.end_if");
 		cur_block.if_block_lbl_end = null;
 
 func generate_cmd_else_if(cmd):
@@ -323,21 +330,21 @@ func generate_cmd_else_if(cmd):
 	var imm_0_handle = new_imm(0);
 	allocate_value(imm_0_handle, cur_scope);
 	var imm_0 = imm_0_handle.ir_name;
-	emit("$%s\n" % cb_cond, "generate_cmd_else_if.cb_cond");
-	emit("cmp $%s, $%s;\n" % [res, imm_0], "generate_cmd_else_if.cmp");
-	emit("jz %s;\n" % lbl_else, "generate_cmd_else_if.jz_else");
-	emit("$%s\n" % cb_block, "generate_cmd_else_if.cb_block");
-	emit("jmp %s\n" % lbl_end, "generate_cmd_else_if.end_then");
-	emit(":%s:\n" % lbl_else, "generate_cmd_else_if.lbl_else");
+	emit("$%s\n" % cb_cond, get_cb_cmd_size(cb_cond), "generate_cmd_else_if.cb_cond");
+	emit("cmp $%s, $%s;\n" % [res, imm_0], cmd_size, "generate_cmd_else_if.cmp");
+	emit("jz %s;\n" % lbl_else, cmd_size, "generate_cmd_else_if.jz_else");
+	emit("$%s\n" % cb_block, get_cb_cmd_size(cb_block), "generate_cmd_else_if.cb_block");
+	emit("jmp %s\n" % lbl_end, cmd_size, "generate_cmd_else_if.end_then");
+	emit(":%s:\n" % lbl_else, 0, "generate_cmd_else_if.lbl_else");
 	if not cur_block.if_block_continued:
-		emit(":%s:\n" % lbl_end, "generate_cmd_else_if.end_if");
+		emit(":%s:\n" % lbl_end, 0, "generate_cmd_else_if.end_if");
 		cur_block.if_block_lbl_end = null;
 
 func generate_cmd_else(cmd):
 	var cb_block = cmd[1];
 	var lbl_end = cur_block.if_block_lbl_end;
-	emit("$%s\n" % [cb_block], "generate_cmd_else.cb_block");
-	emit(":%s:\n" % [lbl_end], "generate_cmd_else.lbl_end");
+	emit("$%s\n" % [cb_block], get_cb_cmd_size(cb_block), "generate_cmd_else.cb_block");
+	emit(":%s:\n" % [lbl_end], 0, "generate_cmd_else.lbl_end");
 	cur_block.if_block_lbl_end = null;
 
 func generate_cmd_while(cmd):
@@ -388,7 +395,7 @@ func generate_cmd_call(cmd):
 		var cb = all_syms[cb_name];
 		if cb not in referenced_cbs: referenced_cbs.append(cb);
 
-func emit(text:String, dbg_trace:String):
+func emit(text:String, wp_diff:int, dbg_trace:String):
 	var imm_flag = false;
 	var allocs = [];
 	while true:
@@ -400,8 +407,8 @@ func emit(text:String, dbg_trace:String):
 			var reg = alloc_register();
 			allocs.push_back(reg);
 			assert(reg != null);
-			emit_raw("mov %s, %s;\n" % [reg, res], "emit.needs_deref_1(%s)" % ref_load.val);
-			emit_raw("mov %s, *%s;\n" % [reg, reg], "emit.needs_deref_2(%s)" % ref_load.val);
+			emit_raw("mov %s, %s;\n" % [reg, res], cmd_size, "emit.needs_deref_1(%s)" % ref_load.val);
+			emit_raw("mov %s, *%s;\n" % [reg, reg], cmd_size, "emit.needs_deref_2(%s)" % ref_load.val);
 			res = reg;
 			#note: imm_flag = false or imm_flag;
 		else:
@@ -430,7 +437,7 @@ func emit(text:String, dbg_trace:String):
 		imm_flag = false;
 		#vars_to_store.append([res, ref_store.val]);
 		text = text.substr(0, ref_store.from) + res + text.substr(ref_store.to);
-	emit_raw(text, dbg_trace + ":emit(%s)" % text);
+	emit_raw(text, wp_diff, dbg_trace + ":emit(%s)" % text);
 	for touple in vars_to_store:
 		#store_val(pair[0], pair[1]);
 		var reg = touple[0];
@@ -439,11 +446,11 @@ func emit(text:String, dbg_trace:String):
 		var res_store = touple[3];
 		if needs_deref:
 			var reg2 = alloc_register();
-			emit_raw("mov %s, %s;\n" % [reg2, res_load], dbg_trace+":emit(%s).store_deref_3" % text);
-			emit_raw("mov *%s, %s;\n" % [reg2, reg], dbg_trace+":emit(%s).store_deref_4" % text);
+			emit_raw("mov %s, %s;\n" % [reg2, res_load], cmd_size, dbg_trace+":emit(%s).store_deref_3" % text);
+			emit_raw("mov *%s, %s;\n" % [reg2, reg], cmd_size, dbg_trace+":emit(%s).store_deref_4" % text);
 			free_val(reg2);
 		else:
-			emit_raw("mov %s, %s;\n" % [res_store, reg], dbg_trace + ":emit(%s).store" % text);
+			emit_raw("mov %s, %s;\n" % [res_store, reg], cmd_size, dbg_trace + ":emit(%s).store" % text);
 		free_val(reg);
 	for val in allocs:
 		free_val(val);
@@ -451,7 +458,7 @@ func emit(text:String, dbg_trace:String):
 func promote(res:String, allocs:Array):
 	var reg = alloc_register();
 	allocs.append(reg);
-	emit("mov %s, %s;\n" % [reg, res], "promote");
+	emit("mov %s, %s;\n" % [reg, res], cmd_size, "promote");
 	res = reg;
 	return res;
 
@@ -477,6 +484,7 @@ func load_value(val:String):
 	var handle = all_syms[val];
 	var res = "";
 	if handle.val_type == "code":
+		assert(false, "Deprecated, need to generate before emitting");
 		res = generate_code_block(handle).code;
 	elif handle.val_type == "immediate":
 		if handle.data_type == "string":
@@ -526,9 +534,10 @@ func alloc_temporary():
 		res = ir_name;
 	return res;
 
-func emit_raw(text:String, dbg_trace:String):
+func emit_raw(text:String, wp_diff:int, dbg_trace:String):
 	if ADD_DEBUG_TRACE: cur_assy_block.code += "#%s\n" % dbg_trace.remove_chars("\n");
 	cur_assy_block.code += text;
+	cur_assy_block.write_pos += wp_diff;
 
 ## returns a CPU-addressable string that can be used to write into the value.
 func store_val(val:String):
@@ -674,3 +683,23 @@ func fixup_symtable_val(val):
 		_: assert(false, "unexpected sym storage type [%s]" % str(sym.storage.type));
 	if val.user_name == null:
 		val.pos["val"] = sym.value;
+
+func mark_loc_begin(loc:LocationRange):
+	var wp = cur_assy_block.write_pos;
+	var lmap = cur_assy_block.location_map.begin;
+	if wp not in lmap: lmap[wp] = [];
+	lmap[wp].append(loc);
+
+func mark_loc_end(loc:LocationRange):
+	var wp = cur_assy_block.write_pos;
+	var lmap = cur_assy_block.location_map.end;
+	if wp not in lmap: lmap[wp] = [];
+	lmap[wp].append(loc);
+
+func get_cb_cmd_size(cb_name):
+	var handle = all_syms[cb_name];
+	assert(handle.val_type == "code");
+	#res = generate_code_block(handle).code;
+	## Problem: code block isn't generated yet by the time we hit "emit"...
+	assert(handle.is_generated == true);
+	return handle.assy_block.write_pos;

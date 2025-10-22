@@ -47,8 +47,10 @@ func reset():
 func _ready():
 	reset();
 
-func tokenize(text:String)->Array[Token]:
+func tokenize(input:Dictionary)->Array[Token]:
 	reset();
+	var text:String = input.text;
+	cur_filename = input.filename;
 	#output_tokens.clear();
 	#cur_line = "";
 	#cur_line_idx = 0;

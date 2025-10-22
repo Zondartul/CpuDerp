@@ -46,8 +46,9 @@ func assemble_zderp():
 		return res;
 
 func compile_miniderp():
-	n_compiler.cur_path = cur_efile.path;
-	var success = n_compiler.compile(cur_efile.get_text());
+	#n_compiler.cur_path = cur_efile.path;
+	var compiler_input = {"text":cur_efile.get_text(), "filename":cur_efile.file_name};
+	var success = n_compiler.compile(compiler_input);
 	if success:
 		return {"code":[], "shadow":[]};
 	else:

@@ -37,8 +37,9 @@ func reset():
 	dbg_fp = FileAccess.open(dbg_filename, FileAccess.WRITE);
 
 # LR(1) shift-reduce parser, always applies the first valid rule
-func parse(in_tokens:Array[Token]):
+func parse(input:Dictionary):
 	reset();
+	var in_tokens:Array[Token] = input.tokens;
 	erep.proxy = self;
 	#tokens = tokens.duplicate();
 	var tokens:Array[AST] = [];

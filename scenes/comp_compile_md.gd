@@ -21,18 +21,19 @@ func reset():
 	cur_path = "";
 	has_error = false;
 
-func compile(text):
+func compile(input):
 	reset();
-	var tokens = tokenizer.tokenize(text);		if has_error: return false;
-	if not tokens: return;
-	var ast = parser.parse(tokens);				if has_error: return false;
-	if not ast: return;
-	var _IR = analyzer.analyze(ast);			if has_error: return false;
-	var _assy = codegen.parse_file("IR.txt");	if has_error: return false;
+	input["tokens"] = tokenizer.tokenize(input);		if has_error: return false;
+	if not input.tokens: return;
+	input["ast"] = parser.parse(input);				if has_error: return false;
+	if not input.ast: return;
+	input["IR"] = analyzer.analyze(input);			if has_error: return false;
+	input.filename = "IR.txt";
+	input["assy"] = codegen.parse_file(input);	if has_error: return false;
 	codegen.fixup_symtable(analyzer.sym_table); if has_error: return false;
 	sym_table_ready.emit(analyzer.sym_table);
 	#print(_assy);
-	save_file(_assy, "a.zd");
+	save_file(input.assy, "a.zd");
 	open_file_request.emit("a.zd");
 	return true;
 func save_file(text:String, filename:String):
