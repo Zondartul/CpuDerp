@@ -80,12 +80,16 @@ func assemble(source:String)->Chunk:
 	output_tokens.clear();
 	lines = source.split("\n",true);
 	#print(lines);
+	var cur_loc = Location.new({"filename":cur_filename, "line":"", "line_idx":0, "col":0});
 	for line in lines:
 		if line == "": cur_line_idx += 1; continue;
 		cur_line = line;
+		cur_loc.line = cur_line;
+		cur_loc.line_idx = cur_line_idx;
+		cur_loc.col = 0;
 		line = preproc(line);
 		cur_line = line;
-		var tokens = tokenize(line);
+		var tokens = tokenize(line, cur_loc);
 		output_tokens.append_array(tokens);
 		if output_tokens.size():
 			output_tokens.back().set_meta("token_viewer_newline",true);
@@ -104,6 +108,7 @@ func assemble(source:String)->Chunk:
 			#var erep = ErrorReporter.new(self, lbl_tok);
 			erep.context = lbl_tok;
 			erep.error(E.ERR_13 % lbl_name);
+			return Chunk.null_val();
 		push_error(E.ERR_02 % str(unlinked))
 	print("Assembly done");
 	print("stats: ")
@@ -113,8 +118,10 @@ func assemble(source:String)->Chunk:
 
 func assign_line_pos(tokens:Array[Token])->void:
 	for tok:Token in tokens:
-		tok.line = cur_line;
-		tok.line_idx = cur_line_idx;
+		tok.loc.from.line = cur_line;
+		tok.loc.to.line = cur_line;
+		tok.loc.from.line_idx = cur_line_idx;
+		tok.loc.to.line_idx = cur_line_idx;
 
 func cprint(msg):
 	sig_cprint.emit(msg);
@@ -300,11 +307,10 @@ func last_non_space(line:String)->int:
 #------------------------------------------------------------
 
 #------------ Tokenization ----------------------------------
-func tokenize(line:String)->Array[Token]:
+func tokenize(line:String, cur_loc:Location)->Array[Token]:
 	var tokens:Array[Token] = [];
 	var tok_class = "";
 	var cur_tok = "";
-	var col = 0;
 	for ch in line:
 		var new_tok_class = tok_ch_class(ch);
 		if should_split_on_transition(new_tok_class, tok_class):
@@ -312,16 +318,24 @@ func tokenize(line:String)->Array[Token]:
 				new_tok_class = "ENDSTRING";
 				cur_tok = cur_tok.substr(1); #remove the leading \"
 			if cur_tok != "":
-				tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "col":col-1}));
+				var t_loc = to_tok_loc(cur_loc, cur_tok);
+				tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "loc":t_loc}));
 				cur_tok = "";
 			tok_class = new_tok_class;
 		cur_tok += ch;
-		col += 1;
+		cur_loc.col += 1;
 	if cur_tok != "":
-		tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "line":cur_line, "line_idx":cur_line_idx, "col":col-1}));
+		var t_loc = to_tok_loc(cur_loc, cur_tok);
+		tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "loc":t_loc}));
 		cur_tok = "";
 	tokens = tokens.filter(filter_tokens);
 	return tokens;
+
+func to_tok_loc(cur_loc:Location, cur_tok:String)->LocationRange:
+	var t_loc = cur_loc.duplicate();
+	t_loc.col -= 1;
+	t_loc = LocationRange.from_loc_len(t_loc, len(cur_tok));
+	return t_loc;
 
 func should_split_on_transition(new_tok_class:String, old_tok_class:String):
 	#if (new_tok_class != tok_class) or (tok_class == "PUNCT"):
@@ -428,8 +442,8 @@ func parse_db(iter:Iter)->bool:
 func record_op_position(old_iter:Iter, iter:Iter)->void:
 	var tok_first = old_iter.tokens[old_iter.pos];
 	var tok_last = iter.tokens[iter.pos-1];
-	var begin_col = tok_first["col"];
-	var end_col = tok_last["col"]+len(tok_last["text"]);
+	var begin_col = tok_first.loc.from.col;
+	var end_col = tok_last.loc.to.col;#tok_last.loc.from.col+len(tok_last.text);
 	var op = {"ip":write_pos,"filename":cur_filename, "line":cur_line_idx, "begin":begin_col, "end":end_col};
 	op_locations.append(op);
 

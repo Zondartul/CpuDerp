@@ -9,6 +9,12 @@ const class_ErrorReporter = preload("res://class_ErrorReporter.gd");
 const class_Cmd_args = preload("res://class_Cmd_arg.gd");
 const class_Cmd_flags = preload("res://class_Cmd_flags.gd");
 const class_AST = preload("res://class_AST.gd");
+const class_LocationMap = preload("res://class_LocationMap.gd");
+const class_IR_Value = preload("res://class_IR_value.gd");
+const class_IR_Cmd = preload("res://class_IR_cmd.gd");
+const class_CodeBlock = preload("res://class_CodeBlock.gd");
+const class_AssyBlock = preload("res://class_AssyBlock.gd");
+
 
 ## Creates an independent copy of the value
 func duplicate_val(obj)->Variant:
@@ -33,6 +39,7 @@ func duplicate_deep(src, dest)->void:
 			#print("duplicate "+str(key));
 			var old_val = src.get(key.name);
 			var new_val = duplicate_val(old_val);
+			assert(is_type_compatible(key.type, typeof(new_val)), "Can't assign property because of type mismatch");
 			dest.set(key.name, new_val);
 	elif src is Dictionary:
 		assert(dest is Dictionary);
@@ -49,6 +56,17 @@ func duplicate_shallow(src, dest)->void:
 		if key.name in duplication_blacklist: continue;
 		dest.set(key.name, src.get(key.name));
 
+func is_type_compatible(type_A:int, type_B:int)->bool:
+	return type_A == type_B;
+
+func dictionary_init(obj:Object, dict:Dictionary):
+	var prop_list = obj.get_property_list();
+	for key in prop_list:
+		if key.name in dict:
+			var val = dict[key.name];
+			assert(is_type_compatible(key.type, typeof(val)), "Can't assign property because of type mismatch");
+			obj.set(key.name, val);
+		
 #-------- Comparison logic ---------------
 func has(obj):
 	if obj is Array:
@@ -95,6 +113,14 @@ func last_non_space(line:String)->int:
 	if idx == -1: return -1;
 	else: return line.length() - idx - 1;
 
+## finds first instance of any character from 'needles' in the string 'text'
+func find_first_of(text:String, needles:String, from:int=0)->int:
+	for i in range(from, len(text)):
+		var ch = text[i];
+		if ch in needles:
+			return i;
+	return len(text);
+
 ## returns an array with the positions of all occurences of needle in haystack
 func str_find_all_instances(needle:String, haystack:String)->Array:
 	var res = [];
@@ -137,3 +163,8 @@ func comparison(A:Object, B:Object, prop_list:Array)->bool:
 		if val_A < val_B: return true;
 		elif val_A > val_B: return false;
 	return false;
+
+func first_in_dict(dict:Dictionary)->Variant:
+	if len(dict.keys()):
+		return dict[dict.keys()[0]];
+	return null;

@@ -43,7 +43,6 @@ sub ESP, 11;
 :lbl_from_81:
 :lbl_to_82:
 # End code block cb_80
-
 mov EAX, 0;
 cmp 1, EAX;
 jz lbl_79__while_end;
@@ -51,7 +50,6 @@ jz lbl_79__while_end;
 :lbl_from_85:
 :lbl_to_86:
 # End code block cb_84
-
 jmp lbl_78__while_next;
 :lbl_79__while_end:
 # IR: LEAVE
@@ -81,7 +79,6 @@ mov EBP[-11], EAX;
 :lbl_from_39:
 :lbl_to_40:
 # End code block cb_38
-
 mov EAX, 0;
 cmp EBP[-11], EAX;
 jz lbl_37__while_end;
@@ -115,7 +112,6 @@ add ESP, 16;
 mov EBP[-35], eax;
 :lbl_to_43:
 # End code block cb_41
-
 jmp lbl_36__while_next;
 :lbl_37__while_end:
 # IR: LEAVE
