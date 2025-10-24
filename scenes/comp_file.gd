@@ -232,8 +232,10 @@ func _on_fd_load_file_selected(path):
 func _on_efile_update_my_tab(efile):
 	update_efile_tab(efile);
 
-func highlight_line(line_idx, col=-1, length=-1):
-	cur_efile.highlight_line(line_idx, col, length);
+func highlight_line(loc:LocationRange):#(line_idx, col=-1, length=-1):
+	if cur_efile.filename == loc.filename:
+		cur_efile.highlight_line(loc);
+	#cur_efile.highlight_line(line_idx, col, length);
 
 func get_cur_line_idx():
 	return cur_efile.get_cur_line_idx();

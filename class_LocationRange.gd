@@ -1,8 +1,8 @@
 extends RefCounted
 class_name LocationRange
 
-var from:Location;
-var to:Location;
+var begin:Location;
+var end:Location;
 
 func _init(dict=null):
 	if dict:
@@ -16,12 +16,12 @@ func duplicate()->LocationRange:
 	return loc2;
 
 func _to_string()->String:
-	return "%s~%s" % [from, to];
+	return "%s~%s" % [begin, end];
 
 static func from_loc_len(loc:Location, length:int)->LocationRange:
 	var loc2 = loc.duplicate();
 	loc2.col += length;
-	return LocationRange.new({"from":loc.duplicate(), "to":loc2});
+	return LocationRange.new({"begin":loc.duplicate(), "end":loc2});
 
 static func from_string(S:String)->LocationRange:
 	var idx = S.find("~");
@@ -29,4 +29,4 @@ static func from_string(S:String)->LocationRange:
 	var s_to = S.substr(idx-1);
 	var loc_from = Location.from_string(s_from);
 	var loc_to = Location.from_string(s_to);
-	return LocationRange.new({"from":loc_from, "to":loc_to});
+	return LocationRange.new({"begin":loc_from, "end":loc_to});

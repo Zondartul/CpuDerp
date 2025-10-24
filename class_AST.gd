@@ -30,6 +30,6 @@ func get_location()->LocationRange:
 		res = LocationRange.new();
 	for ch in children:
 		var ch_loc = ch.get_location();
-		if ch_loc.from.less_than(res.from): res.from = ch_loc.from;
-		if res.to.less_than(ch_loc.to): res.to = ch_loc.to;
+		if ch_loc.begin.less_than(res.begin): res.begin = ch_loc.begin;
+		if res.end.less_than(ch_loc.end): res.end = ch_loc.end;
 	return res;

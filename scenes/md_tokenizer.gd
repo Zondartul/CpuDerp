@@ -83,7 +83,7 @@ func basic_tokenize(text:String)->Array[Token]:
 			#tok.line = line;
 			#tok.line_idx = cur_line_idx;
 			for prop in ["filename", "line", "line_idx"]:
-				for dest in [tok.loc.from, tok.loc.to]:
+				for dest in [tok.loc.begin, tok.loc.end]:
 					dest.set(prop, cur_loc.get(prop));
 		tokens.append_array(line_tokens);
 		cur_line_idx += 1;

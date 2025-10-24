@@ -127,19 +127,24 @@ func _on_comp_file_cur_efile_changed(efile):
 		n_assembler.cur_filename = "";
 		n_compiler.cur_filename = "";
 
-func set_highlight(from_line, from_col, to_line, to_col):
+func set_highlight(loc:LocationRange):#(from_line, from_col, to_line, to_col):
 	var TE = cur_efile.find_child("TextEdit");
 	assert(TE != null);
+	var from_line = loc.begin.line_idx;
+	var from_col = loc.begin.col;
+	var to_line = loc.end.line_idx;
+	var to_col = loc.end.col;
 	TE.select(from_line, from_col, to_line, to_col);
 	TE.set_caret_line(to_line);
 	TE.set_caret_column(to_col);
 
-func _on_comp_asm_zd_highlight_error(from_line, from_col, to_line, to_col):
-	print("highlight error ("+str(from_line)+", "+str(from_col)+", "+str(to_line)+", "+str(to_col)+")");
-	set_highlight(from_line, from_col, to_line, to_col);
+func _on_comp_asm_zd_highlight_error(loc:LocationRange):#(from_line, from_col, to_line, to_col):
+	#print("highlight error ("+str(from_line)+", "+str(from_col)+", "+str(to_line)+", "+str(to_col)+")");
+	print("highlight error %s" % loc);
+	set_highlight(loc);#(from_line, from_col, to_line, to_col);
 
-func _on_debug_panel_set_highlight(from_line, from_col, to_line, to_col):
-	set_highlight(from_line, from_col, to_line, to_col);
+func _on_debug_panel_set_highlight(loc:LocationRange):#(from_line, from_col, to_line, to_col):
+	set_highlight(loc);#(from_line, from_col, to_line, to_col);
 
 
 func _on_language_index_pressed(index: int) -> void:

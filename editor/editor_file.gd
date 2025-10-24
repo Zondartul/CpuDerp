@@ -82,17 +82,20 @@ func get_text():
 func _on_text_edit_text_set():
 	update_line_numbers();
 
-func highlight_line(line_idx, col=-1, length=-1):
-	print("highlighting line %d, col %d, length %d" % [line_idx, col, length])
-	var line_idx_to;
-	var col_to = 0;
-	if col == -1: 
+func highlight_line(loc:LocationRange):#(line_idx, col=-1, length=-1):
+	var line_idx = loc.begin.line_idx;
+	#print("highlighting line %d, col %d, length %d" % [line_idx, col, length])
+	print("highlighting %s" % str(loc));
+	var line_idx_to = loc.end.line_idx;
+	var col = loc.begin.col;
+	var col_to = loc.end.col;
+	if (col == -1) or (col_to == -1): 
 		line_idx_to = line_idx+1;
 		col = 0;
 		col_to = 0;
-	else:
-		line_idx_to = line_idx;
-		col_to = col+length;
+	#else:
+	#	line_idx_to = line_idx;
+	#	col_to = col+length;
 	#n_text.select(line_idx,0,line_idx+1,0,0);
 	n_text.select(line_idx, col, line_idx_to, col_to);	
 	var spos = n_text.get_scroll_pos_for_line(line_idx);

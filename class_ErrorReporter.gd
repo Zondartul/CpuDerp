@@ -47,7 +47,7 @@ func point_out_error_iter(msg:String, iter:Iter)->void:
 	point_out_error_tok(msg, iter.tokens[iter.pos]);
 
 func point_out_error_tok(msg:String, tok:Token)->void:
-	point_out_error_loc(msg, tok.loc.from);	
+	point_out_error_loc(msg, tok.loc.begin);	
 
 func point_out_error_loc(msg:String, loc:Location)->void:
 	point_out_error(msg, loc.line, loc.line_idx, loc.col);

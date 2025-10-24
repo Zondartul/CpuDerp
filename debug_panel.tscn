@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://dg8o8urks7l22"]
+[gd_scene load_steps=13 format=3 uid="uid://dg8o8urks7l22"]
 
 [ext_resource type="Script" uid="uid://oodpp66xpni2" path="res://debug_panel.gd" id="1_16avt"]
 [ext_resource type="Script" uid="uid://bsy2f38lmupwk" path="res://scenes/indicator.gd" id="2_x1thd"]
@@ -11,6 +11,8 @@
 [ext_resource type="Texture2D" uid="uid://cid68bw8y38s8" path="res://res/icons/control_start_blue.png" id="7_8jajc"]
 [ext_resource type="Texture2D" uid="uid://dbr5py0b8o4vo" path="res://res/icons/arrow-up-icon.png" id="8_nxosy"]
 [ext_resource type="Texture2D" uid="uid://dbkxwlrkhodfm" path="res://res/icons/arrow-right-icon.png" id="9_qp3qd"]
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_8jajc"]
 
 [node name="debug_panel" type="Control"]
 layout_mode = 3
@@ -33,7 +35,7 @@ grow_vertical = 2
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
-current_tab = 4
+current_tab = 5
 
 [node name="stack_view" type="ItemList" parent="V/TabContainer"]
 visible = false
@@ -179,6 +181,7 @@ max_columns = 3
 same_column_width = true
 
 [node name="HL_locals" type="Control" parent="V/TabContainer"]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 4
 
@@ -206,6 +209,49 @@ layout_mode = 2
 size_flags_vertical = 3
 max_columns = 2
 same_column_width = true
+
+[node name="Settings" type="Control" parent="V/TabContainer"]
+layout_mode = 2
+metadata/_tab_index = 5
+
+[node name="HF" type="HFlowContainer" parent="V/TabContainer/Settings"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PC" type="PanelContainer" parent="V/TabContainer/Settings/HF"]
+layout_mode = 2
+
+[node name="V" type="VBoxContainer" parent="V/TabContainer/Settings/HF/PC"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="V/TabContainer/Settings/HF/PC/V"]
+layout_mode = 2
+text = "Current instruction 
+highlight mode"
+horizontal_alignment = 1
+
+[node name="btn_highlight_hl" type="Button" parent="V/TabContainer/Settings/HF/PC/V"]
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+button_group = SubResource("ButtonGroup_8jajc")
+text = "High-level"
+
+[node name="btn_highlight_asm" type="Button" parent="V/TabContainer/Settings/HF/PC/V"]
+layout_mode = 2
+toggle_mode = true
+button_group = SubResource("ButtonGroup_8jajc")
+text = "Assembly"
+
+[node name="btn_highlight_none" type="Button" parent="V/TabContainer/Settings/HF/PC/V"]
+layout_mode = 2
+toggle_mode = true
+button_group = SubResource("ButtonGroup_8jajc")
+text = "None"
 
 [node name="H2" type="HBoxContainer" parent="V"]
 layout_mode = 2
@@ -282,6 +328,9 @@ text = "hex"
 [connection signal="value_changed" from="V/TabContainer/pointers/H/sb_offs" to="." method="_on_sb_addr_value_changed"]
 [connection signal="item_selected" from="V/TabContainer/local_view/V/H/ob_view" to="." method="_on_ob_view_item_selected"]
 [connection signal="toggled" from="V/TabContainer/local_view/V/H/cb_update" to="." method="_on_cb_update_toggled"]
+[connection signal="pressed" from="V/TabContainer/Settings/HF/PC/V/btn_highlight_hl" to="." method="_on_btn_highlight_hl_pressed"]
+[connection signal="pressed" from="V/TabContainer/Settings/HF/PC/V/btn_highlight_asm" to="." method="_on_btn_highlight_asm_pressed"]
+[connection signal="pressed" from="V/TabContainer/Settings/HF/PC/V/btn_highlight_none" to="." method="_on_btn_highlight_none_pressed"]
 [connection signal="pressed" from="V/H/btn_run" to="." method="_on_btn_run_pressed"]
 [connection signal="pressed" from="V/H/btn_pause" to="." method="_on_btn_pause_pressed"]
 [connection signal="pressed" from="V/H/btn_stop" to="." method="_on_btn_stop_pressed"]

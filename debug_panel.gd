@@ -9,6 +9,13 @@ const ISA = preload("res://lang_zvm.gd")
 @onready var n_hl_locals = $V/TabContainer/HL_locals/V/hl_locals
 @onready var win = get_parent();
 
+@onready var slider_top:Control =  $V/TabContainer/pointers/slider_top
+@onready var slider_mid:ItemList = $V/TabContainer/pointers/slider_mid
+@onready var slider_bot:ItemList = $V/TabContainer/pointers/slider_bot
+@onready var n_sb_addr = $V/TabContainer/pointers/H/sb_addr
+@onready var n_ob_view = $V/TabContainer/pointers/H/ob_view
+@onready var n_sb_offs = $V/TabContainer/pointers/H/sb_offs
+
 const class_PerfLimitDirectory = preload("res://PerfLimitDirectory.gd");
 
 var perf = PerfLimitDirectory.new({
@@ -67,11 +74,15 @@ var editor;
 var is_setup = false;
 var mode_hex = false;
 var stack_items = [];
+var slider_base_addr:int = 0;
 var cur_sym_table = null;
 var symtable_label_ips = [];
 var symtable_label_names = [];
+enum HighlightMode {NONE, ASM, HIGH_LEVEL};
+var highlight_mode = HighlightMode.HIGH_LEVEL;
+var loc_map:LocationMap;
 
-signal set_highlight(from_line, from_col, to_line, to_col);
+signal set_highlight(loc:LocationRange);#(from_line, from_col, to_line, to_col);
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	init_reg_view();
@@ -127,18 +138,36 @@ func update_ip_highlight():
 	if not win.visible: return;
 	if not perf.ip.run(0): return;
 	
-	if assembler and assembler.op_locations.size():
-		cache_op_locations();
-		var ip = cpu.regs[cpu.ISA.REG_IP];
-		var idx = op_ips.bsearch(ip, false)-1;
-		if(idx >= 0):
-			var op = op_locations[idx];
-			if op.line != last_highlighted_line:
-				last_highlighted_line = op.line;
-				editor.switch_to_file(op.filename)
-				set_highlight.emit(op.line, op.begin, op.line, op.end);
-		else:
-			set_highlight.emit(0,0,0,0);
+	if highlight_mode == HighlightMode.NONE: return;
+	elif highlight_mode == HighlightMode.ASM:
+		if assembler and assembler.op_locations.size():
+			cache_op_locations();
+			var ip = cpu.regs[cpu.ISA.REG_IP];
+			var idx = op_ips.bsearch(ip, false)-1;
+			if(idx >= 0):
+				var op = op_locations[idx];
+				if op.line != last_highlighted_line:
+					last_highlighted_line = op.line;
+					editor.switch_to_file(op.filename)
+					#set_highlight.emit(op.line, op.begin, op.line, op.end);
+					var loc1 = Location.new({"line_idx":op.line, "col":op.begin});
+					var loc2 = Location.new({"line_idx":op.line, "col":op.end});
+					var loc = LocationRange.new({"begin":loc1, "end":loc2});
+					set_highlight.emit(loc);
+			else:
+				#set_highlight.emit(0,0,0,0);
+				set_highlight.emit(LocationRange.new());
+	elif highlight_mode == HighlightMode.HIGH_LEVEL:
+		if loc_map:
+			var ip = cpu.regs[cpu.ISA.REG_IP];
+			var idx = loc_map.begin.keys().bsearch(ip, false)-1;
+			if(idx >= 0):
+				var nearest_ip = loc_map.begin.keys()[idx];
+				var loc_arr:Array[LocationRange] = loc_map.begin[nearest_ip];
+				var loc:LocationRange = loc_arr[0];
+				set_highlight.emit(loc);
+			else:
+				set_highlight.emit(LocationRange.new());
 
 func _process(delta):
 	if not win.visible: return;
@@ -305,13 +334,6 @@ func _on_cb_hex_toggled(toggled_on: bool) -> void:
 	mode_hex = toggled_on;
 	perf.all.prime();
 
-@onready var slider_top:Control =  $V/TabContainer/pointers/slider_top
-@onready var slider_mid:ItemList = $V/TabContainer/pointers/slider_mid
-@onready var slider_bot:ItemList = $V/TabContainer/pointers/slider_bot
-@onready var n_sb_addr = $V/TabContainer/pointers/H/sb_addr
-@onready var n_ob_view = $V/TabContainer/pointers/H/ob_view
-@onready var n_sb_offs = $V/TabContainer/pointers/H/sb_offs
-var slider_base_addr:int = 0;
 
 func get_pointer_tooltip(addr, val)->String:
 	var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
@@ -868,3 +890,8 @@ func read_hl_local(val, cur_ebp):
 		"temporary": pass;
 		_: assert(false, "unknown hl_local pos type [%s]" % str(val.pos.type));
 	return "<error>";
+
+
+func _on_btn_highlight_hl_pressed() -> void: highlight_mode = HighlightMode.HIGH_LEVEL;
+func _on_btn_highlight_asm_pressed() -> void: highlight_mode = HighlightMode.ASM;
+func _on_btn_highlight_none_pressed() -> void: highlight_mode = HighlightMode.NONE;

@@ -118,10 +118,10 @@ func assemble(source:String)->Chunk:
 
 func assign_line_pos(tokens:Array[Token])->void:
 	for tok:Token in tokens:
-		tok.loc.from.line = cur_line;
-		tok.loc.to.line = cur_line;
-		tok.loc.from.line_idx = cur_line_idx;
-		tok.loc.to.line_idx = cur_line_idx;
+		tok.loc.begin.line = cur_line;
+		tok.loc.end.line = cur_line;
+		tok.loc.begin.line_idx = cur_line_idx;
+		tok.loc.end.line_idx = cur_line_idx;
 
 func cprint(msg):
 	sig_cprint.emit(msg);
@@ -442,8 +442,8 @@ func parse_db(iter:Iter)->bool:
 func record_op_position(old_iter:Iter, iter:Iter)->void:
 	var tok_first = old_iter.tokens[old_iter.pos];
 	var tok_last = iter.tokens[iter.pos-1];
-	var begin_col = tok_first.loc.from.col;
-	var end_col = tok_last.loc.to.col;#tok_last.loc.from.col+len(tok_last.text);
+	var begin_col = tok_first.loc.begin.col;
+	var end_col = tok_last.loc.end.col;#tok_last.loc.from.col+len(tok_last.text);
 	var op = {"ip":write_pos,"filename":cur_filename, "line":cur_line_idx, "begin":begin_col, "end":end_col};
 	op_locations.append(op);
 

@@ -1,0 +1,468 @@
+[gd_scene load_steps=37 format=3 uid="uid://cfii8rrppxgqq"]
+
+[ext_resource type="Script" uid="uid://c4qakorwmu6dc" path="res://scenes/main.gd" id="1_ggytm"]
+[ext_resource type="Script" uid="uid://c44d4a042o542" path="res://scenes/Memory.gd" id="2_0ld40"]
+[ext_resource type="Script" uid="uid://dma5vy0j68ilt" path="res://scenes/Editor.gd" id="3_6wt7m"]
+[ext_resource type="Script" uid="uid://do2o7jy66djys" path="res://scenes/VM.gd" id="3_m68nv"]
+[ext_resource type="Script" uid="uid://befrtr2e0sjij" path="res://scenes/comp_file.gd" id="4_3f0fj"]
+[ext_resource type="PackedScene" uid="uid://cmb3hamipl46" path="res://editor/cd_save_discard.tscn" id="4_inoj7"]
+[ext_resource type="Texture2D" uid="uid://c7yu473cbd4rk" path="res://res/icons/resultset_first.png" id="4_j8jky"]
+[ext_resource type="Script" uid="uid://bsi8mnhpra251" path="res://scenes/GPU_cs.gd" id="4_yy5uk"]
+[ext_resource type="PackedScene" uid="uid://ev46am1blkcl" path="res://scenes/gpu_scene.tscn" id="5_5bfjd"]
+[ext_resource type="Texture2D" uid="uid://cvkv18h2lt637" path="res://res/icons/resultset-last-icon.png" id="5_kmb1v"]
+[ext_resource type="Texture2D" uid="uid://bkapeci1jrxpv" path="res://res/icons/cancel.png" id="6_fuf3a"]
+[ext_resource type="Script" uid="uid://deaqpmht4sw37" path="res://scenes/KB.gd" id="6_jv3qg"]
+[ext_resource type="Script" uid="uid://d3hndajig4v8p" path="res://scenes/comp_highlight.gd" id="6_u56tr"]
+[ext_resource type="Script" uid="uid://k4uuqhqbsjgr" path="res://scenes/lang_zd.gd" id="7_8jmkd"]
+[ext_resource type="Script" uid="uid://wd4hwnnoj64x" path="res://scenes/CPU_vm.gd" id="7_p2205"]
+[ext_resource type="Script" uid="uid://djj6hechvxiw0" path="res://scenes/comp_asm_zd.gd" id="8_dp3eg"]
+[ext_resource type="Script" uid="uid://u1nc15uwnmob" path="res://scenes/lang_md.gd" id="8_gqmmt"]
+[ext_resource type="Script" uid="uid://4ggag6vgubb8" path="res://scenes/comp_build.gd" id="8_jurei"]
+[ext_resource type="PackedScene" uid="uid://dg8o8urks7l22" path="res://debug_panel.tscn" id="10_cypyl"]
+[ext_resource type="Script" uid="uid://bfx1a8gunkipm" path="res://scenes/RAM_64k.gd" id="11_1g7n4"]
+[ext_resource type="Script" uid="uid://0em7edt5tnsg" path="res://scenes/Bus.gd" id="11_37vc5"]
+[ext_resource type="Texture2D" uid="uid://j2f1v3ps3264" path="res://res/icons/Bug-silk.png" id="11_nykja"]
+[ext_resource type="Script" uid="uid://d4b6r10nogh80" path="res://scenes/comp_compile_md.gd" id="11_yc10j"]
+[ext_resource type="Script" uid="uid://xob4lsa7oo56" path="res://scenes/md_tokenizer.gd" id="12_pm3ni"]
+[ext_resource type="Script" uid="uid://c82uc0neu8mnf" path="res://scenes/analyzer_md.gd" id="13_2wyq8"]
+[ext_resource type="PackedScene" uid="uid://bctk63nmyhslj" path="res://scenes/win_token_view.tscn" id="13_jscy8"]
+[ext_resource type="Script" uid="uid://cldyqh58eivxh" path="res://scenes/parser_md.gd" id="13_yq6so"]
+[ext_resource type="Script" uid="uid://b0dpyaiyjb2ks" path="res://scenes/ir_md.gd" id="14_vxglm"]
+[ext_resource type="Script" uid="uid://bupipg6ylmfsi" path="res://scenes/codegen_md.gd" id="15_2f3dj"]
+[ext_resource type="PackedScene" uid="uid://bystectvtbdhc" path="res://scenes/win_parse.tscn" id="15_y6deb"]
+[ext_resource type="PackedScene" uid="uid://bgb5s3xu12cb0" path="res://scenes/win_ir.tscn" id="16_og1vs"]
+[ext_resource type="Script" uid="uid://b74jfmkseejoc" path="res://scenes/todo.gd" id="19_a20q3"]
+[ext_resource type="PackedScene" uid="uid://bo8535irp46bf" path="res://scenes/win_ed_dbg.tscn" id="21_fv21b"]
+[ext_resource type="Script" uid="uid://vqh76ivpomru" path="res://scenes/comp_search.gd" id="21_pibwh"]
+[ext_resource type="Script" uid="uid://bc3i5p12hm1p1" path="res://class_ErrorReporter.gd" id="22_tel4y"]
+
+[sub_resource type="SystemFont" id="SystemFont_30trl"]
+font_names = PackedStringArray("Courier New")
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 2
+script = ExtResource("1_ggytm")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TabContainer" type="TabContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+current_tab = 2
+
+[node name="Screen" type="Control" parent="Panel/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="V" type="VBoxContainer" parent="Panel/TabContainer/Screen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="TextureRect" parent="Panel/TabContainer/Screen/V"]
+custom_minimum_size = Vector2(512, 512)
+layout_mode = 2
+
+[node name="Control" type="Control" parent="Panel/TabContainer/Screen/V"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GridContainer" type="GridContainer" parent="Panel/TabContainer/Screen/V/Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+columns = 4
+
+[node name="cbOn" type="CheckButton" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
+layout_mode = 2
+text = "On"
+
+[node name="cr_led_on" type="ColorRect" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+color = Color(0.168627, 0.168627, 0.168627, 1)
+
+[node name="status" type="Label" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.392157, 0.392157, 0.392157, 1)
+text = "status"
+
+[node name="btnKeyboard" type="Button" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "Keyboard"
+
+[node name="btnReset" type="Button" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
+layout_mode = 2
+text = "Reset"
+
+[node name="cr_led_error" type="ColorRect" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+color = Color(0.196078, 0.196078, 0.196078, 1)
+
+[node name="error" type="Label" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.364706, 0.364706, 0.364706, 1)
+text = "error"
+
+[node name="sb_freq" type="SpinBox" parent="Panel/TabContainer/Screen/V/Control/GridContainer"]
+layout_mode = 2
+min_value = 1.0
+max_value = 100000.0
+value = 10000.0
+suffix = "Hz"
+
+[node name="Memory" type="Control" parent="Panel/TabContainer"]
+visible = false
+layout_mode = 2
+script = ExtResource("2_0ld40")
+metadata/_tab_index = 1
+
+[node name="BoxContainer" type="BoxContainer" parent="Panel/TabContainer/Memory"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="mem_map" type="ItemList" parent="Panel/TabContainer/Memory/BoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+max_text_lines = 2
+icon_mode = 0
+
+[node name="VSeparator" type="VSeparator" parent="Panel/TabContainer/Memory/BoxContainer"]
+layout_mode = 2
+
+[node name="TextEdit" type="RichTextLabel" parent="Panel/TabContainer/Memory/BoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 5.0
+theme_override_colors/default_color = Color(0.497474, 0.497474, 0.497474, 1)
+bbcode_enabled = true
+
+[node name="Editor" type="Control" parent="Panel/TabContainer"]
+layout_mode = 2
+script = ExtResource("3_6wt7m")
+metadata/_tab_index = 2
+
+[node name="V" type="VBoxContainer" parent="Panel/TabContainer/Editor"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MenuBar" type="MenuBar" parent="Panel/TabContainer/Editor/V"]
+layout_mode = 2
+
+[node name="File" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
+item_count = 5
+item_0/text = "New"
+item_0/id = 0
+item_1/text = "Save"
+item_1/id = 1
+item_1/disabled = true
+item_2/text = "Save as..."
+item_2/id = 2
+item_2/disabled = true
+item_3/text = "Load"
+item_3/id = 3
+item_4/text = "Close"
+item_4/id = 4
+item_4/disabled = true
+
+[node name="Edit" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
+item_count = 1
+item_0/text = "Search"
+item_0/id = 0
+
+[node name="View" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
+item_count = 3
+item_0/text = "tokens"
+item_0/id = 0
+item_1/text = "parse (AST)"
+item_1/id = 1
+item_2/text = "analysis (IR)"
+item_2/id = 2
+
+[node name="Settings" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
+item_count = 3
+item_0/text = "Language..."
+item_0/id = 0
+item_1/text = "Settings"
+item_1/id = 1
+item_2/text = "editor debug"
+item_2/id = 2
+
+[node name="Language" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar/Settings"]
+
+[node name="Build" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar"]
+item_count = 1
+item_0/text = "compile"
+item_0/id = 0
+
+[node name="EFiles" type="TabContainer" parent="Panel/TabContainer/Editor/V"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="HSeparator" type="HSeparator" parent="Panel/TabContainer/Editor/V"]
+layout_mode = 2
+
+[node name="VSearch" type="VBoxContainer" parent="Panel/TabContainer/Editor/V"]
+visible = false
+layout_mode = 2
+
+[node name="H" type="HBoxContainer" parent="Panel/TabContainer/Editor/V/VSearch"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/TabContainer/Editor/V/VSearch/H"]
+layout_mode = 2
+text = "Search:"
+
+[node name="LineEdit" type="LineEdit" parent="Panel/TabContainer/Editor/V/VSearch/H"]
+layout_mode = 2
+size_flags_horizontal = 3
+keep_editing_on_text_submit = true
+
+[node name="lbl_res" type="Label" parent="Panel/TabContainer/Editor/V/VSearch/H"]
+layout_mode = 2
+text = "0/0 Results"
+
+[node name="btn_prev" type="Button" parent="Panel/TabContainer/Editor/V/VSearch/H"]
+layout_mode = 2
+icon = ExtResource("4_j8jky")
+
+[node name="btn_next" type="Button" parent="Panel/TabContainer/Editor/V/VSearch/H"]
+layout_mode = 2
+icon = ExtResource("5_kmb1v")
+
+[node name="btn_close_search" type="Button" parent="Panel/TabContainer/Editor/V/VSearch/H"]
+layout_mode = 2
+icon = ExtResource("6_fuf3a")
+
+[node name="HSeparator2" type="HSeparator" parent="Panel/TabContainer/Editor/V/VSearch"]
+layout_mode = 2
+
+[node name="RTL_console" type="RichTextLabel" parent="Panel/TabContainer/Editor/V"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_following = true
+
+[node name="comp_highlight" type="Node" parent="Panel/TabContainer/Editor"]
+script = ExtResource("6_u56tr")
+
+[node name="lang_zd" type="Node" parent="Panel/TabContainer/Editor/comp_highlight"]
+script = ExtResource("7_8jmkd")
+
+[node name="lang_md" type="Node" parent="Panel/TabContainer/Editor/comp_highlight"]
+script = ExtResource("8_gqmmt")
+
+[node name="comp_build" type="Node" parent="Panel/TabContainer/Editor" node_paths=PackedStringArray("n_VM", "win_tokens")]
+script = ExtResource("8_jurei")
+n_VM = NodePath("../../../../VM")
+win_tokens = NodePath("../win_token_view")
+
+[node name="comp_asm_zd" type="Node" parent="Panel/TabContainer/Editor/comp_build" node_paths=PackedStringArray("erep")]
+script = ExtResource("8_dp3eg")
+erep = NodePath("../../comp_erep")
+
+[node name="comp_compile_md" type="Node" parent="Panel/TabContainer/Editor/comp_build"]
+script = ExtResource("11_yc10j")
+
+[node name="tokenizer_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md"]
+script = ExtResource("12_pm3ni")
+
+[node name="parser_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md" node_paths=PackedStringArray("erep")]
+script = ExtResource("13_yq6so")
+erep = NodePath("../../../comp_erep")
+
+[node name="analyzer_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md" node_paths=PackedStringArray("IR", "erep", "Editor")]
+script = ExtResource("13_2wyq8")
+IR = NodePath("../IR_md")
+erep = NodePath("../../../comp_erep")
+Editor = NodePath("../../..")
+
+[node name="IR_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md"]
+script = ExtResource("14_vxglm")
+
+[node name="codegen_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md"]
+script = ExtResource("15_2f3dj")
+
+[node name="comp_file" type="Node" parent="Panel/TabContainer/Editor"]
+script = ExtResource("4_3f0fj")
+
+[node name="fd_save" type="FileDialog" parent="Panel/TabContainer/Editor/comp_file"]
+initial_position = 2
+size = Vector2i(400, 400)
+access = 2
+
+[node name="fd_load" type="FileDialog" parent="Panel/TabContainer/Editor/comp_file"]
+title = "Open a File"
+initial_position = 2
+size = Vector2i(400, 400)
+ok_button_text = "Open"
+file_mode = 0
+access = 2
+
+[node name="cd_save_discard" parent="Panel/TabContainer/Editor/comp_file" instance=ExtResource("4_inoj7")]
+initial_position = 2
+visible = false
+
+[node name="comp_erep" type="Node" parent="Panel/TabContainer/Editor" node_paths=PackedStringArray("Editor")]
+script = ExtResource("22_tel4y")
+Editor = NodePath("..")
+
+[node name="comp_search" type="Node" parent="Panel/TabContainer/Editor" node_paths=PackedStringArray("Editor", "comp_file")]
+script = ExtResource("21_pibwh")
+Editor = NodePath("..")
+comp_file = NodePath("../comp_file")
+
+[node name="window_debug" type="Window" parent="Panel/TabContainer/Editor"]
+oversampling_override = 1.0
+title = "Debug"
+initial_position = 2
+size = Vector2i(490, 500)
+visible = false
+
+[node name="debug_panel" parent="Panel/TabContainer/Editor/window_debug" instance=ExtResource("10_cypyl")]
+
+[node name="win_token_view" parent="Panel/TabContainer/Editor" instance=ExtResource("13_jscy8")]
+visible = false
+
+[node name="win_parse" parent="Panel/TabContainer/Editor" instance=ExtResource("15_y6deb")]
+title = "Parse (AST)"
+visible = false
+
+[node name="win_IR" parent="Panel/TabContainer/Editor" instance=ExtResource("16_og1vs")]
+visible = false
+
+[node name="win_ed_dbg" parent="Panel/TabContainer/Editor" node_paths=PackedStringArray("Editor", "comp_file", "tab_EFiles", "comp_build") instance=ExtResource("21_fv21b")]
+visible = false
+Editor = NodePath("..")
+comp_file = NodePath("../comp_file")
+tab_EFiles = NodePath("../V/EFiles")
+comp_build = NodePath("../comp_build")
+
+[node name="btn_debugger" type="Button" parent="Panel"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -25.0
+offset_top = 1.0
+offset_right = -1.0
+offset_bottom = 25.0
+grow_horizontal = 0
+icon = ExtResource("11_nykja")
+
+[node name="VM" type="Node" parent="."]
+script = ExtResource("3_m68nv")
+
+[node name="Bus" type="Node" parent="VM"]
+script = ExtResource("11_37vc5")
+
+[node name="RAM_64k" type="Node" parent="VM/Bus"]
+script = ExtResource("11_1g7n4")
+
+[node name="GPU_cs" type="Node" parent="VM/Bus"]
+script = ExtResource("4_yy5uk")
+font = SubResource("SystemFont_30trl")
+
+[node name="SubViewport" type="SubViewport" parent="VM/Bus/GPU_cs"]
+render_target_update_mode = 0
+
+[node name="GPU_scene" parent="VM/Bus/GPU_cs/SubViewport" instance=ExtResource("5_5bfjd")]
+
+[node name="KB" type="Node" parent="VM/Bus"]
+script = ExtResource("6_jv3qg")
+
+[node name="CPU_vm" type="Node" parent="VM"]
+script = ExtResource("7_p2205")
+
+[node name="todo" type="Node" parent="."]
+script = ExtResource("19_a20q3")
+
+[connection signal="toggled" from="Panel/TabContainer/Screen/V/Control/GridContainer/cbOn" to="." method="_on_cb_on_toggled"]
+[connection signal="toggled" from="Panel/TabContainer/Screen/V/Control/GridContainer/btnKeyboard" to="." method="_on_btn_keyboard_toggled"]
+[connection signal="pressed" from="Panel/TabContainer/Screen/V/Control/GridContainer/btnReset" to="." method="_on_btn_reset_pressed"]
+[connection signal="value_changed" from="Panel/TabContainer/Screen/V/Control/GridContainer/sb_freq" to="VM" method="_on_sb_freq_value_changed"]
+[connection signal="item_selected" from="Panel/TabContainer/Memory/BoxContainer/mem_map" to="Panel/TabContainer/Memory" method="_on_mem_map_item_selected"]
+[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/File" to="Panel/TabContainer/Editor/comp_file" method="_on_file_index_pressed"]
+[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Edit" to="Panel/TabContainer/Editor" method="_on_edit_index_pressed"]
+[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/View" to="Panel/TabContainer/Editor" method="_on_view_index_pressed"]
+[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Settings" to="Panel/TabContainer/Editor" method="_on_settings_index_pressed"]
+[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Settings/Language" to="Panel/TabContainer/Editor/comp_build" method="_on_language_index_pressed"]
+[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Build" to="Panel/TabContainer/Editor/comp_build" method="_on_build_index_pressed"]
+[connection signal="tab_changed" from="Panel/TabContainer/Editor/V/EFiles" to="Panel/TabContainer/Editor/comp_file" method="_on_e_files_tab_changed"]
+[connection signal="gui_input" from="Panel/TabContainer/Editor/V/VSearch/H/LineEdit" to="Panel/TabContainer/Editor/comp_search" method="_on_line_edit_gui_input"]
+[connection signal="text_changed" from="Panel/TabContainer/Editor/V/VSearch/H/LineEdit" to="Panel/TabContainer/Editor/comp_search" method="_on_line_edit_text_changed"]
+[connection signal="text_submitted" from="Panel/TabContainer/Editor/V/VSearch/H/LineEdit" to="Panel/TabContainer/Editor/comp_search" method="_on_line_edit_text_submitted"]
+[connection signal="pressed" from="Panel/TabContainer/Editor/V/VSearch/H/btn_prev" to="Panel/TabContainer/Editor/comp_search" method="_on_btn_prev_pressed"]
+[connection signal="pressed" from="Panel/TabContainer/Editor/V/VSearch/H/btn_next" to="Panel/TabContainer/Editor/comp_search" method="_on_btn_next_pressed"]
+[connection signal="pressed" from="Panel/TabContainer/Editor/V/VSearch/H/btn_close_search" to="Panel/TabContainer/Editor/comp_search" method="_on_btn_close_search_pressed"]
+[connection signal="sig_cprint" from="Panel/TabContainer/Editor/comp_build/comp_asm_zd" to="Panel/TabContainer/Editor" method="_on_cprint"]
+[connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_asm_zd" to="Panel/TabContainer/Editor" method="_on_user_error"]
+[connection signal="IR_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor/win_IR" method="_on_comp_compile_md_ir_ready"]
+[connection signal="open_file_request" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="." method="_on_comp_compile_md_open_file_request"]
+[connection signal="parse_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor/win_parse" method="_on_comp_compile_md_parse_ready"]
+[connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor" method="_on_user_error"]
+[connection signal="sym_table_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="on_sym_table_ready"]
+[connection signal="tokens_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/tokenizer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_tokenizer_md_tokens_ready"]
+[connection signal="sig_cprint" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor" method="_on_cprint"]
+[connection signal="sig_parse_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_parser_md_sig_parse_ready"]
+[connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor" method="_on_user_error"]
+[connection signal="IR_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_analyzer_md_ir_ready"]
+[connection signal="sig_cprint" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor" method="_on_cprint"]
+[connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_analyzer_md_sig_user_error"]
+[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor" method="_on_comp_file_cur_efile_changed"]
+[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_highlight" method="_on_comp_file_cur_efile_changed"]
+[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_build" method="_on_comp_file_cur_efile_changed"]
+[connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_save" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_save_file_selected"]
+[connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_load" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_load_file_selected"]
+[connection signal="sig_highlight_line" from="Panel/TabContainer/Editor/comp_erep" to="Panel/TabContainer/Editor" method="_on_highlight_line"]
+[connection signal="sig_highlight_line" from="Panel/TabContainer/Editor/comp_search" to="Panel/TabContainer/Editor" method="_on_highlight_line"]
+[connection signal="close_requested" from="Panel/TabContainer/Editor/window_debug" to="Panel/TabContainer/Editor/window_debug" method="hide"]
+[connection signal="set_highlight" from="Panel/TabContainer/Editor/window_debug/debug_panel" to="Panel/TabContainer/Editor/comp_build" method="_on_debug_panel_set_highlight"]
+[connection signal="close_requested" from="Panel/TabContainer/Editor/win_IR" to="Panel/TabContainer/Editor/win_IR" method="hide"]
+[connection signal="pressed" from="Panel/btn_debugger" to="Panel/TabContainer/Editor/window_debug" method="show"]
+[connection signal="cpu_step_done" from="VM/CPU_vm" to="Panel/TabContainer/Memory" method="_on_cpu_vm_cpu_step_done"]
+[connection signal="cpu_step_done" from="VM/CPU_vm" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="_on_cpu_vm_cpu_step_done"]
+[connection signal="mem_accessed" from="VM/CPU_vm" to="Panel/TabContainer/Memory" method="_on_cpu_vm_mem_accessed"]
+[connection signal="mem_accessed" from="VM/CPU_vm" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="_on_cpu_vm_mem_accessed"]
+[connection signal="on_cpu_error" from="VM/CPU_vm" to="." method="_on_cpu_vm_on_cpu_error"]

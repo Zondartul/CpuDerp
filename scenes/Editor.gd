@@ -70,8 +70,8 @@ func _on_cclear()->void:
 	clear_console();
 
 ## signal receiver for "highlight_line" - highlights a region in the text editor
-func _on_highlight_line(line_idx, col=-1, length=-1)->void:
-	$comp_file.highlight_line(line_idx, col, length);
+func _on_highlight_line(loc:LocationRange)->void:#(line_idx, col=-1, length=-1)->void:
+	$comp_file.highlight_line(loc);#(loc.line_idx, loc.col, length);
 
 func get_cur_line_idx()->int:
 	return $comp_file.get_cur_line_idx();
