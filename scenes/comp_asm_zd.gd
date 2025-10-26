@@ -82,7 +82,7 @@ func assemble(input:Dictionary)->Chunk:
 	output_tokens.clear();
 	lines = source.split("\n",true);
 	#print(lines);
-	var cur_loc = Location.new({"filename":cur_filename, "line":"", "line_idx":0, "col":0});
+	var cur_loc = Location.new({"filename":cur_filename, "line":"<assemble.default>", "line_idx":0, "col":0});
 	for line in lines:
 		if line == "": cur_line_idx += 1; continue;
 		cur_line = line;

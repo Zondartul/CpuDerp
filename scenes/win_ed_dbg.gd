@@ -4,6 +4,7 @@ extends Window
 @export var comp_file:Node;
 @export var tab_EFiles:Node;
 @export var comp_build:Node;
+@export var debug_panel:Node;
 
 @onready var n_list = $BC/IL;
 
@@ -15,6 +16,9 @@ func _ready():
 		{"node":tab_EFiles, "propname":"current_tab", "propval":null, "desc":"Current tab"},
 		{"node":comp_build, "propname":"cur_efile", "propval":null, "desc":"Compiler's efile"},
 		{"node":comp_build, "propname":"cur_lang", "propval":null, "desc":"Current language"},
+		{"node":debug_panel, "propname":"cur_loc", "propval":null, "desc":"Current Location"},
+		{"node":debug_panel, "propname":"cur_loc_line", "propval":null, "desc":"loc.line"},
+		{"node":debug_panel, "propname":"n_locations", "propval":null, "desc":"num locations"},
 	];
 
 func _process(_delta):

@@ -115,7 +115,7 @@ func serialize_ir_arg(arg):
 		res.append("]");
 		return res;
 	elif arg is LocationRange:
-		return [escape_string(str(arg))];
+		return [G.escape_string(arg.to_string_full())];
 	else:
 		push_error("can't serialize IR argument ["+str(arg)+"]");
 		return [];
@@ -214,47 +214,47 @@ func serialize_vals(arr):
 			for key2 in ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code"]:
 				if (key2 in old_var) and (old_var[key2] != null):
 					var val = old_var[key2];
-					val = escape_string(val);
+					val = G.escape_string(val);
 					new_var.append(val);
 				else:
 					new_var.append("NULL");
 			arr[i] = new_var;
 
-func escape_string(text):
-	var new_str = "";
-	for ch:String in text:
-		if ch in "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890.+-_":
-			new_str += ch;
-		else:
-			var buff = ch.to_ascii_buffer();
-			assert(len(buff) == 1);
-			ch = "%" + "%03d" % buff[0];
-			new_str += ch;
-	return new_str;
+#func escape_string(text):
+	#var new_str = "";
+	#for ch:String in text:
+		#if ch in "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890.+-_":
+			#new_str += ch;
+		#else:
+			#var buff = ch.to_ascii_buffer();
+			#assert(len(buff) == 1);
+			#ch = "%" + "%03d" % buff[0];
+			#new_str += ch;
+	#return new_str;
 
-func unescape_string(text):
-	var new_str:String = "";
-	var esc_step:int = 0;
-	var num_str:String = "";
-	for ch in text:
-		match esc_step:
-			0:
-				if(ch == "%"):
-					esc_step = 1;
-				else:
-					new_str += ch;
-			1:	num_str += ch; esc_step += 1;
-			2:	num_str += ch; esc_step += 1;
-			3:	
-				num_str += ch;
-				assert(num_str.is_valid_int());
-				var num = num_str.to_int();
-				num_str = "";
-				var new_ch = PackedByteArray([num]).get_string_from_ascii();
-				new_str += new_ch;
-				esc_step = 0;
-	print("unescape str: in [%s], out [%s]" % [text, new_str]);
-	return new_str;
+#func unescape_string(text):
+	#var new_str:String = "";
+	#var esc_step:int = 0;
+	#var num_str:String = "";
+	#for ch in text:
+		#match esc_step:
+			#0:
+				#if(ch == "%"):
+					#esc_step = 1;
+				#else:
+					#new_str += ch;
+			#1:	num_str += ch; esc_step += 1;
+			#2:	num_str += ch; esc_step += 1;
+			#3:	
+				#num_str += ch;
+				#assert(num_str.is_valid_int());
+				#var num = num_str.to_int();
+				#num_str = "";
+				#var new_ch = PackedByteArray([num]).get_string_from_ascii();
+				#new_str += new_ch;
+				#esc_step = 0;
+	#print("unescape str: in [%s], out [%s]" % [text, new_str]);
+	#return new_str;
 
 func to_file(filename):
 	var fp = FileAccess.open(filename, FileAccess.ModeFlags.WRITE);

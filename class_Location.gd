@@ -23,13 +23,45 @@ func less_than(other:Location)->bool:
 func _to_string()->String:
 	return "@%s:%d:%d" % [filename, line_idx, col];
 
+func to_string_short()->String:
+	return "%d:%d" % [line_idx, col];
+
+func to_string_full()->String:
+	return "@%s:%d:%d:[%s]" % [filename, line_idx, col, G.escape_string(line)];
+
 static func from_string(S:String)->Location:
 	var regex:RegEx = RegEx.new();
-	regex.compile("\\@([^:]*)\\:([^:]*)\\:([^:]*)");
+	#const rx_pretty = "\\@[^:]*\\:[^:]*\\:[^:]*";
+	#const rx_short = "[^:]*\\:[^:]*";
+	#const rx_full = "\\@[^:]*\\:[^:]*\\:[^:]*\\:\\[[^:]*\\]";
+	const rx_any =  "(\\@([^:]*)\\:)?([^:]*)\\:([^:]*)(\\:\\[([^:]*)\\])?";
+	# groups           1 2          3        4      5      6
+	var compile_res = regex.compile(rx_any);
+	assert(compile_res == OK);
 	var res:RegExMatch = regex.search(S);
+	assert(res, "unable to deserialize location: %s" % S);
 	if res:
-		var loc = Location.new({"filename":res.get_string(1), "line_idx":res.get_string(2), "col":res.get_string(3)});
+		print("-------- REGEX ----");
+		print(res.strings);
+		var filename = "";
+		if res.get_string(1) != "":
+			filename = res.get_string(2);
+		var line_idx = int(res.get_string(3));
+		var col = int(res.get_string(4));
+		var line = "";
+		if res.get_string(5) != "":
+			line = res.get_string(6);
+			line = G.unescape_string(line);
+		var loc = Location.new({"filename":filename, "line":line, "line_idx":line_idx, "col":col});
 		return loc;
 	else:
 		return Location.new();
+	#var regex:RegEx = RegEx.new();
+	#regex.compile("\\@([^:]*)\\:([^:]*)\\:([^:]*)");
+	#var res:RegExMatch = regex.search(S);
+	#if res:
+		#var loc = Location.new({"filename":res.get_string(1), "line_idx":res.get_string(2), "col":res.get_string(3)});
+		#return loc;
+	#else:
+		#return Location.new();
 		

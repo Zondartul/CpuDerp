@@ -82,7 +82,9 @@ var symtable_label_names = [];
 enum HighlightMode {NONE, ASM, HIGH_LEVEL};
 var highlight_mode = HighlightMode.HIGH_LEVEL;
 var loc_map:LocationMap;
-var cur_loc:LocationRange;
+var cur_loc:LocationRange: set=set_cur_loc;
+var cur_loc_line:String;
+var n_locations = 0;
 
 signal set_highlight(loc:LocationRange);#(from_line, from_col, to_line, to_col);
 # Called when the node enters the scene tree for the first time.
@@ -162,6 +164,7 @@ func get_loc_asm()->LocationRange:
 				var loc2 = Location.new({"filename":op.filename, "line":op.line, "line_idx":op.line_idx, "col":op.end});
 				var loc = LocationRange.new({"begin":loc1, "end":loc2});
 				return loc;
+			return cur_loc;
 	return LocationRange.new();
 
 func get_loc_hl():
@@ -920,4 +923,12 @@ func _on_btn_highlight_none_pressed() -> void: highlight_mode = HighlightMode.NO
 
 func _on_locations_ready(new_loc_map: LocationMap) -> void:
 	loc_map = new_loc_map;
+	n_locations = len(loc_map.begin);
 	pass # Replace with function body.
+
+func set_cur_loc(new_loc):
+	cur_loc = new_loc;
+	if G.has(cur_loc):
+		cur_loc_line = cur_loc.begin.line;
+	else:
+		cur_loc_line = "<no loc>";

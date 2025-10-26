@@ -79,7 +79,7 @@ func deserialize(text:String)->void:
 		if "code" in in_cb:
 			for cmd in in_cb.code:
 				var loc_str = cmd.pop_back();
-				loc_str = unescape_string(loc_str);
+				loc_str = G.unescape_string(loc_str);
 				var loc = LocationRange.from_string(loc_str);
 				assert(len(cmd));
 				var out_cmd = IR_Cmd.new({"loc":loc});
@@ -111,33 +111,9 @@ func inflate_vals(arr:Array)->void:
 		assert(len(val) == len(props));
 		var new_val = {};
 		for j in range(len(props)):
-			var S = unescape_string(val[j]);
+			var S = G.unescape_string(val[j]);
 			new_val[props[j]] = S;
 		arr[i] = new_val;
-
-func unescape_string(text:String)->String:
-	var new_str:String = "";
-	var esc_step:int = 0;
-	var num_str:String = "";
-	for ch in text:
-		match esc_step:
-			0:
-				if(ch == "%"):
-					esc_step = 1;
-				else:
-					new_str += ch;
-			1:	num_str += ch; esc_step += 1;
-			2:	num_str += ch; esc_step += 1;
-			3:	
-				num_str += ch;
-				assert(num_str.is_valid_int());
-				var num = num_str.to_int();
-				num_str = "";
-				var new_ch = PackedByteArray([num]).get_string_from_ascii();
-				new_str += new_ch;
-				esc_step = 0;
-	#print("unescape str: in [%s], out [%s]" % [text, new_str]);
-	return new_str;
 
 #-------------- Code generation -----------------
 
@@ -789,7 +765,7 @@ func translate_ab_locations(loc_map:LocationMap, wp:int)->void:
 	var dbg_len_in = len(loc_map.begin.keys());
 	var loc_map_trans = LocationMap.new(); #{"begin":{}, "end":{}};
 	var offs = wp; #cur_assy_block.write_pointer;
-	print("translate %d ips by offs %d: " % [dbg_len_in, offs]);
+	#print("translate %d ips by offs %d: " % [dbg_len_in, offs]);
 	for ip in loc_map.begin:
 		translate_ab_loc(loc_map.begin, ip, loc_map_trans.begin, ip+offs);
 	for ip in loc_map.end:
@@ -813,7 +789,7 @@ func translate_ab_loc(src_lmap:Dictionary, src_ip:int, dest_lmap:Dictionary, des
 	dest_arr.append_array(src_arr);
 	var len_out = len(dest_arr);
 	assert(len_out == (len_src + len_dst));
-	print("   (ip %d->%d): src %d + dest %d = out %d" % [src_ip, dest_ip, len_src, len_dst, len_out]);
+	#print("   (ip %d->%d): src %d + dest %d = out %d" % [src_ip, dest_ip, len_src, len_dst, len_out]);
 
 func add_ab_locations(loc_map_in:LocationMap):
 	for ip in loc_map_in.begin:

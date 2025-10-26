@@ -7,7 +7,7 @@ func tokenize(line:String)->Array[Token]:
 	var tok_class = "";
 	var cur_tok = "";
 	var col = 0;
-	var cur_loc:Location = Location.new({"col":0});
+	var cur_loc:Location = Location.new({"col":0, "line":line});
 	for ch in line:
 		var new_tok_class = tok_ch_class(ch);
 		if should_split_on_transition(new_tok_class, tok_class):

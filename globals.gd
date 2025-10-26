@@ -172,3 +172,41 @@ func first_in_dict(dict:Dictionary)->Variant:
 	if len(dict.keys()):
 		return dict[dict.keys()[0]];
 	return null;
+	
+#-------
+
+func unescape_string(text:String)->String:
+	var new_str:String = "";
+	var esc_step:int = 0;
+	var num_str:String = "";
+	for ch in text:
+		match esc_step:
+			0:
+				if(ch == "%"):
+					esc_step = 1;
+				else:
+					new_str += ch;
+			1:	num_str += ch; esc_step += 1;
+			2:	num_str += ch; esc_step += 1;
+			3:	
+				num_str += ch;
+				assert(num_str.is_valid_int());
+				var num = num_str.to_int();
+				num_str = "";
+				var new_ch = PackedByteArray([num]).get_string_from_ascii();
+				new_str += new_ch;
+				esc_step = 0;
+	#print("unescape str: in [%s], out [%s]" % [text, new_str]);
+	return new_str;
+
+func escape_string(text):
+	var new_str = "";
+	for ch:String in text:
+		if ch in "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890.+-_":
+			new_str += ch;
+		else:
+			var buff = ch.to_ascii_buffer();
+			assert(len(buff) == 1);
+			ch = "%" + "%03d" % buff[0];
+			new_str += ch;
+	return new_str;

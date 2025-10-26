@@ -16,7 +16,10 @@ func duplicate()->LocationRange:
 	return loc2;
 
 func _to_string()->String:
-	return "%s~%s" % [begin, end];
+	return "%s~%s" % [begin._to_string(), end.to_string_short()];
+
+func to_string_full()->String:
+	return "%s~%s" % [begin.to_string_full(), end.to_string_full()];
 
 static func from_loc_len(loc:Location, length:int)->LocationRange:
 	var loc2 = loc.duplicate();
@@ -26,7 +29,9 @@ static func from_loc_len(loc:Location, length:int)->LocationRange:
 static func from_string(S:String)->LocationRange:
 	var idx = S.find("~");
 	var s_from = S.substr(0, idx);
-	var s_to = S.substr(idx-1);
+	var s_to = S.substr(idx+1);
 	var loc_from = Location.from_string(s_from);
 	var loc_to = Location.from_string(s_to);
-	return LocationRange.new({"begin":loc_from, "end":loc_to});
+	var res = LocationRange.new({"begin":loc_from, "end":loc_to});
+	print("LocationRange.from_string(%s) result: %s" % [S, res.to_string_full()])
+	return res;

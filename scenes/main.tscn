@@ -372,12 +372,13 @@ visible = false
 [node name="win_IR" parent="Panel/TabContainer/Editor" instance=ExtResource("16_og1vs")]
 visible = false
 
-[node name="win_ed_dbg" parent="Panel/TabContainer/Editor" node_paths=PackedStringArray("Editor", "comp_file", "tab_EFiles", "comp_build") instance=ExtResource("21_fv21b")]
+[node name="win_ed_dbg" parent="Panel/TabContainer/Editor" node_paths=PackedStringArray("Editor", "comp_file", "tab_EFiles", "comp_build", "debug_panel") instance=ExtResource("21_fv21b")]
 visible = false
 Editor = NodePath("..")
 comp_file = NodePath("../comp_file")
 tab_EFiles = NodePath("../V/EFiles")
 comp_build = NodePath("../comp_build")
+debug_panel = NodePath("../window_debug/debug_panel")
 
 [node name="btn_debugger" type="Button" parent="Panel"]
 layout_mode = 1
