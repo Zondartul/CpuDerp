@@ -146,12 +146,12 @@ func update_ip_highlight():
 			var idx = op_ips.bsearch(ip, false)-1;
 			if(idx >= 0):
 				var op = op_locations[idx];
-				if op.line != last_highlighted_line:
-					last_highlighted_line = op.line;
+				if op.line_idx != last_highlighted_line:
+					last_highlighted_line = op.line_idx;
 					editor.switch_to_file(op.filename)
 					#set_highlight.emit(op.line, op.begin, op.line, op.end);
-					var loc1 = Location.new({"line_idx":op.line, "col":op.begin});
-					var loc2 = Location.new({"line_idx":op.line, "col":op.end});
+					var loc1 = Location.new({"filename":op.filename, "line":op.line, "line_idx":op.line_idx, "col":op.begin});
+					var loc2 = Location.new({"filename":op.filename, "line":op.line, "line_idx":op.line_idx, "col":op.end});
 					var loc = LocationRange.new({"begin":loc1, "end":loc2});
 					set_highlight.emit(loc);
 			else:
@@ -895,3 +895,7 @@ func read_hl_local(val, cur_ebp):
 func _on_btn_highlight_hl_pressed() -> void: highlight_mode = HighlightMode.HIGH_LEVEL;
 func _on_btn_highlight_asm_pressed() -> void: highlight_mode = HighlightMode.ASM;
 func _on_btn_highlight_none_pressed() -> void: highlight_mode = HighlightMode.NONE;
+
+func _on_locations_ready(new_loc_map: LocationMap) -> void:
+	loc_map = new_loc_map;
+	pass # Replace with function body.

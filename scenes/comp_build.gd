@@ -38,7 +38,8 @@ func setup(dict:Dictionary):
 
 func assemble_zderp():
 	n_assembler.cur_path = cur_efile.path;
-	var chunk = n_assembler.assemble(cur_efile.get_text());
+	var asm_input = {"text":cur_efile.get_text(), "filename":cur_efile.file_name};
+	var chunk = n_assembler.assemble(asm_input);
 	if G.has(chunk):
 		assert("code" in chunk);
 		var res = {"code":chunk.code};
@@ -128,15 +129,22 @@ func _on_comp_file_cur_efile_changed(efile):
 		n_compiler.cur_filename = "";
 
 func set_highlight(loc:LocationRange):#(from_line, from_col, to_line, to_col):
-	var TE = cur_efile.find_child("TextEdit");
-	assert(TE != null);
-	var from_line = loc.begin.line_idx;
-	var from_col = loc.begin.col;
-	var to_line = loc.end.line_idx;
-	var to_col = loc.end.col;
-	TE.select(from_line, from_col, to_line, to_col);
-	TE.set_caret_line(to_line);
-	TE.set_caret_column(to_col);
+	var comp_file = (Editor as Control).get_node("comp_file");
+	comp_file.highlight_line(loc);
+	## why are we doing this when comp_highlight and editor_file
+	##  both alerady have set_highlight?
+	#var TE = cur_efile.find_child("TextEdit");
+	#assert(TE != null);
+	#if G.has(loc):
+		#var from_line = loc.begin.line_idx;
+		#var from_col = loc.begin.col;
+		#var to_line = loc.end.line_idx;
+		#var to_col = loc.end.col;
+		#TE.select(from_line, from_col, to_line, to_col);
+		#TE.set_caret_line(to_line);
+		#TE.set_caret_column(to_col);
+	#else:
+		#TE.deselect();
 
 func _on_comp_asm_zd_highlight_error(loc:LocationRange):#(from_line, from_col, to_line, to_col):
 	#print("highlight error ("+str(from_line)+", "+str(from_col)+", "+str(to_line)+", "+str(to_col)+")");

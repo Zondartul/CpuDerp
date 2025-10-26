@@ -75,6 +75,10 @@ func has(obj):
 		return not obj.is_empty();
 	if obj and (obj is Object) and ("to_bool" in obj):
 		return obj.to_bool();
+	if obj is LocationRange:
+		return (has(obj.begin) and has(obj.end));
+	if obj is Location:
+		return obj.line_idx != -1;
 	return not not obj;
 
 # --------- util ------------

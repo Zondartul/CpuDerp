@@ -1,6 +1,6 @@
 extends Node
 
-signal locations_ready(loc_map:Dictionary);
+signal locations_ready(loc_map:LocationMap);
 
 const uYaml = preload("res://scenes/uYaml.gd")
 # constants
@@ -34,6 +34,7 @@ var cur_block:CodeBlock;
 var cb_stack:Array[CodeBlock] = [];
 var entered_scopes = [];
 var cur_scope = null;
+var n_locations = 0;
 #var location_map = {};
 
 func reset():
@@ -48,6 +49,7 @@ func reset():
 	cb_stack = [];
 	entered_scopes = [];
 	cur_scope = null;
+	n_locations = 0;
 
 #---------- IR ingestion -------------------
 
@@ -165,6 +167,7 @@ func generate()->String:
 	#assy_full += generate_globals();
 	#return assy_full;
 	cur_assy_block = AssyBlock.new(); #{"code":"", "write_pos":0, "location_map":{"begin":{}, "end":{}}};
+	var global_ab = cur_assy_block;
 	while not referenced_cbs.is_empty():
 		var cb = referenced_cbs.pop_front();
 		if cb in emitted_cbs: continue;
@@ -172,6 +175,10 @@ func generate()->String:
 		emit_cb(cb.ir_name, "generate.referenced_cbs");
 	fixup_enter_leave(cur_assy_block);
 	cur_assy_block.code += generate_globals();
+	assert(cur_assy_block == global_ab);
+	var n_locations_in = n_locations;
+	var n_locations_out = len(cur_assy_block.loc_map.begin);
+	#assert(n_locations_out == n_locations_in);
 	locations_ready.emit(cur_assy_block.loc_map);
 	return cur_assy_block.code;
 	
@@ -290,6 +297,8 @@ func generate_cmd_op(cmd:IR_Cmd)->void:
 	var arg1 = cmd.words[2];
 	var arg2 = cmd.words[3];
 	var res = cmd.words[4];
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	if op not in op_map: push_error("codegen: can't generate op ["+op+"]"); return;
 	var op_str:String = op_map[op];
 	
@@ -316,6 +325,7 @@ func generate_cmd_op(cmd:IR_Cmd)->void:
 	if op == "INDEX": res_handle.needs_deref = true;
 	free_val(tmpA);
 	if(tmpB): free_val(tmpB);
+	mark_loc_end(loc);
 	
 func new_lbl(lbl_name:String)->Dictionary:
 	var ir_name = "lbl_"+str(len(all_syms)+1)+"__"+lbl_name;
@@ -342,6 +352,9 @@ func generate_cmd_if(cmd:IR_Cmd)->void:
 	var imm_0_handle = new_imm(0);
 	allocate_value(imm_0_handle, cur_scope);
 	var imm_0 = imm_0_handle.ir_name;
+	
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	emit_cb(cb_cond, "generate_cmd_if.cb_cond");
 	#emit("$%s\n" % cb_cond, get_cb_cmd_size(cb_cond), "generate_cmd_if.cb_cond");
 	emit("cmp $%s, $%s;\n" % [res, imm_0], cmd_size, "generate_cmd_if.cmp");
@@ -355,6 +368,7 @@ func generate_cmd_if(cmd:IR_Cmd)->void:
 	else:
 		emit(":%s:\n" % lbl_end, 0, "generate_cmd_if.end_if");
 		cur_block.if_block_lbl_end = null;
+	mark_loc_end(loc);
 
 func generate_cmd_else_if(cmd:IR_Cmd)->void:
 	var cb_cond = cmd.words[1];
@@ -365,6 +379,8 @@ func generate_cmd_else_if(cmd:IR_Cmd)->void:
 	var imm_0_handle = new_imm(0);
 	allocate_value(imm_0_handle, cur_scope);
 	var imm_0 = imm_0_handle.ir_name;
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	emit_cb(cb_cond, "generate_cmd_else_if.cb_cond");
 	#emit("$%s\n" % cb_cond, get_cb_cmd_size(cb_cond), "generate_cmd_else_if.cb_cond");
 	emit("cmp $%s, $%s;\n" % [res, imm_0], cmd_size, "generate_cmd_else_if.cmp");
@@ -376,14 +392,18 @@ func generate_cmd_else_if(cmd:IR_Cmd)->void:
 	if not cur_block.if_block_continued:
 		emit(":%s:\n" % lbl_end, 0, "generate_cmd_else_if.end_if");
 		cur_block.if_block_lbl_end = null;
+	mark_loc_end(loc);
 
 func generate_cmd_else(cmd:IR_Cmd)->void:
 	var cb_block = cmd.words[1];
 	var lbl_end = cur_block.if_block_lbl_end;
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	emit_cb(cb_block,"generate_cmd_else.cb_block");
 	#emit("$%s\n" % [cb_block], get_cb_cmd_size(cb_block), "generate_cmd_else.cb_block");
 	emit(":%s:\n" % [lbl_end], 0, "generate_cmd_else.lbl_end");
 	cur_block.if_block_lbl_end = null;
+	mark_loc_end(loc);
 
 func generate_cmd_while(cmd:IR_Cmd)->void:
 	#WHILE cb_cond res cb_block lbl_next lbl_end
@@ -393,6 +413,8 @@ func generate_cmd_while(cmd:IR_Cmd)->void:
 	var lbl_next = cmd.words[4];
 	var lbl_end = cmd.words[5];
 	var immediate_0 = new_imm(0);
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	allocate_value(immediate_0, cur_scope);
 	emit(":%s:\n" % lbl_next, 0, "generate_cmd_while.lbl_next");		# loop:
 	emit_cb(cb_cond, "generate_cmd_while.cb_cond");
@@ -404,6 +426,7 @@ func generate_cmd_while(cmd:IR_Cmd)->void:
 	#emit("$%s\n" % cb_block, "generate_cmd_while.cb_block");		#  (code block)
 	emit("jmp %s;\n" % lbl_next, cmd_size, "generate_cmd_while.jmp_next");	#  GOTO "loop"
 	emit(":%s:\n" % lbl_end, 0, "generate_cmd_while.lbl_end");		# end:
+	mark_loc_end(loc);
 
 func generate_cmd_call(cmd:IR_Cmd)->void:
 	#CALL fun arg(s) res
@@ -423,11 +446,14 @@ func generate_cmd_call(cmd:IR_Cmd)->void:
 	args.reverse();
 	var n_args = len(args);
 	var pushed_stack_size = 4*n_args;
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	for arg in args:
 		emit("push $%s;\n" % arg, cmd_size, "generate_cmd_call.args");
 	emit("call @%s;\n" % fun, cmd_size, "generate_cmd_call.call");
 	emit("add ESP, %s;\n" % pushed_stack_size, cmd_size, "generate_cmd_call.stack");
 	emit("mov ^%s, eax;\n" % res, cmd_size, "generate_cmd_call.result");
+	mark_loc_end(loc);
 	
 	if fun_handle.storage.type != "extern":
 		var cb_name = fun_handle.code;
@@ -668,22 +694,31 @@ func to_arg_pos(pos:int)->int:
 	return 9+pos;
 
 func generate_cmd_return(cmd:IR_Cmd)->void:
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	if len(cmd.words) >= 2:
 		var res = cmd.words[1];
 		emit("mov EAX, $%s;\n" % res, cmd_size, "generate_cmd_return.arg");
 	var scp_name = cur_scope.ir_name;
 	emit("__LEAVE_%s;\n" % scp_name, enter_leave_size, "generate_cmd_return.leave");
 	emit("ret;\n", cmd_size, "generate_cmd_return.ret");
+	mark_loc_end(loc);
 
 func generate_cmd_enter(cmd:IR_Cmd)->void:
 	var scp_name = cmd.words[1];
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	enter_scope(IR.scopes[scp_name]);
 	emit("__ENTER_%s;\n" % scp_name, enter_leave_size, "generate_cmd_enter");
+	mark_loc_end(loc);
 
-func generate_cmd_leave(_cmd:IR_Cmd)->void:
+func generate_cmd_leave(cmd:IR_Cmd)->void:
 	var scp_name = cur_scope.ir_name;
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	emit("__LEAVE_%s;\n" % scp_name, enter_leave_size, "generate_cmd_leave");
 	leave_scope();
+	mark_loc_end(loc);
 
 func fixup_enter_leave(assy_block:AssyBlock)->void:
 	for key in IR.scopes:
@@ -724,6 +759,7 @@ func mark_loc(loc:LocationRange, lmap:Dictionary, wp:int)->void:
 func mark_loc_begin(loc:LocationRange)->void:
 	var wp = cur_assy_block.write_pos;
 	var lmap = cur_assy_block.loc_map;
+	n_locations += 1;
 	mark_loc(loc, lmap.begin, wp);
 
 func mark_loc_end(loc:LocationRange)->void:
@@ -744,23 +780,44 @@ func emit_cb(cb_name:String, msg:String)->void:
 	assert(handle.val_type == "code");
 	var assy_block = generate_code_block(handle);
 	translate_ab_locations(assy_block.loc_map, cur_assy_block.write_pos);
+	add_ab_locations(assy_block.loc_map);
 	emit_raw("%s" % assy_block.code, assy_block.write_pos, msg);
+	
 	
 ## generate a location map offset by the current write pointer
 func translate_ab_locations(loc_map:LocationMap, wp:int)->void:
+	var dbg_len_in = len(loc_map.begin.keys());
 	var loc_map_trans = LocationMap.new(); #{"begin":{}, "end":{}};
 	var offs = wp; #cur_assy_block.write_pointer;
+	print("translate %d ips by offs %d: " % [dbg_len_in, offs]);
 	for ip in loc_map.begin:
 		translate_ab_loc(loc_map.begin, ip, loc_map_trans.begin, ip+offs);
 	for ip in loc_map.end:
 		translate_ab_loc(loc_map.end, ip, loc_map_trans.end, ip+offs);
 	loc_map.begin.assign(loc_map_trans.begin);
 	loc_map.end.assign(loc_map_trans.end);
-	
+	var dbg_len_out = len(loc_map.begin.keys());
+	assert(dbg_len_out >= dbg_len_in);
 ## translate a single location and insert it into the destination map
 func translate_ab_loc(src_lmap:Dictionary, src_ip:int, dest_lmap:Dictionary, dest_ip:int)->void:
-	if not src_ip in src_lmap: src_lmap[src_ip] = [];
+	if not src_ip in src_lmap: 
+		var new_arr:Array[LocationRange] = [];
+		src_lmap[src_ip] = new_arr;
 	var src_arr = src_lmap[src_ip];
-	if not dest_ip in dest_lmap: dest_lmap[dest_ip] = [];
+	var len_src = len(src_arr);
+	if not dest_ip in dest_lmap: 
+		var new_arr:Array[LocationRange] = [];
+		dest_lmap[dest_ip] = new_arr;
 	var dest_arr = dest_lmap[dest_ip];
+	var len_dst = len(dest_arr);
 	dest_arr.append_array(src_arr);
+	var len_out = len(dest_arr);
+	assert(len_out == (len_src + len_dst));
+	print("   (ip %d->%d): src %d + dest %d = out %d" % [src_ip, dest_ip, len_src, len_dst, len_out]);
+
+func add_ab_locations(loc_map_in:LocationMap):
+	for ip in loc_map_in.begin:
+		translate_ab_loc(loc_map_in.begin, ip, cur_assy_block.loc_map.begin, ip);
+	for ip in loc_map_in.end:
+		translate_ab_loc(loc_map_in.end, ip, cur_assy_block.loc_map.end, ip);
+	

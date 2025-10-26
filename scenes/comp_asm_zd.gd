@@ -74,9 +74,11 @@ func clear()->void:
 	#cur_line_idx = 0;
 	#error_code = "";
 
-func assemble(source:String)->Chunk:
+func assemble(input:Dictionary)->Chunk:
 	erep.proxy = self;
 	clear();
+	var source:String = input.text;
+	cur_filename = input.filename;
 	output_tokens.clear();
 	lines = source.split("\n",true);
 	#print(lines);
@@ -444,7 +446,7 @@ func record_op_position(old_iter:Iter, iter:Iter)->void:
 	var tok_last = iter.tokens[iter.pos-1];
 	var begin_col = tok_first.loc.begin.col;
 	var end_col = tok_last.loc.end.col;#tok_last.loc.from.col+len(tok_last.text);
-	var op = {"ip":write_pos,"filename":cur_filename, "line":cur_line_idx, "begin":begin_col, "end":end_col};
+	var op = {"ip":write_pos,"filename":cur_filename, "line":cur_line, "line_idx":cur_line_idx, "begin":begin_col, "end":end_col};
 	op_locations.append(op);
 
 func parse_command(iter:Iter)->bool:

@@ -450,6 +450,7 @@ script = ExtResource("19_a20q3")
 [connection signal="IR_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_analyzer_md_ir_ready"]
 [connection signal="sig_cprint" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor" method="_on_cprint"]
 [connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_analyzer_md_sig_user_error"]
+[connection signal="locations_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/codegen_md" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="_on_locations_ready"]
 [connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor" method="_on_comp_file_cur_efile_changed"]
 [connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_highlight" method="_on_comp_file_cur_efile_changed"]
 [connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_build" method="_on_comp_file_cur_efile_changed"]

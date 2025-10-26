@@ -160,7 +160,8 @@ func async_new_file(new_name):
 
 func async_save_file():
 	print("save file");
-	assert(cur_efile != null);
+	if cur_efile == null: return;
+	#assert(cur_efile != null);
 	if cur_efile.path != "":
 		if cur_efile.file_save(): 
 			return true;
@@ -233,7 +234,9 @@ func _on_efile_update_my_tab(efile):
 	update_efile_tab(efile);
 
 func highlight_line(loc:LocationRange):#(line_idx, col=-1, length=-1):
-	if cur_efile.filename == loc.filename:
+	if not G.has(loc): 
+		return;
+	if cur_efile.file_name == loc.begin.filename:
 		cur_efile.highlight_line(loc);
 	#cur_efile.highlight_line(line_idx, col, length);
 

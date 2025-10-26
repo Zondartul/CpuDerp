@@ -3,8 +3,8 @@ class_name Location
 
 var filename:String;
 var line:String;
-var line_idx:int;
-var col:int;
+var line_idx:int = -1;
+var col:int = 0;
 
 func _init(dict=null):
 	if dict:
