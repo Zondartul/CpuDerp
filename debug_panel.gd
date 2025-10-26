@@ -65,6 +65,7 @@ const REG_IVT = 10;
 const REG_IVS = 11;
 const REG_IRQ = 12;
 const REG_CTRL = 13;
+const step_limit = 1000; #how many CPU steps are permitted per frame
 
 var cpu:CPU_vm;
 var bus;
@@ -81,6 +82,7 @@ var symtable_label_names = [];
 enum HighlightMode {NONE, ASM, HIGH_LEVEL};
 var highlight_mode = HighlightMode.HIGH_LEVEL;
 var loc_map:LocationMap;
+var cur_loc:LocationRange;
 
 signal set_highlight(loc:LocationRange);#(from_line, from_col, to_line, to_col);
 # Called when the node enters the scene tree for the first time.
@@ -140,34 +142,38 @@ func update_ip_highlight():
 	
 	if highlight_mode == HighlightMode.NONE: return;
 	elif highlight_mode == HighlightMode.ASM:
-		if assembler and assembler.op_locations.size():
-			cache_op_locations();
-			var ip = cpu.regs[cpu.ISA.REG_IP];
-			var idx = op_ips.bsearch(ip, false)-1;
-			if(idx >= 0):
-				var op = op_locations[idx];
-				if op.line_idx != last_highlighted_line:
-					last_highlighted_line = op.line_idx;
-					editor.switch_to_file(op.filename)
-					#set_highlight.emit(op.line, op.begin, op.line, op.end);
-					var loc1 = Location.new({"filename":op.filename, "line":op.line, "line_idx":op.line_idx, "col":op.begin});
-					var loc2 = Location.new({"filename":op.filename, "line":op.line, "line_idx":op.line_idx, "col":op.end});
-					var loc = LocationRange.new({"begin":loc1, "end":loc2});
-					set_highlight.emit(loc);
-			else:
-				#set_highlight.emit(0,0,0,0);
-				set_highlight.emit(LocationRange.new());
+		cur_loc = get_loc_asm();
 	elif highlight_mode == HighlightMode.HIGH_LEVEL:
-		if loc_map:
-			var ip = cpu.regs[cpu.ISA.REG_IP];
-			var idx = loc_map.begin.keys().bsearch(ip, false)-1;
-			if(idx >= 0):
-				var nearest_ip = loc_map.begin.keys()[idx];
-				var loc_arr:Array[LocationRange] = loc_map.begin[nearest_ip];
-				var loc:LocationRange = loc_arr[0];
-				set_highlight.emit(loc);
-			else:
-				set_highlight.emit(LocationRange.new());
+		cur_loc = get_loc_hl();
+	set_highlight.emit(cur_loc);
+
+func get_loc_asm()->LocationRange:
+	if assembler and assembler.op_locations.size():
+		cache_op_locations();
+		var ip = cpu.regs[cpu.ISA.REG_IP];
+		var idx = op_ips.bsearch(ip, false)-1;
+		if(idx >= 0):
+			var op = op_locations[idx];
+			if op.line_idx != last_highlighted_line:
+				last_highlighted_line = op.line_idx;
+				editor.switch_to_file(op.filename)
+				#set_highlight.emit(op.line, op.begin, op.line, op.end);
+				var loc1 = Location.new({"filename":op.filename, "line":op.line, "line_idx":op.line_idx, "col":op.begin});
+				var loc2 = Location.new({"filename":op.filename, "line":op.line, "line_idx":op.line_idx, "col":op.end});
+				var loc = LocationRange.new({"begin":loc1, "end":loc2});
+				return loc;
+	return LocationRange.new();
+
+func get_loc_hl():
+	if loc_map:
+		var ip = cpu.regs[cpu.ISA.REG_IP];
+		var idx = loc_map.begin.keys().bsearch(ip, false)-1;
+		if(idx >= 0):
+			var nearest_ip = loc_map.begin.keys()[idx];
+			var loc_arr:Array[LocationRange] = loc_map.begin[nearest_ip];
+			var loc:LocationRange = loc_arr[0];
+			return loc;
+	return LocationRange.new();
 
 func _process(delta):
 	if not win.visible: return;
@@ -301,8 +307,16 @@ func _on_btn_stop_pressed():
 
 func _on_btn_step_pressed():
 	#cpu.regs[cpu.ISA.REG_CTRL] |= (cpu.ISA.BIT_STEP | cpu.ISA.BIT_PWR);
-	cpu.step();
-	perf.all.prime();
+	if highlight_mode == HighlightMode.HIGH_LEVEL:
+		var old_loc = cur_loc;
+		for i in range(step_limit):
+			if cur_loc != old_loc: break;
+			cpu.step();
+			cur_loc = get_loc_hl();
+		perf.all.prime();
+	else:
+		cpu.step();
+		perf.all.prime();
 
 func _on_btn_next_line_pressed():
 	print("unimplemented");
@@ -728,8 +742,16 @@ func _on_ob_view_item_selected(_index: int) -> void:
 	perf.locals.prime();
 
 func _on_btn_unstep_pressed() -> void:
-	unstep();
-	perf.all.prime();
+	if highlight_mode == HighlightMode.HIGH_LEVEL:
+		var old_loc = cur_loc;
+		for i in range(step_limit):
+			if cur_loc != old_loc: break;
+			unstep();
+			cur_loc = get_loc_hl();
+		perf.all.prime();
+	else:
+		unstep();
+		perf.all.prime();
 
 func _on_cpu_vm_mem_accessed(addr: Variant, val: Variant, is_write: Variant) -> void:
 	save_mem_access(addr,val,is_write);
