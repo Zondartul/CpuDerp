@@ -72,4 +72,7 @@ extends Node
 #	highlighter and error-reporter should specify filename
 # [FIXED bug]			"DEBUG LOCALS FLICKER"
 #	maybe a race condition, it sometimes shows "null" function
+# [legacy]				"OP LOCATIONS"
+#	remove the old "op location" system for ASM debugging and replace with LocationRanges
+#
 #

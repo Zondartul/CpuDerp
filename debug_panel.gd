@@ -85,6 +85,8 @@ var loc_map:LocationMap;
 var cur_loc:LocationRange: set=set_cur_loc;
 var cur_loc_line:String;
 var n_locations = 0;
+var all_locs_here:Array[LocationRange];
+var all_locs_here_str = "";
 
 signal set_highlight(loc:LocationRange);#(from_line, from_col, to_line, to_col);
 # Called when the node enters the scene tree for the first time.
@@ -174,9 +176,17 @@ func get_loc_hl():
 		if(idx >= 0):
 			var nearest_ip = loc_map.begin.keys()[idx];
 			var loc_arr:Array[LocationRange] = loc_map.begin[nearest_ip];
+			all_locs_here = loc_arr;
+			all_locs_here_str = dbg_locs_to_str(loc_arr);
 			var loc:LocationRange = loc_arr[0];
 			return loc;
 	return LocationRange.new();
+
+func dbg_locs_to_str(loc_arr:Array[LocationRange]):
+	var S = "";
+	for loc in loc_arr:
+		S += "%s [%s]\n" % [str(loc), loc.begin.line];
+	return S;
 
 func _process(delta):
 	if not win.visible: return;
@@ -924,7 +934,113 @@ func _on_btn_highlight_none_pressed() -> void: highlight_mode = HighlightMode.NO
 func _on_locations_ready(new_loc_map: LocationMap) -> void:
 	loc_map = new_loc_map;
 	n_locations = len(loc_map.begin);
+	expand_location_map();
 	pass # Replace with function body.
+
+class IP_range:
+	var begin:int = -1;
+	var end:int = -1;
+	var loc:LocationRange;
+	func _init(dict=null):
+		if dict:
+			G.dictionary_init(self, dict);
+	func is_valid():
+		return (begin != -1) and (end != -1) \
+			and (loc != null) and loc.is_valid();
+	
+class ELM_sub_entry:
+	var all_ranges:Array[IP_range] = []; ## all ranges that overlap with current ip
+	var smallest_src:IP_range; ## range that corresponds to the smallest source text
+	var smallest_ip:IP_range; ## range that covers the smallest ip distance
+	func _init(dict=null):
+		if dict:
+			G.dictionary_init(self, dict);
+	func is_valid():
+		return (all_ranges.all(func(x): x.is_valid())) \
+			and	(smallest_src != null) and (smallest_src.is_valid()) \
+			and (smallest_ip != null) and (smallest_ip.is_valid());
+
+class ELM_entry:
+	var ip:int = -1;
+	var asm:ELM_sub_entry;
+	var hl:ELM_sub_entry;
+	func _init(dict=null):
+		if dict:
+			G.dictionary_init(self, dict);
+	func is_valid():
+		return (asm != null) and asm.is_valid() \
+				and (hl != null) and hl.is_valid();
+
+var ExpandedLocationMap:Array[ELM_entry];
+
+## changes the loc_map from sparse to dense representation.
+##  every ip will point to all the ranges that ovelap with it.
+func expand_location_map():
+	var ELM:Array[ELM_entry] = ExpandedLocationMap;
+	ELM.clear();
+	ELM.resize(get_max_loc_map_key());
+	var open_locs = {};
+	for ip in range(len(ELM)):
+		if ip in loc_map.begin:
+			var loc_arr = loc_map.begin[ip];
+			for loc in loc_arr:
+				var ip_range = ELM_open_loc(ip, "hl", loc);
+				open_locs[loc] = ip_range;
+		if ip in loc_map.end:
+			var loc_arr = loc_map.end[ip];
+			for loc in loc_arr:
+				ELM_close_loc(ip, "hl", loc);
+				open_locs.erase(loc);
+	for ip in range(len(ELM)):
+		ELM_sort_ranges(ELM[ip].hl);
+	for entry in ELM:
+		assert(entry.hl.is_valid(), "ELM entry at %d (out of %d) is invalid" % [entry.ip, len(ELM)]);
+
+func ELM_open_loc(ip:int, sub_entry_key:String, loc:LocationRange):
+	var ELM:Array[ELM_entry] = ExpandedLocationMap;
+	var entry = ELM[ip];
+	assert(entry);
+	if entry[sub_entry_key] == null:
+		entry[sub_entry_key] = ELM_sub_entry.new();
+	var subentry = entry[sub_entry_key];
+	var all_ranges:Array[IP_range] = subentry.all_ranges;
+	var ip_range = IP_range.new({"begin":ip, "end":-1, "loc":loc});
+	all_ranges.append(ip_range);
+	return range;
+
+func ELM_close_loc(ip:int, sub_entry_key:String, loc:LocationRange):
+	var ELM:Array[ELM_entry] = ExpandedLocationMap;
+	var entry = ELM[ip];
+	assert(entry);
+	if entry[sub_entry_key] == null:
+		entry[sub_entry_key] = ELM_sub_entry.new();
+	var subentry = entry[sub_entry_key];
+	var ip_range = get_ip_range_for_loc(subentry.all_ranges, loc);
+	ip_range.end = ip;
+	return range;
+
+func ELM_sort_ranges(subentry:ELM_sub_entry):
+	assert(len(subentry.all_ranges), "can't have it so no ranges cover an ip");
+	subentry.all_ranges.sort_custom(
+		func(a:IP_range,b:IP_range)->bool:
+			return a.ip_dist() < b.ip_dist());
+	subentry.smallest_ip = subentry.all_ranges.front();
+	subentry.all_ranges.sort_custom(
+		func(a:IP_range,b:IP_range)->bool:
+			return a.src_dist() < b.src_dist());
+	subentry.smallest_src = subentry.all_ranges.front();
+
+
+func get_ip_range_for_loc(all_ranges:Array[IP_range], loc:LocationRange):
+	for ip_range in all_ranges:
+		if ip_range.loc == loc: return ip_range;
+	return null
+
+func get_max_loc_map_key():
+	var keys = loc_map.keys().duplicate(); 
+	keys.sort(); 
+	var max_key = keys.back();
+	return max_key;
 
 func set_cur_loc(new_loc):
 	cur_loc = new_loc;

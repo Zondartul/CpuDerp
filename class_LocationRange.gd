@@ -15,6 +15,9 @@ func duplicate()->LocationRange:
 	G.duplicate_deep(self, loc2);
 	return loc2;
 
+func is_valid():
+	return begin.is_valid() and end.is_valid();
+
 func _to_string()->String:
 	return "%s~%s" % [begin._to_string(), end.to_string_short()];
 

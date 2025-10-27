@@ -373,6 +373,7 @@ visible = false
 visible = false
 
 [node name="win_ed_dbg" parent="Panel/TabContainer/Editor" node_paths=PackedStringArray("Editor", "comp_file", "tab_EFiles", "comp_build", "debug_panel") instance=ExtResource("21_fv21b")]
+size = Vector2i(450, 300)
 visible = false
 Editor = NodePath("..")
 comp_file = NodePath("../comp_file")

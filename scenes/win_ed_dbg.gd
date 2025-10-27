@@ -19,6 +19,7 @@ func _ready():
 		{"node":debug_panel, "propname":"cur_loc", "propval":null, "desc":"Current Location"},
 		{"node":debug_panel, "propname":"cur_loc_line", "propval":null, "desc":"loc.line"},
 		{"node":debug_panel, "propname":"n_locations", "propval":null, "desc":"num locations"},
+		{"node":debug_panel, "propname":"all_locs_here_str", "propval":null, "desc":"locs here"},
 	];
 
 func _process(_delta):

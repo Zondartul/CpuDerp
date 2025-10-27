@@ -17,6 +17,8 @@ func duplicate()->Location:
 	G.duplicate_deep(self, loc2);
 	return loc2;
 
+func is_valid(): return line_idx != -1;
+
 func less_than(other:Location)->bool:
 	return G.comparison(self, other, ["filename", "line", "line_idx", "col"]);
 	
@@ -43,16 +45,16 @@ static func from_string(S:String)->Location:
 	if res:
 		print("-------- REGEX ----");
 		print(res.strings);
-		var filename = "";
+		var new_filename = "";
 		if res.get_string(1) != "":
-			filename = res.get_string(2);
-		var line_idx = int(res.get_string(3));
-		var col = int(res.get_string(4));
-		var line = "";
+			new_filename = res.get_string(2);
+		var new_line_idx = int(res.get_string(3));
+		var new_col = int(res.get_string(4));
+		var new_line = "";
 		if res.get_string(5) != "":
-			line = res.get_string(6);
-			line = G.unescape_string(line);
-		var loc = Location.new({"filename":filename, "line":line, "line_idx":line_idx, "col":col});
+			new_line = res.get_string(6);
+			new_line = G.unescape_string(new_line);
+		var loc = Location.new({"filename":new_filename, "line":new_line, "line_idx":new_line_idx, "col":new_col});
 		return loc;
 	else:
 		return Location.new();
