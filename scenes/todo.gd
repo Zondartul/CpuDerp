@@ -74,5 +74,6 @@ extends Node
 #	maybe a race condition, it sometimes shows "null" function
 # [legacy]				"OP LOCATIONS"
 #	remove the old "op location" system for ASM debugging and replace with LocationRanges
-#
+# [refactor]			"ELM IN COMPILER"
+#	expanded location map should be precomputed in the compiler, not the debugger.
 #

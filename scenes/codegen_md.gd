@@ -274,8 +274,8 @@ func generate_cmd_op(cmd:IR_Cmd)->void:
 	var arg2 = cmd.words[3];
 	var res = cmd.words[4];
 	var loc:LocationRange = cmd.loc;
-	mark_loc_begin(loc);
 	if op not in op_map: push_error("codegen: can't generate op ["+op+"]"); return;
+	mark_loc_begin(loc);
 	var op_str:String = op_map[op];
 	
 	var tmpA = null;

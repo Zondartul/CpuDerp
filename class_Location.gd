@@ -5,19 +5,28 @@ var filename:String;
 var line:String;
 var line_idx:int = -1;
 var col:int = 0;
+var uid:int = 0;
+static var counter = 0;
 
 func _init(dict=null):
 	if dict:
 		for key in dict:
 			assert(key in self);
 			set(key, dict[key]);
+	uid = counter;
+	counter += 1;
 
 func duplicate()->Location:
 	var loc2 = Location.new();
 	G.duplicate_deep(self, loc2);
 	return loc2;
 
-func is_valid(): return line_idx != -1;
+func is_valid(): 
+	if not (line_idx != -1):
+		print("Location: line_idx unset");
+		return false;
+	return true;
+	#return line_idx != -1;
 
 func less_than(other:Location)->bool:
 	return G.comparison(self, other, ["filename", "line", "line_idx", "col"]);
@@ -43,8 +52,8 @@ static func from_string(S:String)->Location:
 	var res:RegExMatch = regex.search(S);
 	assert(res, "unable to deserialize location: %s" % S);
 	if res:
-		print("-------- REGEX ----");
-		print(res.strings);
+		#print("-------- REGEX ----");
+		#print(res.strings);
 		var new_filename = "";
 		if res.get_string(1) != "":
 			new_filename = res.get_string(2);

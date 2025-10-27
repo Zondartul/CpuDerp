@@ -170,16 +170,28 @@ func get_loc_asm()->LocationRange:
 	return LocationRange.new();
 
 func get_loc_hl():
-	if loc_map:
+	#if loc_map:
+		#var ip = cpu.regs[cpu.ISA.REG_IP];
+		#var idx = loc_map.begin.keys().bsearch(ip, false)-1;
+		#if(idx >= 0):
+			#var nearest_ip = loc_map.begin.keys()[idx];
+			#var loc_arr:Array[LocationRange] = loc_map.begin[nearest_ip];
+			#all_locs_here = loc_arr;
+			#all_locs_here_str = dbg_locs_to_str(loc_arr);
+			#var loc:LocationRange = loc_arr[0];
+			#return loc;
+	var ELM:Array[ELM_entry] = ExpandedLocationMap;
+	if ELM:
 		var ip = cpu.regs[cpu.ISA.REG_IP];
-		var idx = loc_map.begin.keys().bsearch(ip, false)-1;
-		if(idx >= 0):
-			var nearest_ip = loc_map.begin.keys()[idx];
-			var loc_arr:Array[LocationRange] = loc_map.begin[nearest_ip];
-			all_locs_here = loc_arr;
-			all_locs_here_str = dbg_locs_to_str(loc_arr);
-			var loc:LocationRange = loc_arr[0];
+		var cmd_idx = ip/cmd_size
+		if cmd_idx < len(ELM):
+			#if cmd_idx in ELM:
+			var entry = ELM[cmd_idx];
+			var subentry = entry.hl;
+			var smallest_ip = subentry.smallest_ip;
+			var loc = smallest_ip.loc;
 			return loc;
+			#return ELM[cmd_idx].hl.smallest_ip.loc;
 	return LocationRange.new();
 
 func dbg_locs_to_str(loc_arr:Array[LocationRange]):
@@ -945,8 +957,28 @@ class IP_range:
 		if dict:
 			G.dictionary_init(self, dict);
 	func is_valid():
-		return (begin != -1) and (end != -1) \
-			and (loc != null) and loc.is_valid();
+		if not (begin != -1):
+			print("IP_range: begin unset");
+			return false;
+		if not (end != -1):
+			print("IP_range: end unset");
+			return false;
+		if not (loc != null):
+			print("IP_range: loc is null");
+			return false;
+		if not (loc.is_valid()):
+			print("IP_range: loc invalid");
+			return false;
+		return true;
+		#return (begin != -1) and (end != -1) \
+		#	and (loc != null) and loc.is_valid();
+	func ip_dist()->float:
+		assert(is_valid());
+		return (end - begin);
+	func src_dist()->float:
+		assert(is_valid());
+		return loc.dist();
+		
 	
 class ELM_sub_entry:
 	var all_ranges:Array[IP_range] = []; ## all ranges that overlap with current ip
@@ -956,9 +988,25 @@ class ELM_sub_entry:
 		if dict:
 			G.dictionary_init(self, dict);
 	func is_valid():
-		return (all_ranges.all(func(x): x.is_valid())) \
-			and	(smallest_src != null) and (smallest_src.is_valid()) \
-			and (smallest_ip != null) and (smallest_ip.is_valid());
+		if not (all_ranges.all(func(x): return x.is_valid())):
+			print(" ELM_sub_entry: some ranges invalid");
+			return false;
+		if not (smallest_src != null):
+			print(" ELM_sub_entry: smallest_src is null");
+			return false;
+		if not (smallest_src.is_valid()):
+			print(" ELM_sub_entry: smallest_src invalid");
+			return false;
+		if not (smallest_ip != null):
+			print(" ELM_sub_entry: smallest_ip is null");
+			return false;
+		if not (smallest_ip.is_valid()):
+			print(" ELM_sub_entry: smallest_ip invalid");
+			return false;
+		return true;
+		#return (all_ranges.all(func(x): x.is_valid())) \
+		#	and	(smallest_src != null) and (smallest_src.is_valid()) \
+		#	and (smallest_ip != null) and (smallest_ip.is_valid());
 
 class ELM_entry:
 	var ip:int = -1;
@@ -968,37 +1016,70 @@ class ELM_entry:
 		if dict:
 			G.dictionary_init(self, dict);
 	func is_valid():
-		return (asm != null) and asm.is_valid() \
-				and (hl != null) and hl.is_valid();
+		#if not (asm != null):
+		#	print("ELM_entry: asm is null");
+		#	return false;
+		#if not (asm.is_valid()):
+		#	print("ELM_entry: asm invalid");
+		#	return false;
+		if not (hl != null):
+			print("ELM_entry: hl is null");
+			return false;
+		if not (hl.is_valid()):
+			print("ELM_entry: hl invalid");
+			return false;
+		return true;
+		#return (asm != null) and asm.is_valid() \
+		#		and (hl != null) and hl.is_valid();
 
-var ExpandedLocationMap:Array[ELM_entry];
+var ExpandedLocationMap:Array[ELM_entry]; ## <cmd_idx, entry>
 
 ## changes the loc_map from sparse to dense representation.
 ##  every ip will point to all the ranges that ovelap with it.
 func expand_location_map():
 	var ELM:Array[ELM_entry] = ExpandedLocationMap;
 	ELM.clear();
-	ELM.resize(get_max_loc_map_key());
-	var open_locs = {};
-	for ip in range(len(ELM)):
+	var max_ip = get_max_loc_map_key();
+	var n_cmd_idxes = (max_ip / cmd_size) + 1;
+	ELM.resize(n_cmd_idxes);
+	var open_locs = {}; ## <loc, ip_range>
+	print("putting %d+%d locations into %d/%d ips" % [len(loc_map.begin.keys()), len(loc_map.end.keys()), len(ELM), cmd_size]);
+	var unvisited_keys_begin = loc_map.begin.keys();
+	var unvisited_keys_end = loc_map.begin.keys();
+	for cmd_idx in range(n_cmd_idxes):
+		var ip = cmd_idx * cmd_size;
+		ELM[cmd_idx] = ELM_entry.new({"ip":ip});
+		unvisited_keys_begin.erase(ip);
 		if ip in loc_map.begin:
 			var loc_arr = loc_map.begin[ip];
 			for loc in loc_arr:
-				var ip_range = ELM_open_loc(ip, "hl", loc);
-				open_locs[loc] = ip_range;
+				if loc not in open_locs:
+					var ip_range = ELM_open_loc(ip, "hl", loc);
+					open_locs[loc] = ip_range;
+		else:
+			for loc in open_locs:
+				var ip_range = open_locs[loc];
+				ELM_continue_loc(ip, "hl", ip_range);
+		unvisited_keys_end.erase(ip);
 		if ip in loc_map.end:
 			var loc_arr = loc_map.end[ip];
 			for loc in loc_arr:
-				ELM_close_loc(ip, "hl", loc);
+				ELM_close_loc(ip, open_locs[loc]);
 				open_locs.erase(loc);
-	for ip in range(len(ELM)):
-		ELM_sort_ranges(ELM[ip].hl);
+	assert(unvisited_keys_begin.is_empty());
+	assert(unvisited_keys_end.is_empty());
+	assert(open_locs.is_empty());
 	for entry in ELM:
-		assert(entry.hl.is_valid(), "ELM entry at %d (out of %d) is invalid" % [entry.ip, len(ELM)]);
+		#var ip = cmd_idx * cmd_size;
+		ELM_sort_ranges(entry.hl);
+	for entry in ELM:
+		assert(entry.is_valid(), "ELM entry at %d (out of %d) is invalid" % [entry.ip, len(ELM)]);
 
-func ELM_open_loc(ip:int, sub_entry_key:String, loc:LocationRange):
+func ELM_open_loc(ip:int, sub_entry_key:String, loc:LocationRange)->IP_range:
+	#print("open loc [%s] at ip %d" % [loc.begin.line, ip]);
 	var ELM:Array[ELM_entry] = ExpandedLocationMap;
-	var entry = ELM[ip];
+	var cmd_idx = ip / cmd_size;
+	var entry = ELM[cmd_idx];
 	assert(entry);
 	if entry[sub_entry_key] == null:
 		entry[sub_entry_key] = ELM_sub_entry.new();
@@ -1006,18 +1087,23 @@ func ELM_open_loc(ip:int, sub_entry_key:String, loc:LocationRange):
 	var all_ranges:Array[IP_range] = subentry.all_ranges;
 	var ip_range = IP_range.new({"begin":ip, "end":-1, "loc":loc});
 	all_ranges.append(ip_range);
-	return range;
+	return ip_range;
 
-func ELM_close_loc(ip:int, sub_entry_key:String, loc:LocationRange):
+func ELM_close_loc(ip:int, ip_range:IP_range):
+	#print("close loc [%s] at ip %d" % [ip_range.loc.begin.line, ip]);
+	ip_range.end = ip;
+
+func ELM_continue_loc(ip:int, sub_entry_key:String, ip_range:IP_range):
 	var ELM:Array[ELM_entry] = ExpandedLocationMap;
-	var entry = ELM[ip];
+	var cmd_idx = ip / cmd_size;
+	var entry = ELM[cmd_idx];
 	assert(entry);
 	if entry[sub_entry_key] == null:
 		entry[sub_entry_key] = ELM_sub_entry.new();
 	var subentry = entry[sub_entry_key];
-	var ip_range = get_ip_range_for_loc(subentry.all_ranges, loc);
-	ip_range.end = ip;
-	return range;
+	var all_ranges:Array[IP_range] = subentry.all_ranges;
+	assert(ip_range not in all_ranges);
+	all_ranges.append(ip_range);
 
 func ELM_sort_ranges(subentry:ELM_sub_entry):
 	assert(len(subentry.all_ranges), "can't have it so no ranges cover an ip");
@@ -1030,16 +1116,18 @@ func ELM_sort_ranges(subentry:ELM_sub_entry):
 			return a.src_dist() < b.src_dist());
 	subentry.smallest_src = subentry.all_ranges.front();
 
-
-func get_ip_range_for_loc(all_ranges:Array[IP_range], loc:LocationRange):
-	for ip_range in all_ranges:
-		if ip_range.loc == loc: return ip_range;
-	return null
+#func get_ip_range_for_loc(all_ranges:Array[IP_range], loc:LocationRange):
+	#for ip_range in all_ranges:
+		#if ip_range.loc == loc: return ip_range;
+	#return null
 
 func get_max_loc_map_key():
-	var keys = loc_map.keys().duplicate(); 
+	var keys = loc_map.begin.keys().duplicate(); 
 	keys.sort(); 
 	var max_key = keys.back();
+	keys = loc_map.end.keys().duplicate();
+	keys.sort();
+	max_key = max(max_key, keys.back());
 	return max_key;
 
 func set_cur_loc(new_loc):
