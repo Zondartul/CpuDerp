@@ -28,3 +28,6 @@ const ERR_29 = "Error 29: Identifier not found: [%s]";
 const ERR_30 = "Error 30: 'Continue' statement outside of a loop";
 const ERR_31 = "Error 31: Operator '%s' is not allowed here.";
 const ERR_32 = "Error 32: Variable declaration can't have [%s] as left-hand-side of assignment";
+const ERR_33 = "Error 33: Can't assign value of type [%s] to variable of type [%s]";
+const ERR_34 = "Error 34: analyze_type_expr: unimplemented ast type: [%s]";
+const ERR_35 = "Error 35: Can't do operator %s between %s and %s";

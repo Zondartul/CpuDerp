@@ -6,7 +6,7 @@ var lang_name = "miniderp";
 const keywords = ["var", "func", "if", "else", "elif", "continue", 
 				"break", "while", "return", "extern"];
 const types = ["int", "char", "float", "double", "u8", "u16", "u32", "u64",
-				"s8", "s16", "s32", "s64"];
+				"s8", "s16", "s32", "s64", "Ref", "String"];
 const ops = [".", "+", "-", "*", "/", "%", 
 			"=", "+=", "-=", "*=", "/=", "%=", 
 			"&", "|", "^", ">", "<", "!=", "==",
@@ -79,6 +79,7 @@ const rules = [
 	# expressions
 	["expr_immediate", 					"*", "expr"],
 	["expr_ident", 						"*", "expr"],
+	["expr_typed_ident",				"*", "expr"],
 	["expr_postfix", 					"*", "expr"],
 	["expr_infix", 						"*", "expr"],
 	["expr_call",						"*", "expr"],
@@ -90,7 +91,10 @@ const rules = [
 	["STRING", 							"*", "expr_immediate"],
 	# -- expr_ident
 	#["IDENT", 							"/=", "SHIFT"],
+	["IDENT",							"/:", "SHIFT"],
 	["IDENT", 							"*", "expr_ident"],
+	# -- expr_typed_ident
+	["IDENT", "/:", "type_expr",		"*", "expr_typed_ident"],
 	# -- expr_postfix
 	["expr", "OP", 						"/;", "expr_postfix"],
 	["expr", "OP",						"/)", "expr_postfix"],
@@ -107,35 +111,45 @@ const rules = [
 	["expr", "/(", "expr", "/)",		"*", "expr_call"],
 	["expr", "/(", "expr_list", "/)",	"*", "expr_call"],
 	["/(", "expr", "/)",				"*", "expr_parenthesis"],
+
+	# Types
+	["TYPE",							"/[", "SHIFT"],
+	["TYPE",							"*", "type_expr"],
+	["TYPE", "/[", "type_expr", "/]",	"*", "type_expr"],
+	["TYPE", "type_expr_list", "/]",	"*", "type_expr"],
+	["/[", "type_expr",					"/,", "type_expr_list"],
+	["type_expr_list", "/,", "type_expr",	"*", "type_expr_list"],
 ];
 
 func get_syntax():
 	var syn = CodeHighlighter.new();
 	var col_orange = Color(1.0,0.5,0.0,	1);
-	#var col_red = 	 Color(1.0,0.2,0.1,	1);
+	var col_red = 	 Color(1.0,0.2,0.1,	1);
 	var col_gray = 	 Color(0.5,0.5,0.5,	1);
 	var col_yellow = Color(1.0,1.0,0.0,	1);
 	var col_purple = Color(0.8,0.4,0.7,	1);
 	var col_blue = 	 Color(0.143, 0.401, 1.0, 1.0);
 	var col_green =  Color(0.2,1.0,0.1,	1);
-	var col_type =	 Color(0.6,0.9,0.6,	1);
 	syn.member_variable_color = col_yellow;
 	syn.number_color = col_orange;
 	syn.symbol_color = col_yellow;
 	syn.function_color=col_blue;
 	var opcode_color = col_purple;
 	var comment_color =col_gray;
-	var string_color  =col_green;
-	add_keywords(syn, keywords, opcode_color);
-	add_keywords(syn, types, col_type);
+	var string_color  =col_red;
+	var type_color    =col_green;
+	add_keywords(syn, keywords, opcode_color, true);
+	add_keywords(syn, types, type_color);
 	syn.add_color_region("//","",comment_color,true);
 	syn.add_color_region("\"","\"",string_color,false);
 	return syn;
 
-func add_keywords(syn, kws, col):
+func add_keywords(syn, kws, col, any_case=false):
 	for kw in kws:
-		syn.keyword_colors[kw.to_upper()] = col;
-		syn.keyword_colors[kw.to_lower()] = col;
+		syn.keyword_colors[kw] = col;
+		if(any_case):
+			syn.keyword_colors[kw.to_upper()] = col;
+			syn.keyword_colors[kw.to_lower()] = col;
 
 static func get_all_punct():
 	var s = "";
