@@ -93,7 +93,7 @@ func basic_tokenize(text:String)->Array[Token]:
 ## preprocess the line: remove comments, trim whitespace, etc
 func preproc(line:String)->String:
 	line = remove_comments(line);
-	line = G.trim_spaces(line);
+	#line = G.trim_spaces(line); ##[2025.10.29] need to keep the line intact until we have locations
 	return line;
 
 ## removes comments from the line. Comments start with the # character and last until end of string.
@@ -154,6 +154,7 @@ func recombine_n(toks:Array[Token], idx:int, length:int):
 	var from = idx-length+1;
 	for i in range(length-1):
 		toks[from].text += toks[from+1].text;
+		toks[from].loc.end = toks[from+1].loc.end;
 		toks.remove_at(from+1);
 
 

@@ -210,3 +210,8 @@ func escape_string(text):
 			ch = "%" + "%03d" % buff[0];
 			new_str += ch;
 	return new_str;
+
+## performs a "newline" function for ItemList widgets
+func complete_line(item_list:ItemList):
+	var n = item_list.max_columns-1 - ((item_list.item_count-1) % item_list.max_columns);
+	for i in range(n): item_list.add_item(" ");

@@ -29,7 +29,7 @@ func is_valid():
 	#return line_idx != -1;
 
 func less_than(other:Location)->bool:
-	return G.comparison(self, other, ["filename", "line", "line_idx", "col"]);
+	return G.comparison(self, other, ["filename", "line_idx", "col"]);#["filename", "line", "line_idx", "col"]);
 	
 func _to_string()->String:
 	return "@%s:%d:%d" % [filename, line_idx, col];
@@ -37,8 +37,11 @@ func _to_string()->String:
 func to_string_short()->String:
 	return "%d:%d" % [line_idx, col];
 
-func to_string_full()->String:
-	return "@%s:%d:%d:[%s]" % [filename, line_idx, col, G.escape_string(line)];
+func to_string_full(b_friendly=null)->String:
+	var line_str = line;
+	if not b_friendly:
+		line_str = G.escape_string(line);
+	return "@%s:%d:%d:[%s]" % [filename, line_idx, col, line_str];
 
 static func from_string(S:String)->Location:
 	var regex:RegEx = RegEx.new();

@@ -22,7 +22,7 @@ extends Node
 #	Debugger should show current assembly instruction
 #           - from debug symbols        
 #			- also from decompiled
-# [PARTIAL feature]		"DEBUG FUNCTION" 
+# [FIXED feature]		"DEBUG FUNCTION" 
 #	Debugger should show current function
 #			- from debug symbols
 #			- from stack trace
@@ -53,7 +53,7 @@ extends Node
 #	parser should re-order expressions based on operator precedence
 # [feature]				"TYPES" 
 #	implement types (char vs u32)
-# [feature]				"HL DEBUG" 
+# [FIXED feature]		"HL DEBUG" 
 #	high-level debugger
 # [feature]				"DEBUG STACK SMASH" 
 #	stack smash detection (stack modified by non-control-flow instruction)

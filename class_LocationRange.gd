@@ -17,16 +17,16 @@ func duplicate()->LocationRange:
 
 func is_valid():
 	if not (begin != null):
-		print("LocationRange: begin is null");
+		#print("LocationRange: begin is null");
 		return false;
 	if not (begin.is_valid()):
-		print("LocationRange: begin invalid");
+		#print("LocationRange: begin invalid");
 		return false;
 	if not (end != null):
-		print("LocationRange: end is null");
+		#print("LocationRange: end is null");
 		return false;
 	if not (end.is_valid()):
-		print("LocationRange: end invalid");
+		#print("LocationRange: end invalid");
 		return false;
 	return true;
 #	return begin.is_valid() and end.is_valid();

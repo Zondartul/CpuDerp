@@ -22,14 +22,36 @@ func duplicate()->AST:
 
 func get_location()->LocationRange:
 	var res;
-	if loc:
-		res = loc.duplicate();
-	elif len(children):
+	#if loc:
+		#res = loc.duplicate();
+	#elif len(children):
+		#res = children[0].get_location();
+	#else:
+		#res = LocationRange.new();
+	#for ch in children:
+		#var ch_loc = ch.get_location();
+		#if ch_loc.begin.less_than(res.begin): res.begin = ch_loc.begin;
+		#if res.end.less_than(ch_loc.end): res.end = ch_loc.end;
+	
+	if len(children):
 		res = children[0].get_location();
+		for ch in children:
+			var ch_loc = ch.get_location();
+			if ch_loc.begin.less_than(res.begin): res.begin = ch_loc.begin;
+			if res.end.less_than(ch_loc.end): res.end = ch_loc.end;
 	else:
-		res = LocationRange.new();
-	for ch in children:
-		var ch_loc = ch.get_location();
-		if ch_loc.begin.less_than(res.begin): res.begin = ch_loc.begin;
-		if res.end.less_than(ch_loc.end): res.end = ch_loc.end;
+		res = loc.duplicate();
+
+	res.begin.line = tok_class + ":" + compute_text();
 	return res;
+
+## returns the text implied by this sequence of tokens
+func compute_text()->String:
+	if children.is_empty():
+		return text;
+	else:
+		var S = "";
+		for ch in children:
+			if S != "": S += " ";
+			S += ch.compute_text();
+		return S;

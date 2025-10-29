@@ -6,30 +6,37 @@ func tokenize(line:String)->Array[Token]:
 	var tokens:Array[Token] = [];
 	var tok_class = "";
 	var cur_tok = "";
-	var col = 0;
-	var cur_loc:Location = Location.new({"col":0, "line":line});
-	for ch in line:
+	#var col = 0;
+	var tok_loc = LocationRange.new({"begin":Location.new(),"end":Location.new()});
+	for col in range(len(line)):#for ch in line:
+		var ch = line[col];
+		tok_loc_next_char(tok_loc, col);
 		var new_tok_class = tok_ch_class(ch);
 		if should_split_on_transition(new_tok_class, tok_class):
 			if tok_class == "STRING" and new_tok_class == "STRING":
 				new_tok_class = "ENDSTRING";
 				cur_tok = cur_tok.substr(1); #remove the leading \"
 			if cur_tok != "":
-				cur_loc.col -= 1;
-				var tok_loc = LocationRange.from_loc_len(cur_loc, len(cur_tok));
-				tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "loc":tok_loc}));#"col":col-1}));
+				#cur_loc.col -= 1;
+				tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "loc":tok_loc.duplicate()}));
+				tok_loc_advance(tok_loc);
 				cur_tok = "";
 			tok_class = new_tok_class;
 		cur_tok += ch;
-		col += 1;
-		cur_loc.col = col;
+		#col += 1;
+		#cur_loc.col = col;
 	if cur_tok != "":
-		cur_loc.col -= 1;
-		var tok_loc = LocationRange.from_loc_len(cur_loc, len(cur_tok));
-		tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "loc":tok_loc}));
+		#cur_loc.col -= 1;
+		tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "loc":tok_loc.duplicate()}));
+		tok_loc_advance(tok_loc);
 		cur_tok = "";
 	#tokens = tokens.filter(filter_tokens);
 	return tokens;
+
+func tok_loc_next_char(tok_loc:LocationRange, col:int):
+	tok_loc.end.col = col;
+func tok_loc_advance(tok_loc:LocationRange):
+	tok_loc.begin = tok_loc.end.duplicate();
 
 func should_split_on_transition(new_tok_class:String, old_tok_class:String):
 	#if (new_tok_class != tok_class) or (tok_class == "PUNCT"):
@@ -44,10 +51,12 @@ func should_split_on_transition(new_tok_class:String, old_tok_class:String):
 #	if tok["class"] in ["SPACE", "ENDSTRING"]: return false;
 #	return true;
 
+const ch_space = " \t\r\n";
 var ch_punct = ".,:[]+;";
 const ch_alphabet = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_";
 const ch_digits = "1234567890";
 
+func tok_is_space(ch:String)->bool: return ch in ch_space;
 func tok_is_punct(ch:String)->bool: return ch in ch_punct;
 func tok_is_word(ch:String)->bool: return ch in ch_alphabet;
 func tok_is_num(ch:String)->bool: return ch in ch_digits;
@@ -61,7 +70,7 @@ func tok_is_num(ch:String)->bool: return ch in ch_digits;
 # deprecated - now using strings
 
 func tok_ch_class(ch:String)->String:
-	if ch == " ": return "SPACE";
+	if tok_is_space(ch): return "SPACE";
 	if tok_is_word(ch): return "WORD";
 	if tok_is_num(ch): return "NUMBER";
 	if tok_is_punct(ch): return "PUNCT";

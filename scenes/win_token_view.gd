@@ -20,6 +20,13 @@ func add_item(text:String, col:Color, tooltip:String):
 	lbl.tooltip_text = tooltip;
 	content.add_child(tile);
 
+const repl_dict = {
+	"\n":"\\n",
+	" ":"_",
+	"\t":"\\t",
+	"\r":"\\r",
+};
+
 func set_tokens(tokens):
 	clear();
 	show();
@@ -30,7 +37,9 @@ func set_tokens(tokens):
 			add_newline();
 		var tooltip = array_to_str(token);
 		var color = maybe_prop(token, "token_viewer_color", Color.WHITE);
-		add_item(token.text, color, tooltip);
+		var text = token.text;
+		if text in repl_dict: text = repl_dict[text];
+		add_item(text, color, tooltip);
 		if "token_viewer_newline" in token:
 			add_newline();
 	call_deferred("hide");

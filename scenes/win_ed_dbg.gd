@@ -49,11 +49,22 @@ func update_watch_view():
 	n_list.clear();
 	for v in watch:
 		n_list.add_item("%s: " % v.desc);
-		n_list.add_item(str(v.propval));
+		print_val(v.propval);
 		if "subprop" in v:
 			n_list.add_item("...%s: " % v.subprop);
-			n_list.add_item(str(v.subpropval));
-
+			print_val(v.subpropval);
+			
+func print_val(val):
+	var S:String = val;
+	var SS = S.split("\n",false);
+	if len(SS) > 1:
+		G.complete_line(n_list);
+		for S2 in SS:
+			n_list.add_item(" ");
+			n_list.add_item(S2);
+	else:
+		n_list.add_item(str(val));
+	
 
 func _on_close_requested() -> void:
 	hide();

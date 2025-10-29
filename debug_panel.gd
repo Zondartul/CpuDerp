@@ -188,6 +188,12 @@ func get_loc_hl():
 			#if cmd_idx in ELM:
 			var entry = ELM[cmd_idx];
 			var subentry = entry.hl;
+			all_locs_here = [];
+			all_locs_here_str = "%d locs here\n" % len(subentry.all_ranges);
+			for i in range(len(subentry.all_ranges)):
+				var ip_range:IP_range = subentry.all_ranges[i];
+				all_locs_here.append(ip_range.loc);
+				all_locs_here_str += ("%d: " % i) + ip_range.loc.begin.to_string_full(true) + "\n";
 			var smallest_ip = subentry.smallest_ip;
 			var loc = smallest_ip.loc;
 			return loc;
@@ -566,13 +572,13 @@ func update_locals():
 			var local =group[0];
 			format_local_main_word(local, col_main);
 			format_local_val_word(local, col_main);
-			complete_line(n_locals);
+			G.complete_line(n_locals);
 			# other lines
 			for local2 in group:
 				format_local_access_word(local2, col_acc);
 				n_locals.add_item(" ");
 				format_local_ip_word(local2, col_acc);
-				complete_line(n_locals);
+				G.complete_line(n_locals);
 	elif view_type == "access ip":
 		n_locals.max_columns = 4;
 		format_intro_line(cur_func);
@@ -615,7 +621,7 @@ func format_intro_line(cur_func:String):
 	if cur_func != locals_func:
 		n_locals.add_item("Current:");
 		n_locals.add_item(cur_func);
-	complete_line(n_locals);
+	G.complete_line(n_locals);
 
 func format_local_val_word(local, col):
 	var val = 0;
@@ -638,11 +644,6 @@ func format_local_access_word(local, col):
 func format_local_ip_word(local, col):
 	var idx = n_locals.add_item(str(local.ip));
 	n_locals.set_item_custom_fg_color(idx, col);
-
-## performs a "newline" function for ItemList widgets
-func complete_line(item_list:ItemList):
-	var n = item_list.max_columns-1 - ((item_list.item_count-1) % item_list.max_columns);
-	for i in range(n): item_list.add_item(" ");
 
 func get_cur_func_name():
 	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
@@ -907,7 +908,7 @@ func update_HL_locals():
 	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
 	var cur_func_name = decode_ip(cur_ip);
 	n_hl_locals.add_item(cur_func_name);
-	complete_line(n_hl_locals);
+	G.complete_line(n_hl_locals);
 	if cur_func_name == "(null)": cur_func_name = "global";
 	if cur_func_name not in cur_sym_table.funcs:
 		n_hl_locals.add_item("[No symbols for this function]");
@@ -918,7 +919,7 @@ func update_HL_locals():
 	else:
 		fun_handle = cur_sym_table.funcs[cur_func_name];
 	var count = len(fun_handle.args) + len(fun_handle.vars);
-	n_hl_locals.add_item("%d symbols" % count); complete_line(n_hl_locals);
+	n_hl_locals.add_item("%d symbols" % count); G.complete_line(n_hl_locals);
 	for cat in [fun_handle.args, fun_handle.vars]:
 		for val in cat:
 			n_hl_locals.add_item(val.user_name);
