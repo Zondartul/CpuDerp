@@ -27,6 +27,8 @@ func error(msg):
 			point_out_error_tok("", context);
 		elif context is Iter:
 			point_out_error_iter("", context);
+		elif context is LocationRange:
+			point_out_error_loc("", context.begin);
 		else:
 			push_error(E.ERR_01); assert(false);
 

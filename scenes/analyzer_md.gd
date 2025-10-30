@@ -183,7 +183,9 @@ func analyze_expr_infix(ast):
 	assert(expr2.tok_class == "expr");
 	#var erep = ErrorReporter.new(self, op);
 	erep.context = op;
-	if op.text in op_map: analyze_expr_infix_op(expr1, expr2, op_map[op.text], ast.get_location()); if error_code != "": return;
+	if op.text in op_map: 
+		analyze_expr_infix_op(expr1, expr2, op_map[op.text], ast.get_location()); 
+		if error_code != "": return;
 	else: erep.error(E.ERR_31 % op.text); return;
 	return;
 
@@ -194,7 +196,9 @@ func analyze_expr_postfix(ast):
 	assert(expr1.tok_class == "expr");
 	var op = ast.children[1];
 	
-	if op.text in op_map: analyze_expr_postfix_op(expr1, op_map[op.text], ast.get_location()); if error_code != "": return;
+	if op.text in op_map: 
+		analyze_expr_postfix_op(expr1, op_map[op.text], ast.get_location()); 
+		if error_code != "": return;
 	else: internal_error(E.ERR_25 % op.text); return;
 
 #func get_location(asts:Array[AST]):
@@ -202,7 +206,7 @@ func analyze_expr_postfix(ast):
 	#virt_ast.children.assign(asts);
 	#return virt_ast.get_location();
 
-func analyze_expr_infix_op(expr1, expr2, op, loc:LocationRange):
+func analyze_expr_infix_op(expr1:AST, expr2:AST, op, loc:LocationRange):
 	if error_code != "": return;
 	analyze_expr(expr1); if error_code != "": return;
 	analyze_expr(expr2); if error_code != "": return;
@@ -220,28 +224,38 @@ func analyze_expr_infix_op(expr1, expr2, op, loc:LocationRange):
 				#sTres = sT1_allowed_T2[sT2];
 				#op_permitted = true;
 	#var Tres:Type = Type.from_string(sTres);
-	var sT1 = arg1.data_type.full_name;
-	var sT2 = arg2.data_type.full_name;
-	var Tres = get_op_result_type(arg1.data_type, arg2.data_type, op);
-	if not Tres:
-		erep.error(E.ERROR_35 % [op, sT1, sT2]);
+	var Tres = calc_output_type(arg1, arg2, op, loc);
 	res.data_type = Tres;
 	IR.save_variable(res);
 	IR.emit_IR(["OP", op, arg1, arg2, res], loc);
 	expr_stack.push_back(res);
 
+func calc_output_type(arg1, arg2, op:String, loc:LocationRange):
+	var sT1 = "null";
+	var T1:Type;
+	var T2:Type;
+	if arg2 and arg1.data_type:
+		sT1 = arg1.data_type.full_name;
+		T1 = arg1.data_type;
+	var sT2 = "null";
+	if arg2 and arg2.data_type:
+		sT2 = arg2.data_type.full_name;
+		T2 = arg2.data_type;
+	var res = get_op_result_type(T1, T2, op);
+	if not res:
+		erep.context = loc;
+		erep.error(E.ERR_35 % [op, sT1, sT2]);
+	return res.type;
+	
 func get_op_result_type(T1:Type, _T2, _op:String):
-	return T1;
+	return {"type":T1};
 
 func analyze_expr_postfix_op(expr1, op, loc:LocationRange):
 	if error_code != "": return;
 	analyze_expr(expr1); if error_code != "": return;
 	var arg = expr_stack.pop_back();
 	var res = IR.new_val_temp();
-	var sT1 = arg.data_type.full_name;
-	var Tres = get_op_result_type(arg.data_type, null, op);
-	if not Tres:
-		erep.error(E.ERROR_35 % [op, sT1, "itself"]);
+	var Tres = calc_output_type(arg, null, op, loc);
 	res.data_type = Tres;
 	IR.save_variable(res);
 	IR.emit_IR(["OP", op, arg, IR.new_val_none(), res], loc);
@@ -374,6 +388,7 @@ func analyze_decl_assignment(ast):
 		erep.error(E.ERR_33 % [arg.data_type, var_handle.data_type]);
 
 func is_type_assignable(to:Type, from:Type):
+	if (to == null) or (from == null): return true;
 	var typestr_to = to.full_name;
 	var typestr_from = from.full_name;
 	if typestr_to == typestr_from: return true;
@@ -500,7 +515,7 @@ func analyze_expr_ident(ast):
 	if not var_handle: 
 		erep.error(E.ERR_29 % var_name);
 		var_handle = IR.new_val_error();
-	var_handle.data_type = null;
+	#var_handle.data_type = null;
 	expr_stack.push_back(var_handle);
 
 func analyze_expr_typed_ident(ast):
@@ -606,15 +621,16 @@ func analyze_func_def_stmt(ast):
 	assert(tok_ident.tok_class == "IDENT");
 	var fun_name = tok_ident.text;
 	
-	var arg_names = [];
+	var arg_names:Array[String] = [];
+	var arg_types:Array[Type] = [];
 	if expr_call.children[2].text != ")":
 		var expr = expr_call.children[2];
 		if expr.tok_class == "expr":
-			analyze_func_def_arg_expr(expr, arg_names); if error_code != "": return;
+			analyze_func_def_arg_expr(expr, arg_names, arg_types); if error_code != "": return;
 		elif expr.tok_class == "expr_list":
 			for expr2 in expr.children:
 				assert(expr2.tok_class == "expr");
-				analyze_func_def_arg_expr(expr2, arg_names); if error_code != "": return;
+				analyze_func_def_arg_expr(expr2, arg_names, arg_types); if error_code != "": return;
 		else:
 			internal_error(E.ERR_28); return;
 		#while true:
@@ -633,9 +649,13 @@ func analyze_func_def_stmt(ast):
 	var ocb = IR.push_code_block();
 	var osc = IR.push_scope();
 	IR.emit_IR(["ENTER", IR.cur_scope.ir_name], ast.get_location());
-	for arg_name in arg_names:
+	assert(len(arg_names) == len(arg_types));
+	for i in range(len(arg_names)):#for arg_name in arg_names:
+		var arg_name = arg_names[i];
+		var arg_type = arg_types[i];
 		var arg_handle = IR.new_val_var(arg_name);
 		arg_handle.storage = "arg";
+		arg_handle.data_type = arg_type;
 		IR.save_variable(arg_handle);
 	analyze_block(block); if error_code != "": return;
 	IR.emit_IR(["LEAVE"], ast.get_location());
@@ -649,13 +669,19 @@ func analyze_func_def_stmt(ast):
 		fun_handle = IR.new_val_func(fun_name, fun_scope, fun_code);
 		IR.save_function(fun_handle);
 
-func analyze_func_def_arg_expr(expr, arg_names):
+func analyze_func_def_arg_expr(expr:AST, arg_names:Array[String], arg_types:Array[Type]):
 	assert(expr.tok_class == "expr");
 	var sub_expr = expr.children[0];
 	match sub_expr.tok_class:
 		"expr_ident":
 			var tok_ident = sub_expr.children[0];
 			arg_names.push_front(tok_ident.text);
+			arg_types.push_front(null);
+		"expr_typed_ident":
+			var tok_ident = sub_expr.children[0];
+			arg_names.push_front(tok_ident.text);
+			var type = analyze_type_expr(sub_expr); if error_code != "": return;
+			arg_types.push_front(type);
 		_: internal_error(E.ERR_28); return;
 
 func analyze_flow_stmt(ast):

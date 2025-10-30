@@ -10,7 +10,7 @@ signal tokens_ready;
 # constants
 const ISA = preload("res://lang_zvm.gd");
 const USE_32BIT_BY_DEFAULT = true;
-const USE_WIDE_STRINGS = true;
+const USE_WIDE_STRINGS = false;
 const cmd_size = 8;
 const ch_punct = ".,:[]+;";
 const ch_alphabet = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_";

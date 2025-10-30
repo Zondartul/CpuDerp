@@ -277,7 +277,8 @@ func generate_cmd_op(cmd:IR_Cmd)->void:
 	if op not in op_map: push_error("codegen: can't generate op ["+op+"]"); return;
 	mark_loc_begin(loc);
 	var op_str:String = op_map[op];
-	
+
+		
 	var tmpA = null;
 	var tmpB = null;
 	#var arg1_by_addr = false;
@@ -294,6 +295,19 @@ func generate_cmd_op(cmd:IR_Cmd)->void:
 		tmpB = alloc_temporary();
 		emit("mov %s, $%s;\n" % [tmpB, arg2], cmd_size, "generate_cmd_op.find_b");
 		op_str = op_str.replace("%b", tmpB);
+		
+	if op == "INDEX":
+		var arg1_handle = all_syms[arg1];
+		assert(arg1_handle != null);
+		var arg1_type = arg1_handle.data_type;
+		var pointer_step = 1;
+		if arg1_type != "NULL":
+			var arg1T = Type.from_string(arg1_type);
+			assert(arg1T != null);
+			var arg1dT = arg1T.get_deref_type();
+			pointer_step = arg1dT.size;
+		emit("mul %s, %d;\n" % [tmpA, pointer_step], cmd_size, "generate_cmd_op.index_step");
+		
 	var op_cmd_size = cmd_size * op_str.count(";");
 	emit(op_str, op_cmd_size, "generate_cmd_op.op_str");
 	if op not in mono_ops: emit("mov ^%s, %s;\n" % [res, tmpA], cmd_size, "generate_cmd_op.result1");

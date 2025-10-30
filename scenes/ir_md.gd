@@ -211,6 +211,8 @@ func serialize_vals(arr):
 	for i in range(len(arr)):
 			var old_var = arr[i];
 			var new_var = [];
+			if old_var.data_type:
+				old_var.data_type = old_var.data_type.full_name;
 			for key2 in ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code"]:
 				if (key2 in old_var) and (old_var[key2] != null):
 					var val = old_var[key2];
