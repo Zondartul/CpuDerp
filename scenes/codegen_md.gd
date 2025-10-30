@@ -144,7 +144,9 @@ func generate()->String:
 	#return assy_full;
 	cur_assy_block = AssyBlock.new(); #{"code":"", "write_pos":0, "location_map":{"begin":{}, "end":{}}};
 	var global_ab = cur_assy_block;
+	var lc = LoopCounter.new();
 	while not referenced_cbs.is_empty():
+		lc.step();
 		var cb = referenced_cbs.pop_front();
 		if cb in emitted_cbs: continue;
 		else: emitted_cbs.append(cb);
@@ -152,8 +154,8 @@ func generate()->String:
 	fixup_enter_leave(cur_assy_block);
 	cur_assy_block.code += generate_globals();
 	assert(cur_assy_block == global_ab);
-	var n_locations_in = n_locations;
-	var n_locations_out = len(cur_assy_block.loc_map.begin);
+	#var n_locations_in = n_locations;
+	#var n_locations_out = len(cur_assy_block.loc_map.begin);
 	#assert(n_locations_out == n_locations_in);
 	locations_ready.emit(cur_assy_block.loc_map);
 	return cur_assy_block.code;
@@ -192,7 +194,7 @@ func generate_globals()->String:
 			if sym.storage.type == "global":
 				text += ":%s: db 0;\n" % sym.ir_name;
 		if sym.val_type == "immediate":
-			if sym.data_type == "string":
+			if sym.data_type == "String":
 				var S = sym.value;
 				S = format_db_string(S);
 				text += ":%s: db %s;\n" % [sym.ir_name, S];
@@ -305,6 +307,7 @@ func generate_cmd_op(cmd:IR_Cmd)->void:
 			var arg1T = Type.from_string(arg1_type);
 			assert(arg1T != null);
 			var arg1dT = arg1T.get_deref_type();
+			assert(arg1dT != null);
 			pointer_step = arg1dT.size;
 		emit("mul %s, %d;\n" % [tmpA, pointer_step], cmd_size, "generate_cmd_op.index_step");
 		
@@ -329,7 +332,7 @@ func new_imm(val)->Dictionary:
 	if val is int:
 		handle["data_type"] = "int";
 	elif val is String:
-		handle["data_type"] = "string";
+		handle["data_type"] = "String";
 	all_syms[ir_name] = handle;
 	return handle;
 
@@ -354,10 +357,10 @@ func generate_cmd_if(cmd:IR_Cmd)->void:
 	emit("jmp %s;\n" % lbl_end, cmd_size, "generate_cmd_if.end_then");
 	emit(":%s:\n" % lbl_else, 0, "generate_cmd_if.lbl_else");
 	if cur_block.if_block_continued:
-		cur_block["if_block_lbl_end"] = lbl_end;
+		cur_block.if_block_lbl_end = lbl_end;
 	else:
 		emit(":%s:\n" % lbl_end, 0, "generate_cmd_if.end_if");
-		cur_block.if_block_lbl_end = null;
+		cur_block.if_block_lbl_end = "";
 	mark_loc_end(loc);
 
 func generate_cmd_else_if(cmd:IR_Cmd)->void:
@@ -381,7 +384,7 @@ func generate_cmd_else_if(cmd:IR_Cmd)->void:
 	emit(":%s:\n" % lbl_else, 0, "generate_cmd_else_if.lbl_else");
 	if not cur_block.if_block_continued:
 		emit(":%s:\n" % lbl_end, 0, "generate_cmd_else_if.end_if");
-		cur_block.if_block_lbl_end = null;
+		cur_block.if_block_lbl_end = "";
 	mark_loc_end(loc);
 
 func generate_cmd_else(cmd:IR_Cmd)->void:
@@ -392,7 +395,7 @@ func generate_cmd_else(cmd:IR_Cmd)->void:
 	emit_cb(cb_block,"generate_cmd_else.cb_block");
 	#emit("$%s\n" % [cb_block], get_cb_cmd_size(cb_block), "generate_cmd_else.cb_block");
 	emit(":%s:\n" % [lbl_end], 0, "generate_cmd_else.lbl_end");
-	cur_block.if_block_lbl_end = null;
+	cur_block.if_block_lbl_end = "";
 	mark_loc_end(loc);
 
 func generate_cmd_while(cmd:IR_Cmd)->void:
@@ -426,7 +429,9 @@ func generate_cmd_call(cmd:IR_Cmd)->void:
 	var args = [];
 	if cmd.words[2] == "[":
 		var i = 3;
+		var lc = LoopCounter.new();
 		while true:
+			lc.step();
 			if cmd.words[i] == "]": break;
 			args.append(cmd.words[i]);
 			i += 1;
@@ -454,7 +459,9 @@ func generate_cmd_call(cmd:IR_Cmd)->void:
 func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 	var imm_flag = false;
 	var allocs = [];
+	var lc = LoopCounter.new();
 	while true:
+		lc.step();
 		var ref_load = find_reference(text, "$");
 		if not ref_load: break;
 		var res = load_value(ref_load.val);
@@ -471,7 +478,9 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 			if imm_flag: res = promote(res, allocs);
 			imm_flag = true;
 		text = text.substr(0, ref_load.from) + res + text.substr(ref_load.to);
+	lc = LoopCounter.new();
 	while true:
+		lc.step();
 		var ref_addr = find_reference(text, "@");
 		if not ref_addr: break;
 		var res = address_value(ref_addr.val);
@@ -479,7 +488,9 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 		imm_flag = true;
 		text = text.substr(0, ref_addr.from) + res + text.substr(ref_addr.to);
 	var vars_to_store = [];
+	lc = LoopCounter.new();
 	while true:
+		lc.step();
 		var ref_store = find_reference(text, "^");
 		if not ref_store: break;
 		var handle = all_syms[ref_store.val];
@@ -536,7 +547,7 @@ func load_value(val:String)->String:
 		assert(false, "Deprecated, need to generate before emitting");
 		res = generate_code_block(handle).code;
 	elif handle.val_type == "immediate":
-		if handle.data_type == "string":
+		if handle.data_type == "String":
 			res = handle.ir_name;
 		else:
 			assert(handle.value.is_valid_int());

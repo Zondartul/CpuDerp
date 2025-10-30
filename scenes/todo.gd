@@ -51,8 +51,10 @@ extends Node
 #			- by building a FSA
 # [enhancement]			"EXPR REORDER" 
 #	parser should re-order expressions based on operator precedence
-# [feature]				"TYPES" 
+# [PARTIAL feature]		"TYPES" 
 #	implement types (char vs u32)
+#	- Ref/Array/String/Char supposedly works
+#	- need Return Types
 # [FIXED feature]		"HL DEBUG" 
 #	high-level debugger
 # [feature]				"DEBUG STACK SMASH" 
@@ -76,4 +78,11 @@ extends Node
 #	remove the old "op location" system for ASM debugging and replace with LocationRanges
 # [refactor]			"ELM IN COMPILER"
 #	expanded location map should be precomputed in the compiler, not the debugger.
+# [feature]				"UNIT TESTS"
+# [feature]				"ARRAY INITIALIZERS"
+# [feature]				"POINTER OPS"
+#	reference/dereference
+# [feature]				"STRUCTS"
+# [feature]				"CHAR INIT"
+#	initialize char by 'c'
 #

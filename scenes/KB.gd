@@ -40,7 +40,9 @@ func writeCell(cell:int, val:int):
 	if(cell != 0): return;
 	#print("KB:writeCell("+str(cell)+", "+str(val)+")")
 	if(cell == 0):
+		var lc = LoopCounter.new();
 		while val and buffer[0]:
+			lc.step();
 			assert(buffer.size() >= 2);
 			assert(buffer[0] > 0);
 			buffer[0] -= 1;

@@ -371,7 +371,9 @@ func _on_btn_run_to_line_pressed():
 		if (oploc.line <= cur_line) and (oploc.line > best_oploc.line):
 			best_oploc = oploc;
 	var target_ip = best_oploc.ip;
+	var lc = LoopCounter.new(step_limit);
 	while(cpu.regs[cpu.ISA.REG_IP] != target_ip):
+		lc.step();
 		cpu.step();
 	perf.all.prime();
 
@@ -656,7 +658,9 @@ func find_locals():
 	var next_ret = find_ret(cur_ip);
 	print("next_ret = %d" % next_ret);
 	if not next_ret: return locals;
+	var lc = LoopCounter.new();
 	while(cur_ip < next_ret):
+		lc.step();
 		var cmd = get_cmd(cur_ip);
 		var rcmd = cmd.duplicate();
 		rcmd.reverse();
@@ -820,7 +824,9 @@ func unstep():
 		#print("<empty>"); 
 		return;
 	var event = cpu_history.pop_back();
+	var lc = LoopCounter.new();
 	while(event.type == "mem"):
+		lc.step();
 		#print("<got mem>");
 		undo_mem(event);
 		if cpu_history.is_empty(): 
@@ -828,7 +834,9 @@ func unstep():
 			#print("<pb 1>"); 
 			break;
 		event = cpu_history.pop_back();
+	lc = LoopCounter.new();
 	while(event.type == "cpu"):
+		lc.step();
 		#print("<got cpu>");
 		cpu_n_steps -= 1;
 		if undo_cpu(event):
@@ -849,7 +857,9 @@ func unstep():
 				#print("<pb 3>"); 
 				break;
 			event = cpu_history.pop_back();
+			var lc2 = LoopCounter.new();
 			while(event.type == "mem"):
+				lc2.step();
 				#print("<got mem>");
 				# if we are here, we are still undoing the current CPU state,
 				# and we need to remove the mem stuff we did.

@@ -391,7 +391,9 @@ func process(tokens:Array[Token])->bool:
 	var iter = Iter.new(tokens, 0);
 	#var erep:ErrorReporter = ErrorReporter.new(self, iter);
 	erep.context = iter;
+	var lc = LoopCounter.new(10000);
 	while iter.pos != len(iter.tokens):
+		lc.step();
 		if parse_label(iter) \
 		or parse_db(iter) \
 		or parse_command(iter):
@@ -422,7 +424,9 @@ func parse_db(iter:Iter)->bool:
 	var old_iter = iter.duplicate();
 	if match_tokens(iter, ["\\db"]):
 		var items:Array[Token] = [];
+		var lc = LoopCounter.new();
 		while iter.pos != len(iter.tokens):
+			lc.step();
 			var toks = []
 			if match_tokens(iter, ["STRING"],toks) \
 			or match_tokens(iter, ["NUMBER"],toks) \
@@ -689,6 +693,9 @@ func emit_db_items(items:Array[Token])->void: #maybe we could use the .32 specif
 				return;
 	#if (write_pos % cmd_size): # if not aligned
 	#	write_pos += (cmd_size - (write_pos % cmd_size)); # pad until alignement is reached
+	
+	var lc = LoopCounter.new();
 	while(write_pos % cmd_size):
+		lc.step();
 		emit8(0, ISA.SHADOW_PADDING);
 	assert(write_pos % cmd_size == 0);

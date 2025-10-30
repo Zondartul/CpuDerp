@@ -50,14 +50,14 @@ func new_val_temp():
 	val.ir_name = make_unique_IR_name("tmp");
 	return val;
 
-func new_val_var(val_name):
+func new_val_var(val_name:String):
 	var val = new_val();
 	val.val_type = "variable";
 	val.ir_name = make_unique_IR_name("var", val_name);
 	val.user_name = val_name;
 	return val;
 
-func new_val_immediate(value, type):
+func new_val_immediate(value:String, type:Type):
 	var val = new_val();
 	val.val_type = "immediate";
 	val.value = value;
@@ -171,7 +171,9 @@ func new_scope(scp_name, scp_parent:String=""):
 
 func get_var(var_name:String):
 	var seek_scope = cur_scope;
+	var lc = LoopCounter.new();
 	while true:
+		lc.step();
 		for variable in seek_scope.vars:
 			if variable.user_name == var_name:
 				return variable;
@@ -183,7 +185,9 @@ func get_var(var_name:String):
 
 func get_func(fun_name:String):
 	var seek_scope = cur_scope;
+	var lc = LoopCounter.new();
 	while true:
+		lc.step();
 		for fun in seek_scope.funcs:
 			if fun.user_name == fun_name:
 				return fun;

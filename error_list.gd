@@ -31,3 +31,7 @@ const ERR_32 = "Error 32: Variable declaration can't have [%s] as left-hand-side
 const ERR_33 = "Error 33: Can't assign value of type [%s] to variable of type [%s]";
 const ERR_34 = "Error 34: analyze_type_expr: unimplemented ast type: [%s]";
 const ERR_35 = "Error 35: Can't do operator %s between %s and %s";
+const ERR_36 = "Error 36: Operator %s is not an infix op";
+const ERR_37 = "Error 37: Operator %s is not a postfix op";
+const ERR_38 = "Error 38: Array index must be one of integer types";
+const ERR_39 = "Error 39: Type %s cannot be dereferenced";

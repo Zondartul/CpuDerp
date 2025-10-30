@@ -122,7 +122,9 @@ func recombine_tokens(tokens:Array[Token]):
 	var i = 0;
 	var prev_toks:Array[Token] = [];
 	var prev_count = 2;
+	var lc = LoopCounter.new(len(tokens)+1);
 	while(i < len(tokens)):
+		lc.step();
 		var tok:Token = tokens[i];
 		prev_toks.append(tok);
 		if(len(prev_toks) > prev_count):

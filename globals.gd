@@ -14,7 +14,7 @@ const class_IR_Value = preload("res://class_IR_value.gd");
 const class_IR_Cmd = preload("res://class_IR_cmd.gd");
 const class_CodeBlock = preload("res://class_CodeBlock.gd");
 const class_AssyBlock = preload("res://class_AssyBlock.gd");
-
+const class_LoopCounter = preload("res://class_LoopCounter.gd");
 
 ## Creates an independent copy of the value
 func duplicate_val(obj)->Variant:
@@ -129,7 +129,9 @@ func find_first_of(text:String, needles:String, from:int=0)->int:
 func str_find_all_instances(needle:String, haystack:String)->Array:
 	var res = [];
 	var pos = 0;
+	var lc = LoopCounter.new();
 	while true:
+		lc.step();
 		var iter = haystack.find(needle, pos);
 		if(iter != -1):
 			res.append(iter);

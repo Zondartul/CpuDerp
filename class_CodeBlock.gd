@@ -3,6 +3,7 @@ class_name CodeBlock;
 
 var code:Array[IR_Cmd] = [];
 var if_block_continued:bool = false;
+var if_block_lbl_end:String = "";
 var lbl_from:String = "";
 var lbl_to:String = "";
 

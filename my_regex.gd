@@ -42,7 +42,9 @@ func _tokenize_range(parse):
 	else:
 		tok.type = "range";
 	#---
+	var lc = LoopCounter.new();
 	while(parse.i < parse.line.length()):
+		lc.step();
 		if(C == "]"): break;
 		assert((parse.i+1) < parse.line.length());
 		var C2 = parse.line[parse.i+1];
@@ -68,7 +70,9 @@ func _tokenize_range(parse):
 func _tokenize(parse):
 	var tokens = [];
 	var i = parse.i;
+	var lc = LoopCounter.new();
 	while(i < parse.line.length()):
+		lc.step();
 		var tok = _new_tok();
 		var C = parse.line[i];
 		if(C == "^"):	tok.type = "start"; 	tok.precedence = 1; i+=1;
@@ -89,7 +93,9 @@ func _restack(rx_toks):
 	var in_stack = [];
 	for tok in rx_toks:
 		if(tok.type == "capture_end"): #')'
+			var lc = LoopCounter.new();
 			while true: #collect stuff in braces ()
+				lc.step();
 				assert(not out_stack.empty());
 				var tok2 = out_stack.pop();
 				if(tok2.type == "capture_begin"): #'('
@@ -103,7 +109,9 @@ func _restack(rx_toks):
 			if out_stack.empty(): out_stack.push(tok);
 			else:
 				# pick up all tokens of lower precedence
+				var lc = LoopCounter.new();
 				while not out_stack.empty():
+					lc.step();
 					if (out_stack.back().precedence < tok.precedence) and \
 					(out_stack.back().type != "capture_begin"):
 						var tok2 = out_stack.pop();
@@ -112,7 +120,10 @@ func _restack(rx_toks):
 						break;
 				out_stack.push(tok);
 				# put picked up tokens after this one
-				while not in_stack.empty(): out_stack.push(in_stack.pop());
+				lc = LoopCounter.new();
+				while not in_stack.empty(): 
+					lc.step();
+					out_stack.push(in_stack.pop());
 
 # analyzes the regex tokens to build a regex AST
 func _analyze(aparse):
@@ -258,7 +269,9 @@ func _submatch(this, ast, is_capture_group=false,text_out=null):
 		"star":
 			assert(ast.children.size() == 1);
 			var ch = ast.children[0];
+			var lc = LoopCounter.new();
 			while parser.i < parser.line.length():
+				lc.step();
 				var res = _submatch(this, ch, false, text_in);
 				if res:	
 					text_cur += text_in[0];
@@ -270,7 +283,9 @@ func _submatch(this, ast, is_capture_group=false,text_out=null):
 			assert(ast.children.size() == 1);
 			var ch = ast.children[0];
 			var ok = false;
+			var lc = LoopCounter.new();
 			while parser.i < parser.line.length():
+				lc.step();
 				var res = _submatch(this, ch, false, text_in);
 				if res:	
 					ok = true;

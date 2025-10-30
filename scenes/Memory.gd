@@ -57,7 +57,9 @@ var color_fixups = [];
 var shadow_at = 0;
 
 func _process(delta):
+	var lc = LoopCounter.new();
 	while run_perf_limiter(delta):
+		lc.step();
 		update_mem_view();
 
 func update_mem_view():

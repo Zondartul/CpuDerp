@@ -118,7 +118,9 @@ const primitive_sizes = {
 	"float":4,
 	"double":8,
 };
-
+const integer_types = [
+	"int", "char", "u8", "s8", "u16", "s16", "u32", "s32", "u64", "s64",
+];
 const pointer_types = ["Ref", "Array", "String"]
 
 func get_size():
@@ -128,3 +130,5 @@ func get_size():
 		return primitive_sizes[name];
 	return 1;
 	#assert(false, "Unknown type size for type %s" % full_name);
+
+func is_integer(): return bool(full_name in integer_types);

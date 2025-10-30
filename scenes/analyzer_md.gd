@@ -45,7 +45,8 @@ const type_aliases = {
 	"String":"Ref[char]",
 	"char":"u8",
 };
-
+const prefix_ops = ["NOT"];
+const postfix_ops = ["INC", "DEC"];
 # state
 var error_code = "";
 var cur_line = "";
@@ -224,9 +225,12 @@ func analyze_expr_infix_op(expr1:AST, expr2:AST, op, loc:LocationRange):
 				#sTres = sT1_allowed_T2[sT2];
 				#op_permitted = true;
 	#var Tres:Type = Type.from_string(sTres);
-	var Tres = calc_output_type(arg1, arg2, op, loc);
-	res.data_type = Tres;
+	var t_res = calc_output_type(arg1, arg2, op, loc);
+	assert(t_res);
+	res.data_type = t_res.type;
 	IR.save_variable(res);
+	if (op in prefix_ops) or (op in postfix_ops):
+		erep.error(E.ERR_36 % op); return;
 	IR.emit_IR(["OP", op, arg1, arg2, res], loc);
 	expr_stack.push_back(res);
 
@@ -245,19 +249,33 @@ func calc_output_type(arg1, arg2, op:String, loc:LocationRange):
 	if not res:
 		erep.context = loc;
 		erep.error(E.ERR_35 % [op, sT1, sT2]);
-	return res.type;
+		return null;
+	return res;
 	
-func get_op_result_type(T1:Type, _T2, _op:String):
-	return {"type":T1};
+func get_op_result_type(T1:Type, T2:Type, op:String):
+	var Tres = T1;
+	if op == "INDEX":
+		if T2 and (not T2.is_integer()): erep.error(E.ERR_38); return null;
+		if T1:
+			var T = T1.get_deref_type();
+			if not T:
+				erep.error(E.ERR_39 % T1.full_name); return null;
+			Tres = T;
+		else:
+			Tres = null;
+	return {"type":Tres};
 
 func analyze_expr_postfix_op(expr1, op, loc:LocationRange):
 	if error_code != "": return;
 	analyze_expr(expr1); if error_code != "": return;
 	var arg = expr_stack.pop_back();
 	var res = IR.new_val_temp();
-	var Tres = calc_output_type(arg, null, op, loc);
-	res.data_type = Tres;
+	var t_res = calc_output_type(arg, null, op, loc);
+	assert(t_res);
+	res.data_type = t_res.type;
 	IR.save_variable(res);
+	if op not in postfix_ops:
+		erep.error(E.ERR_37 % op); return;
 	IR.emit_IR(["OP", op, arg, IR.new_val_none(), res], loc);
 	expr_stack.push_back(res);
 
@@ -471,8 +489,8 @@ func analyze_assignment_stmt(ast):
 	var arg = expr_stack.pop_back();
 	RHS = arg;
 	IR.emit_IR(["MOV", LHS, RHS], ast.get_location());
-	arg.data_type = LHS.data_type;
-	expr_stack.push_back(arg);
+	#res.data_type = LHS.data_type;
+	expr_stack.push_back(LHS);
 
 func analyze_expr_immediate(ast):
 	if error_code != "": return;
@@ -487,9 +505,9 @@ func analyze_expr_immediate(ast):
 		value = str(value);
 	if tok.tok_class == "STRING":
 		value = tok.text;
-		type = "string";
-	var res = IR.new_val_immediate(value, type);
-	res.data_type = Type.new({"name":type});
+		type = "String";
+	var res = IR.new_val_immediate(value, Type.new({"name":type}));
+	#res.data_type = Type.new({"name":type});
 	IR.save_variable(res);
 	expr_stack.push_back(res);
 
