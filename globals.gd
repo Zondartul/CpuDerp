@@ -129,7 +129,7 @@ func find_first_of(text:String, needles:String, from:int=0)->int:
 func str_find_all_instances(needle:String, haystack:String)->Array:
 	var res = [];
 	var pos = 0;
-	var lc = LoopCounter.new();
+	var lc = LoopCounter.new(10000);
 	while true:
 		lc.step();
 		var iter = haystack.find(needle, pos);

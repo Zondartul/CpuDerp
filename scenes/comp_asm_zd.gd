@@ -597,6 +597,7 @@ func parse_arg(iter)->Cmd_arg:
 		if has_neg_offs: num = - str(neg_offs[1]["text"]).to_int();
 		if arg.is_imm: 
 			erep.error(E.ERR_08);
+			return arg;
 		arg.is_imm = true;
 		arg.offset = num;
 		arg.is_deref = false;
@@ -612,8 +613,12 @@ func parse_arg(iter)->Cmd_arg:
 		if has_neg_arr: num = - str(neg_arr[2]["text"]).to_int();
 		if arg.is_imm: 
 			erep.error(E.ERR_09);
+			return arg;
 		arg.is_imm = true;
 		arg.offset = num;
+		if(arg.is_deref):
+			erep.error(E.ERR_14);
+			return arg;
 		arg.is_deref = true;
 	return arg;
 

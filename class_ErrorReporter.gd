@@ -45,7 +45,7 @@ func point_out_error_iter(msg:String, iter:Iter)->void:
 	#point_out_error(msg, cur_line, cur_line_idx, char_idx)
 	if(iter.pos >= len(iter.tokens)): iter.pos = len(iter.tokens)-1;
 	var tok = iter.tokens[iter.pos];
-	tok.line = proxy.cur_line; tok.line_idx = proxy.cur_line_idx;
+	tok.loc.begin.line = proxy.cur_line; tok.loc.begin.line_idx = proxy.cur_line_idx;
 	point_out_error_tok(msg, iter.tokens[iter.pos]);
 
 func point_out_error_tok(msg:String, tok:Token)->void:

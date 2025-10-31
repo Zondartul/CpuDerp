@@ -18,9 +18,11 @@ mono_crash.*.json
 
 # Temporary data
 #data/
+.tmp
 
 # Releases
 bin/
+export/
 
 # logs
 log.txt

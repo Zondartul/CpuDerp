@@ -216,8 +216,11 @@ func serialize_vals(arr):
 			var old_var = arr[i];
 			var new_var = [];
 			if old_var.data_type:
+				old_var.data_size = str(old_var.data_type.get_size());
 				old_var.data_type = old_var.data_type.full_name;
-			for key2 in ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code"]:
+			else:
+				old_var.data_size = str(1);
+			for key2 in ["ir_name", "val_type", "user_name", "data_type", "data_size", "storage", "value", "scope", "code"]:
 				if (key2 in old_var) and (old_var[key2] != null):
 					var val = old_var[key2];
 					val = G.escape_string(val);

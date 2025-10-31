@@ -14,6 +14,7 @@ const ERR_10 = "Error 10: can't emit value, doesn't fit in byte: [%s]";
 const ERR_11 = "Error 11: can't emit value, doesn't fit in u32: [%s]";
 const ERR_12 = "Error 12: unexpected input";
 const ERR_13 = "Error 13: Unlinked reference to [%s]";
+const ERR_14 = "Error 14: Can't have dereference on top of array access";
 
 # analyzer errors
 const ERR_21 = "Error 21: Not implemented";

@@ -7,6 +7,9 @@ func alloc(size:int); // returns a pointer to a memory area of given size
 func strcpy(buff:Ref[u8], str:String); // copy string to buffer
 func strlen(str:String); 
 func print_num(num:int);
+func dbg_print_num(num:int);
+func dbg_print_s(S:String);
+func print_digit(digit:int);
 func strrev(str:String); // reverse a string
 func printc(ch:char);
 func prints(str:String);
@@ -25,14 +28,29 @@ infloop();
 
 func main(){
 	print("Hello World!", 128,255,0);
-	dbg_print_num(12345);
+	dbg_print_num(12345); newline();
+	dbg_print_s("%s");
 	var args:Ref[u32] = alloc(10);
 	args[0] = "world";
 	args[1] = 123;
-	printf("hello %s, num [%d]\n", args);
+	printf("x %s \n", args);
+	//printf("hello %s, num [%d]\n", args);
 	args[0] = strlen("\n");
 	printf("strlen( /n ) = %d\n", args);
-	printf("Okay.\n",args);s
+	printf("Okay.\n",args);
+}
+
+func dbg_print_s(S:String){
+	var i = 0;
+	while(S[i]){
+		var c:char = S[i];
+		prints("["); dbg_print_num(i); prints("]: ["); 
+		printc(c); prints("]"); newline();
+		i++;
+	}
+}
+func dbg_print_si(S:String, num:int){
+	prints(S); prints("="); dbg_print_num(num);newline();
 }
 
 func print(str:String,r:u8,g:u8,b:u8){
@@ -84,11 +102,17 @@ func printf(fmt:String, args:Ref[u32]){
 	var arg:u32 = 0;
 	while(c){
 		I++;
+		dbg_print_si(" I",I);
 		var c2:char = fmt[I];
+		dbg_print_si(" c2",c2);
 		if(c2){
+			dbg_print_si(" c", c);
+			dbg_print_si(" %[0]", ("%"[0]));
 			var is_perc:u8 = (c == ("%"[0]));
 			var is_bsl:u8 = (c == ("\"[0])); //"
 			var is_spec:u8 = is_perc + is_bsl;
+			dbg_print_si(" is_perc", is_perc);
+			dbg_print_si(" is_bsl", is_bsl);
 			if(is_spec){
 				I++;
 				if(c2 == ("s"[0])){
@@ -135,6 +159,7 @@ func print_num(num){
 	prints(buff);
 }
 func dbg_print_num(num){
+	if(num == 0){print_digit(0);}
 	while(num > 0){
 		var digit = num % 10;
 		num = num / 10;

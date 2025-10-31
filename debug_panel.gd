@@ -264,8 +264,10 @@ func update_labels_from_sym_table():
 	symtable_label_names.clear();
 	for key in cur_sym_table.funcs:
 		var fun = cur_sym_table.funcs[key];
-		assert_materialized(fun.lbl.from);
-		assert_materialized(fun.lbl.to);
+		if not (fun.lbl.from in assembler.final_labels): continue;
+		if not (fun.lbl.to in assembler.final_labels): continue;
+		#assert_materialized(fun.lbl.from);
+		#assert_materialized(fun.lbl.to);
 		var ip_from = assembler.final_labels[fun.lbl.from];
 		var ip_to = assembler.final_labels[fun.lbl.to];
 		symtable_label_ips.append(ip_from);
