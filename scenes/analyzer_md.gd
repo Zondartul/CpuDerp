@@ -49,6 +49,8 @@ var cur_line_idx = 0;
 var expr_stack = [];
 var control_flow_stack = []; #for break and continue
 var sym_table = null;
+var dbg_undefined_funcs_at_fixup = 0
+var dbg_undefined_funcs_at_symtable = 0
 #------------------------------------------------------------
 
 func reset():
@@ -90,6 +92,9 @@ func fixup_cb_lbls():
 	for fun in scp_global.funcs:
 		#var fun = scp_global.funcs[fun_key];
 		var cb_key = fun.code;
+		if not IR.IR.code_blocks.has(cb_key):  # func is not defined (fwd or extern)
+			dbg_undefined_funcs_at_fixup += 1
+			continue
 		var cb = IR.IR.code_blocks[cb_key];
 		cb.lbl_from = fun.ir_name;
 
@@ -102,6 +107,9 @@ func prepare_sym_table():
 	var global_handle = sym_table_append_scope("global", scp_global_key, scp_global, cb_global);
 	sym_table.global = global_handle;
 	for fun in scp_global.funcs:
+		if not fun.code in IR.IR.code_blocks:
+			dbg_undefined_funcs_at_symtable += 1
+			continue
 		var cb = IR.IR.code_blocks[fun.code];
 		var scp = IR.IR.scopes[fun.scope];
 		var fun_handle = sym_table_append_scope(fun.user_name, fun.ir_name, scp, cb);

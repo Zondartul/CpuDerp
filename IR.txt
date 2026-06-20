@@ -2,161 +2,238 @@ code_blocks:
  cb_1: 
   ir_name: cb_1
   code: 
-   MOV var_9__adr_scr imm_10 %064hello.md%0585%05810%126%064hello.md%0585%05823
-   MOV var_11__scr_I imm_12 %064hello.md%0586%0588%126%064hello.md%0586%05813
-   CALL func_4__main [ ] tmp_13 %064hello.md%0588%0583%126%064hello.md%0588%0587
-   CALL func_7__infloop [ ] tmp_14 %064hello.md%0589%0586%126%064hello.md%0589%05813
+   MOV var_11__adr_scr imm_12 %064main.md%0587%05810%126%064main.md%0587%05823
+   MOV var_13__adr_kb imm_14 %064main.md%0588%0589%126%064main.md%0588%05822
+   MOV var_15__scr_I imm_16 %064main.md%0589%0588%126%064main.md%0589%05813
+   CALL func_4__main [ ] tmp_17 %064main.md%05811%0583%126%064main.md%05811%0587
+   CALL func_7__infloop [ ] tmp_18 %064main.md%05812%0586%126%064main.md%05812%05813
   lbl_from: lbl_from_2
   lbl_to: lbl_to_3
- cb_15: 
-  ir_name: cb_15
+ cb_19: 
+  ir_name: cb_19
   code: 
-   ENTER scp_18__NULL %064hello.md%05813%0584%126%064hello.md%05814%0581
-   CALL func_5__print [ imm_22 imm_21 imm_20 imm_19 ] tmp_23 %064hello.md%05813%0584%126%064hello.md%05813%05832
-   LEAVE %064hello.md%05813%0584%126%064hello.md%05814%0581
+   ENTER scp_22__NULL %064main.md%05820%0584%126%064main.md%05823%0581
+   CALL func_5__print [ imm_26 imm_25 imm_24 imm_23 ] tmp_27 %064main.md%05816%0584%126%064main.md%05816%05832
+   WHILE cb_30 imm_33 cb_34 lbl_28__while_next lbl_29__while_end %064main.md%05820%0584%126%064main.md%05822%0581
+   LEAVE %064main.md%05820%0584%126%064main.md%05823%0581
   lbl_from: func_4__main
-  lbl_to: lbl_to_17
- cb_24: 
-  ir_name: cb_24
+  lbl_to: lbl_to_21
+ cb_30: 
+  ir_name: cb_30
+  lbl_from: lbl_from_31
+  lbl_to: lbl_to_32
+ cb_34: 
+  ir_name: cb_34
   code: 
-   ENTER scp_27__NULL %064hello.md%05820%0580%126%064hello.md%05824%0581
-   MOV var_32__i imm_33 %064hello.md%05817%0584%126%064hello.md%05817%0589
-   OP INDEX var_31__str var_32__i tmp_35 %064hello.md%05818%05810%126%064hello.md%05818%05814
-   MOV var_34__c tmp_35 %064hello.md%05818%0584%126%064hello.md%05818%05814
-   WHILE cb_38 var_34__c cb_41 lbl_36__while_next lbl_37__while_end %064hello.md%05820%0580%126%064hello.md%05823%0581
-   LEAVE %064hello.md%05820%0580%126%064hello.md%05824%0581
-  lbl_from: func_5__print
-  lbl_to: lbl_to_26
- cb_38: 
-  ir_name: cb_38
-  lbl_from: lbl_from_39
-  lbl_to: lbl_to_40
+   IF cb_37 tmp_40 cb_41 %064main.md%05820%0584%126%064main.md%05821%0581
+  lbl_from: lbl_from_35
+  lbl_to: lbl_to_36
+ cb_37: 
+  ir_name: cb_37
+  code: 
+   CALL func_9__has_char [ ] tmp_40 %064main.md%05818%05810%126%064main.md%05818%05818
+  lbl_from: lbl_from_38
+  lbl_to: lbl_to_39
  cb_41: 
   ir_name: cb_41
   code: 
-   OP MUL var_32__i imm_44 tmp_45 %064hello.md%05820%0588%126%064hello.md%05820%05811
-   OP INDEX var_31__str tmp_45 tmp_46 %064hello.md%05820%0586%126%064hello.md%05820%05812
-   MOV var_34__c tmp_46 %064hello.md%05820%0580%126%064hello.md%05820%05812
-   OP INC var_32__i none tmp_47 %064hello.md%05821%0580%126%064hello.md%05821%0582
-   CALL func_6__putch [ var_28__b var_29__g var_30__r var_34__c ] tmp_48 %064hello.md%05822%0584%126%064hello.md%05822%05815
+   CALL func_10__get_char [ ] tmp_45 %064main.md%05819%05815%126%064main.md%05819%05823
+   MOV var_44__c tmp_45 %064main.md%05819%0584%126%064main.md%05819%05823
+   CALL func_6__putch [ imm_48 imm_47 imm_46 var_44__c ] tmp_49 %064main.md%05820%0584%126%064main.md%05820%05821
   lbl_from: lbl_from_42
   lbl_to: lbl_to_43
- cb_49: 
-  ir_name: cb_49
+ cb_50: 
+  ir_name: cb_50
   code: 
-   ENTER scp_52__NULL %064hello.md%05833%05812%126%064hello.md%05834%0581
-   CALL func_8__scr_push_byte [ var_56__c ] tmp_57 %064hello.md%05827%05812%126%064hello.md%05827%05825
-   CALL func_8__scr_push_byte [ var_55__r ] tmp_58 %064hello.md%05828%05812%126%064hello.md%05828%05825
-   CALL func_8__scr_push_byte [ var_54__g ] tmp_59 %064hello.md%05829%05812%126%064hello.md%05829%05825
-   CALL func_8__scr_push_byte [ var_53__b ] tmp_60 %064hello.md%05830%05812%126%064hello.md%05830%05825
-   CALL func_8__scr_push_byte [ imm_61 ] tmp_62 %064hello.md%05831%05812%126%064hello.md%05831%05825
-   CALL func_8__scr_push_byte [ imm_63 ] tmp_64 %064hello.md%05832%05812%126%064hello.md%05832%05825
-   CALL func_8__scr_push_byte [ imm_65 ] tmp_66 %064hello.md%05833%05812%126%064hello.md%05833%05825
-   LEAVE %064hello.md%05833%05812%126%064hello.md%05834%0581
-  lbl_from: func_6__putch
-  lbl_to: lbl_to_51
+   ENTER scp_53__NULL %064main.md%05829%0580%126%064main.md%05833%0581
+   MOV var_58__i imm_59 %064main.md%05826%0584%126%064main.md%05826%0589
+   OP INDEX var_57__str var_58__i tmp_61 %064main.md%05827%05810%126%064main.md%05827%05814
+   MOV var_60__c tmp_61 %064main.md%05827%0584%126%064main.md%05827%05814
+   WHILE cb_64 var_60__c cb_67 lbl_62__while_next lbl_63__while_end %064main.md%05829%0580%126%064main.md%05832%0581
+   LEAVE %064main.md%05829%0580%126%064main.md%05833%0581
+  lbl_from: func_5__print
+  lbl_to: lbl_to_52
+ cb_64: 
+  ir_name: cb_64
+  lbl_from: lbl_from_65
+  lbl_to: lbl_to_66
  cb_67: 
   ir_name: cb_67
   code: 
-   ENTER scp_70__NULL %064hello.md%05837%0586%126%064hello.md%05838%0581
-   OP INDEX var_9__adr_scr var_11__scr_I tmp_72 %064hello.md%05837%0586%126%064hello.md%05837%05817
-   MOV tmp_72 var_71__b %064hello.md%05837%0586%126%064hello.md%05837%05818
-   OP INC var_11__scr_I none tmp_73 %064hello.md%05837%05824%126%064hello.md%05837%05829
-   LEAVE %064hello.md%05837%0586%126%064hello.md%05838%0581
-  lbl_from: func_8__scr_push_byte
+   OP MUL var_58__i imm_70 tmp_71 %064main.md%05829%0588%126%064main.md%05829%05811
+   OP INDEX var_57__str tmp_71 tmp_72 %064main.md%05829%0586%126%064main.md%05829%05812
+   MOV var_60__c tmp_72 %064main.md%05829%0580%126%064main.md%05829%05812
+   OP INC var_58__i none tmp_73 %064main.md%05830%0580%126%064main.md%05830%0582
+   CALL func_6__putch [ var_54__b var_55__g var_56__r var_60__c ] tmp_74 %064main.md%05831%0584%126%064main.md%05831%05815
+  lbl_from: lbl_from_68
   lbl_to: lbl_to_69
- cb_74: 
-  ir_name: cb_74
+ cb_75: 
+  ir_name: cb_75
   code: 
-   ENTER scp_77__NULL %064hello.md%05840%0583%126%064hello.md%05840%05826
-   WHILE cb_80 imm_83 cb_84 lbl_78__while_next lbl_79__while_end %064hello.md%05840%05819%126%064hello.md%05840%05825
-   LEAVE %064hello.md%05840%0583%126%064hello.md%05840%05826
+   ENTER scp_78__NULL %064main.md%05842%05812%126%064main.md%05843%0581
+   CALL func_8__scr_push_byte [ var_82__c ] tmp_83 %064main.md%05836%05812%126%064main.md%05836%05825
+   CALL func_8__scr_push_byte [ var_81__r ] tmp_84 %064main.md%05837%05812%126%064main.md%05837%05825
+   CALL func_8__scr_push_byte [ var_80__g ] tmp_85 %064main.md%05838%05812%126%064main.md%05838%05825
+   CALL func_8__scr_push_byte [ var_79__b ] tmp_86 %064main.md%05839%05812%126%064main.md%05839%05825
+   CALL func_8__scr_push_byte [ imm_87 ] tmp_88 %064main.md%05840%05812%126%064main.md%05840%05825
+   CALL func_8__scr_push_byte [ imm_89 ] tmp_90 %064main.md%05841%05812%126%064main.md%05841%05825
+   CALL func_8__scr_push_byte [ imm_91 ] tmp_92 %064main.md%05842%05812%126%064main.md%05842%05825
+   LEAVE %064main.md%05842%05812%126%064main.md%05843%0581
+  lbl_from: func_6__putch
+  lbl_to: lbl_to_77
+ cb_93: 
+  ir_name: cb_93
+  code: 
+   ENTER scp_96__NULL %064main.md%05846%0586%126%064main.md%05847%0581
+   OP INDEX var_11__adr_scr var_15__scr_I tmp_98 %064main.md%05846%0586%126%064main.md%05846%05817
+   MOV tmp_98 var_97__b %064main.md%05846%0586%126%064main.md%05846%05818
+   OP INC var_15__scr_I none tmp_99 %064main.md%05846%05824%126%064main.md%05846%05829
+   LEAVE %064main.md%05846%0586%126%064main.md%05847%0581
+  lbl_from: func_8__scr_push_byte
+  lbl_to: lbl_to_95
+ cb_100: 
+  ir_name: cb_100
+  code: 
+   ENTER scp_103__NULL %064main.md%05849%0583%126%064main.md%05849%05826
+   WHILE cb_106 imm_109 cb_110 lbl_104__while_next lbl_105__while_end %064main.md%05849%05819%126%064main.md%05849%05825
+   LEAVE %064main.md%05849%0583%126%064main.md%05849%05826
   lbl_from: func_7__infloop
-  lbl_to: lbl_to_76
- cb_80: 
-  ir_name: cb_80
-  lbl_from: lbl_from_81
-  lbl_to: lbl_to_82
- cb_84: 
-  ir_name: cb_84
-  lbl_from: lbl_from_85
-  lbl_to: lbl_to_86
+  lbl_to: lbl_to_102
+ cb_106: 
+  ir_name: cb_106
+  lbl_from: lbl_from_107
+  lbl_to: lbl_to_108
+ cb_110: 
+  ir_name: cb_110
+  lbl_from: lbl_from_111
+  lbl_to: lbl_to_112
+ cb_113: 
+  ir_name: cb_113
+  code: 
+   ENTER scp_116__NULL %064main.md%05852%0585%126%064main.md%05853%0581
+   OP INDEX var_13__adr_kb imm_117 tmp_118 %064main.md%05852%05812%126%064main.md%05852%05818
+   RETURN tmp_118 %064main.md%05852%0585%126%064main.md%05852%05818
+   LEAVE %064main.md%05852%0585%126%064main.md%05853%0581
+  lbl_from: func_9__has_char
+  lbl_to: lbl_to_115
+ cb_119: 
+  ir_name: cb_119
+  code: 
+   ENTER scp_122__NULL %064main.md%05857%0585%126%064main.md%05859%0581
+   OP INDEX var_13__adr_kb imm_124 tmp_125 %064main.md%05856%05813%126%064main.md%05856%05819
+   MOV var_123__c tmp_125 %064main.md%05856%0584%126%064main.md%05856%05819
+   OP INDEX var_13__adr_kb imm_126 tmp_127 %064main.md%05857%0585%126%064main.md%05857%05811
+   MOV tmp_127 imm_128 %064main.md%05857%0585%126%064main.md%05857%05813
+   RETURN var_123__c %064main.md%05858%0585%126%064main.md%05858%05811
+   LEAVE %064main.md%05857%0585%126%064main.md%05859%0581
+  lbl_from: func_10__get_char
+  lbl_to: lbl_to_121
 scopes: 
  scp_0__global: 
   ir_name: scp_0__global
   user_name: global
   parent: none
   vars: 
-   var_9__adr_scr variable adr_scr int NULL NULL NULL NULL
-   imm_10 immediate NULL int NULL 67536 NULL NULL
-   var_11__scr_I variable scr_I int NULL NULL NULL NULL
-   imm_12 immediate NULL int NULL 0 NULL NULL
-   tmp_13 temporary NULL NULL NULL NULL NULL NULL
-   tmp_14 temporary NULL NULL NULL NULL NULL NULL
+   var_11__adr_scr variable adr_scr int NULL NULL NULL NULL
+   imm_12 immediate NULL int NULL 67536 NULL NULL
+   var_13__adr_kb variable adr_kb int NULL NULL NULL NULL
+   imm_14 immediate NULL int NULL 81648 NULL NULL
+   var_15__scr_I variable scr_I int NULL NULL NULL NULL
+   imm_16 immediate NULL int NULL 0 NULL NULL
+   tmp_17 temporary NULL NULL NULL NULL NULL NULL
+   tmp_18 temporary NULL NULL NULL NULL NULL NULL
   funcs: 
-   func_4__main func main NULL NULL NULL scp_18__NULL cb_15
-   func_5__print func print NULL NULL NULL scp_27__NULL cb_24
-   func_6__putch func putch NULL NULL NULL scp_52__NULL cb_49
-   func_7__infloop func infloop NULL NULL NULL scp_77__NULL cb_74
-   func_8__scr_push_byte func scr_push_byte NULL NULL NULL scp_70__NULL cb_67
- scp_18__NULL: 
-  ir_name: scp_18__NULL
+   func_4__main func main NULL NULL NULL scp_22__NULL cb_19
+   func_5__print func print NULL NULL NULL scp_53__NULL cb_50
+   func_6__putch func putch NULL NULL NULL scp_78__NULL cb_75
+   func_7__infloop func infloop NULL NULL NULL scp_103__NULL cb_100
+   func_8__scr_push_byte func scr_push_byte NULL NULL NULL scp_96__NULL cb_93
+   func_9__has_char func has_char NULL NULL NULL scp_116__NULL cb_113
+   func_10__get_char func get_char NULL NULL NULL scp_122__NULL cb_119
+ scp_22__NULL: 
+  ir_name: scp_22__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   imm_19 immediate NULL string NULL Hello%032World%033 NULL NULL
-   imm_20 immediate NULL int NULL 128 NULL NULL
-   imm_21 immediate NULL int NULL 255 NULL NULL
-   imm_22 immediate NULL int NULL 0 NULL NULL
-   tmp_23 temporary NULL NULL NULL NULL NULL NULL
- scp_27__NULL: 
-  ir_name: scp_27__NULL
-  user_name: NULL
-  parent: scp_0__global
-  vars: 
-   var_28__b variable b NULL arg NULL NULL NULL
-   var_29__g variable g NULL arg NULL NULL NULL
-   var_30__r variable r NULL arg NULL NULL NULL
-   var_31__str variable str NULL arg NULL NULL NULL
-   var_32__i variable i int NULL NULL NULL NULL
-   imm_33 immediate NULL int NULL 0 NULL NULL
-   var_34__c variable c NULL NULL NULL NULL NULL
-   tmp_35 temporary NULL NULL NULL NULL NULL NULL
-   imm_44 immediate NULL int NULL 4 NULL NULL
+   imm_23 immediate NULL string NULL Hello%032World%033 NULL NULL
+   imm_24 immediate NULL int NULL 128 NULL NULL
+   imm_25 immediate NULL int NULL 255 NULL NULL
+   imm_26 immediate NULL int NULL 0 NULL NULL
+   tmp_27 temporary NULL NULL NULL NULL NULL NULL
+   imm_33 immediate NULL int NULL 1 NULL NULL
+   tmp_40 temporary NULL NULL NULL NULL NULL NULL
+   var_44__c variable c NULL NULL NULL NULL NULL
    tmp_45 temporary NULL NULL NULL NULL NULL NULL
-   tmp_46 temporary NULL NULL NULL NULL NULL NULL
-   tmp_47 temporary NULL NULL NULL NULL NULL NULL
-   tmp_48 temporary NULL NULL NULL NULL NULL NULL
- scp_52__NULL: 
-  ir_name: scp_52__NULL
+   imm_46 immediate NULL int NULL 255 NULL NULL
+   imm_47 immediate NULL int NULL 255 NULL NULL
+   imm_48 immediate NULL int NULL 255 NULL NULL
+   tmp_49 temporary NULL NULL NULL NULL NULL NULL
+ scp_53__NULL: 
+  ir_name: scp_53__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   var_53__b variable b NULL arg NULL NULL NULL
-   var_54__g variable g NULL arg NULL NULL NULL
-   var_55__r variable r NULL arg NULL NULL NULL
-   var_56__c variable c NULL arg NULL NULL NULL
-   tmp_57 temporary NULL NULL NULL NULL NULL NULL
-   tmp_58 temporary NULL NULL NULL NULL NULL NULL
-   tmp_59 temporary NULL NULL NULL NULL NULL NULL
-   tmp_60 temporary NULL NULL NULL NULL NULL NULL
-   imm_61 immediate NULL int NULL 0 NULL NULL
-   tmp_62 temporary NULL NULL NULL NULL NULL NULL
-   imm_63 immediate NULL int NULL 0 NULL NULL
-   tmp_64 temporary NULL NULL NULL NULL NULL NULL
-   imm_65 immediate NULL int NULL 0 NULL NULL
-   tmp_66 temporary NULL NULL NULL NULL NULL NULL
- scp_70__NULL: 
-  ir_name: scp_70__NULL
-  user_name: NULL
-  parent: scp_0__global
-  vars: 
-   var_71__b variable b NULL arg NULL NULL NULL
+   var_54__b variable b NULL arg NULL NULL NULL
+   var_55__g variable g NULL arg NULL NULL NULL
+   var_56__r variable r NULL arg NULL NULL NULL
+   var_57__str variable str NULL arg NULL NULL NULL
+   var_58__i variable i int NULL NULL NULL NULL
+   imm_59 immediate NULL int NULL 0 NULL NULL
+   var_60__c variable c NULL NULL NULL NULL NULL
+   tmp_61 temporary NULL NULL NULL NULL NULL NULL
+   imm_70 immediate NULL int NULL 4 NULL NULL
+   tmp_71 temporary NULL NULL NULL NULL NULL NULL
    tmp_72 temporary NULL NULL NULL NULL NULL NULL
    tmp_73 temporary NULL NULL NULL NULL NULL NULL
- scp_77__NULL: 
-  ir_name: scp_77__NULL
+   tmp_74 temporary NULL NULL NULL NULL NULL NULL
+ scp_78__NULL: 
+  ir_name: scp_78__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   imm_83 immediate NULL int NULL 1 NULL NULL
+   var_79__b variable b NULL arg NULL NULL NULL
+   var_80__g variable g NULL arg NULL NULL NULL
+   var_81__r variable r NULL arg NULL NULL NULL
+   var_82__c variable c NULL arg NULL NULL NULL
+   tmp_83 temporary NULL NULL NULL NULL NULL NULL
+   tmp_84 temporary NULL NULL NULL NULL NULL NULL
+   tmp_85 temporary NULL NULL NULL NULL NULL NULL
+   tmp_86 temporary NULL NULL NULL NULL NULL NULL
+   imm_87 immediate NULL int NULL 0 NULL NULL
+   tmp_88 temporary NULL NULL NULL NULL NULL NULL
+   imm_89 immediate NULL int NULL 0 NULL NULL
+   tmp_90 temporary NULL NULL NULL NULL NULL NULL
+   imm_91 immediate NULL int NULL 0 NULL NULL
+   tmp_92 temporary NULL NULL NULL NULL NULL NULL
+ scp_96__NULL: 
+  ir_name: scp_96__NULL
+  user_name: NULL
+  parent: scp_0__global
+  vars: 
+   var_97__b variable b NULL arg NULL NULL NULL
+   tmp_98 temporary NULL NULL NULL NULL NULL NULL
+   tmp_99 temporary NULL NULL NULL NULL NULL NULL
+ scp_103__NULL: 
+  ir_name: scp_103__NULL
+  user_name: NULL
+  parent: scp_0__global
+  vars: 
+   imm_109 immediate NULL int NULL 1 NULL NULL
+ scp_116__NULL: 
+  ir_name: scp_116__NULL
+  user_name: NULL
+  parent: scp_0__global
+  vars: 
+   imm_117 immediate NULL int NULL 0 NULL NULL
+   tmp_118 temporary NULL NULL NULL NULL NULL NULL
+ scp_122__NULL: 
+  ir_name: scp_122__NULL
+  user_name: NULL
+  parent: scp_0__global
+  vars: 
+   var_123__c variable c NULL NULL NULL NULL NULL
+   imm_124 immediate NULL int NULL 1 NULL NULL
+   tmp_125 temporary NULL NULL NULL NULL NULL NULL
+   imm_126 immediate NULL int NULL 0 NULL NULL
+   tmp_127 temporary NULL NULL NULL NULL NULL NULL
+   imm_128 immediate NULL int NULL 1 NULL NULL

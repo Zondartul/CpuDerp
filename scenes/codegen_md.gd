@@ -354,7 +354,7 @@ func generate_cmd_if(cmd:IR_Cmd)->void:
 		cur_block["if_block_lbl_end"] = lbl_end;
 	else:
 		emit(":%s:\n" % lbl_end, 0, "generate_cmd_if.end_if");
-		cur_block.if_block_lbl_end = null;
+		cur_block.if_block_lbl_end = "";
 
 func generate_cmd_else_if(cmd:IR_Cmd)->void:
 	var cb_cond = cmd.words[1];
@@ -375,7 +375,7 @@ func generate_cmd_else_if(cmd:IR_Cmd)->void:
 	emit(":%s:\n" % lbl_else, 0, "generate_cmd_else_if.lbl_else");
 	if not cur_block.if_block_continued:
 		emit(":%s:\n" % lbl_end, 0, "generate_cmd_else_if.end_if");
-		cur_block.if_block_lbl_end = null;
+		cur_block.if_block_lbl_end = "";
 
 func generate_cmd_else(cmd:IR_Cmd)->void:
 	var cb_block = cmd.words[1];
@@ -383,7 +383,7 @@ func generate_cmd_else(cmd:IR_Cmd)->void:
 	emit_cb(cb_block,"generate_cmd_else.cb_block");
 	#emit("$%s\n" % [cb_block], get_cb_cmd_size(cb_block), "generate_cmd_else.cb_block");
 	emit(":%s:\n" % [lbl_end], 0, "generate_cmd_else.lbl_end");
-	cur_block.if_block_lbl_end = null;
+	cur_block.if_block_lbl_end = "";
 
 func generate_cmd_while(cmd:IR_Cmd)->void:
 	#WHILE cb_cond res cb_block lbl_next lbl_end
