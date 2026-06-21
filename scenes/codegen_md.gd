@@ -104,7 +104,7 @@ func deserialize(text:String)->void:
 			#cmd.push_back(loc);
 
 func inflate_vals(arr:Array)->void:
-	const props = ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code"];
+	const props = ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code", "argc"];
 	for i in range(len(arr)):
 		var val = arr[i];
 		assert(len(val) == len(props));

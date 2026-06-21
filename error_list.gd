@@ -31,3 +31,5 @@ const ERR_32 = "Error 32: Variable declaration can't have [%s] as left-hand-side
 const ERR_33 = "Error 33: Invalid character literal: [%s]";
 const ERR_34 = "Error 34: #include syntax error";
 const ERR_35 = "Error 35: #include file not found: [%s]";
+const ERR_36 = "Error 36: function [%s] expected %d arguments, got %d";
+const ERR_37 = "Error 37: function [%s] previously declared with %d arguments, now redeclared with %d arguments";

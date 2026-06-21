@@ -313,226 +313,226 @@ scopes:
   user_name: global
   parent: none
   vars: 
-   var_10__adr_scr variable adr_scr int NULL NULL NULL NULL
-   imm_11 immediate NULL int NULL 67536 NULL NULL
-   var_12__scr_I variable scr_I int NULL NULL NULL NULL
-   imm_13 immediate NULL int NULL 0 NULL NULL
-   var_14__col_R variable col_R int NULL NULL NULL NULL
-   imm_15 immediate NULL int NULL 255 NULL NULL
-   var_16__col_G variable col_G int NULL NULL NULL NULL
-   imm_17 immediate NULL int NULL 255 NULL NULL
-   var_18__col_B variable col_B int NULL NULL NULL NULL
-   imm_19 immediate NULL int NULL 255 NULL NULL
-   var_20__scr_width variable scr_width int NULL NULL NULL NULL
-   imm_21 immediate NULL int NULL 56 NULL NULL
-   var_97__adr_kb variable adr_kb int NULL NULL NULL NULL
-   imm_98 immediate NULL int NULL 81648 NULL NULL
-   var_99__alloc_head variable alloc_head int NULL NULL NULL NULL
-   imm_100 immediate NULL int NULL 10000 NULL NULL
-   var_101__char_backspace variable char_backspace int NULL NULL NULL NULL
-   imm_102 immediate NULL int NULL 4 NULL NULL
-   tmp_103 temporary NULL NULL NULL NULL NULL NULL
-   tmp_104 temporary NULL NULL NULL NULL NULL NULL
+   var_10__adr_scr variable adr_scr int NULL NULL NULL NULL NULL
+   imm_11 immediate NULL int NULL 67536 NULL NULL NULL
+   var_12__scr_I variable scr_I int NULL NULL NULL NULL NULL
+   imm_13 immediate NULL int NULL 0 NULL NULL NULL
+   var_14__col_R variable col_R int NULL NULL NULL NULL NULL
+   imm_15 immediate NULL int NULL 255 NULL NULL NULL
+   var_16__col_G variable col_G int NULL NULL NULL NULL NULL
+   imm_17 immediate NULL int NULL 255 NULL NULL NULL
+   var_18__col_B variable col_B int NULL NULL NULL NULL NULL
+   imm_19 immediate NULL int NULL 255 NULL NULL NULL
+   var_20__scr_width variable scr_width int NULL NULL NULL NULL NULL
+   imm_21 immediate NULL int NULL 56 NULL NULL NULL
+   var_97__adr_kb variable adr_kb int NULL NULL NULL NULL NULL
+   imm_98 immediate NULL int NULL 81648 NULL NULL NULL
+   var_99__alloc_head variable alloc_head int NULL NULL NULL NULL NULL
+   imm_100 immediate NULL int NULL 10000 NULL NULL NULL
+   var_101__char_backspace variable char_backspace int NULL NULL NULL NULL NULL
+   imm_102 immediate NULL int NULL 4 NULL NULL NULL
+   tmp_103 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_104 temporary NULL NULL NULL NULL NULL NULL NULL
   funcs: 
-   func_4__print func print NULL NULL NULL scp_42__NULL cb_39
-   func_5__putch func putch NULL NULL NULL scp_64__NULL cb_61
-   func_6__scr_push_byte func scr_push_byte NULL NULL NULL scp_79__NULL cb_76
-   func_7__set_col func set_col NULL NULL NULL scp_86__NULL cb_83
-   func_8__println func println NULL NULL NULL scp_25__NULL cb_22
-   func_9__newline func newline NULL NULL NULL scp_32__NULL cb_29
-   func_90__main func main NULL NULL NULL scp_108__NULL cb_105
-   func_91__infloop func infloop NULL NULL NULL scp_168__NULL cb_165
-   func_92__has_char func has_char NULL NULL NULL scp_181__NULL cb_178
-   func_93__get_char func get_char NULL NULL NULL scp_187__NULL cb_184
-   func_94__malloc func malloc NULL NULL NULL scp_252__NULL cb_249
-   func_95__process_command func process_command NULL NULL NULL scp_197__NULL cb_194
-   func_96__str_eq func str_eq NULL NULL NULL scp_259__NULL cb_256
+   func_4__print func print NULL NULL NULL scp_42__NULL cb_39 1
+   func_5__putch func putch NULL NULL NULL scp_64__NULL cb_61 1
+   func_6__scr_push_byte func scr_push_byte NULL NULL NULL scp_79__NULL cb_76 1
+   func_7__set_col func set_col NULL NULL NULL scp_86__NULL cb_83 3
+   func_8__println func println NULL NULL NULL scp_25__NULL cb_22 1
+   func_9__newline func newline NULL NULL NULL scp_32__NULL cb_29 0
+   func_90__main func main NULL NULL NULL scp_108__NULL cb_105 0
+   func_91__infloop func infloop NULL NULL NULL scp_168__NULL cb_165 0
+   func_92__has_char func has_char NULL NULL NULL scp_181__NULL cb_178 0
+   func_93__get_char func get_char NULL NULL NULL scp_187__NULL cb_184 0
+   func_94__malloc func malloc NULL NULL NULL scp_252__NULL cb_249 1
+   func_95__process_command func process_command NULL NULL NULL scp_197__NULL cb_194 1
+   func_96__str_eq func str_eq NULL NULL NULL scp_259__NULL cb_256 2
  scp_25__NULL: 
   ir_name: scp_25__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   var_26__str variable str NULL arg NULL NULL NULL
-   tmp_27 temporary NULL NULL NULL NULL NULL NULL
-   tmp_28 temporary NULL NULL NULL NULL NULL NULL
+   var_26__str variable str NULL arg NULL NULL NULL NULL
+   tmp_27 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_28 temporary NULL NULL NULL NULL NULL NULL NULL
  scp_32__NULL: 
   ir_name: scp_32__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   var_33__width_I variable width_I NULL NULL NULL NULL NULL
-   imm_34 immediate NULL int NULL 7 NULL NULL
-   tmp_35 temporary NULL NULL NULL NULL NULL NULL
-   tmp_36 temporary NULL NULL NULL NULL NULL NULL
-   tmp_37 temporary NULL NULL NULL NULL NULL NULL
-   tmp_38 temporary NULL NULL NULL NULL NULL NULL
+   var_33__width_I variable width_I NULL NULL NULL NULL NULL NULL
+   imm_34 immediate NULL int NULL 7 NULL NULL NULL
+   tmp_35 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_36 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_37 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_38 temporary NULL NULL NULL NULL NULL NULL NULL
  scp_42__NULL: 
   ir_name: scp_42__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   var_43__str variable str NULL arg NULL NULL NULL
-   var_44__i variable i int NULL NULL NULL NULL
-   imm_45 immediate NULL int NULL 0 NULL NULL
-   var_46__c variable c NULL NULL NULL NULL NULL
-   tmp_47 temporary NULL NULL NULL NULL NULL NULL
-   imm_56 immediate NULL int NULL 4 NULL NULL
-   tmp_57 temporary NULL NULL NULL NULL NULL NULL
-   tmp_58 temporary NULL NULL NULL NULL NULL NULL
-   tmp_59 temporary NULL NULL NULL NULL NULL NULL
-   tmp_60 temporary NULL NULL NULL NULL NULL NULL
+   var_43__str variable str NULL arg NULL NULL NULL NULL
+   var_44__i variable i int NULL NULL NULL NULL NULL
+   imm_45 immediate NULL int NULL 0 NULL NULL NULL
+   var_46__c variable c NULL NULL NULL NULL NULL NULL
+   tmp_47 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_56 immediate NULL int NULL 4 NULL NULL NULL
+   tmp_57 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_58 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_59 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_60 temporary NULL NULL NULL NULL NULL NULL NULL
  scp_64__NULL: 
   ir_name: scp_64__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   var_65__c variable c NULL arg NULL NULL NULL
-   tmp_66 temporary NULL NULL NULL NULL NULL NULL
-   tmp_67 temporary NULL NULL NULL NULL NULL NULL
-   tmp_68 temporary NULL NULL NULL NULL NULL NULL
-   tmp_69 temporary NULL NULL NULL NULL NULL NULL
-   imm_70 immediate NULL int NULL 0 NULL NULL
-   tmp_71 temporary NULL NULL NULL NULL NULL NULL
-   imm_72 immediate NULL int NULL 0 NULL NULL
-   tmp_73 temporary NULL NULL NULL NULL NULL NULL
-   imm_74 immediate NULL int NULL 0 NULL NULL
-   tmp_75 temporary NULL NULL NULL NULL NULL NULL
+   var_65__c variable c NULL arg NULL NULL NULL NULL
+   tmp_66 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_67 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_68 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_69 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_70 immediate NULL int NULL 0 NULL NULL NULL
+   tmp_71 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_72 immediate NULL int NULL 0 NULL NULL NULL
+   tmp_73 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_74 immediate NULL int NULL 0 NULL NULL NULL
+   tmp_75 temporary NULL NULL NULL NULL NULL NULL NULL
  scp_79__NULL: 
   ir_name: scp_79__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   var_80__b variable b NULL arg NULL NULL NULL
-   tmp_81 temporary NULL NULL NULL NULL NULL NULL
-   tmp_82 temporary NULL NULL NULL NULL NULL NULL
+   var_80__b variable b NULL arg NULL NULL NULL NULL
+   tmp_81 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_82 temporary NULL NULL NULL NULL NULL NULL NULL
  scp_86__NULL: 
   ir_name: scp_86__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   var_87__B variable B NULL arg NULL NULL NULL
-   var_88__G variable G NULL arg NULL NULL NULL
-   var_89__R variable R NULL arg NULL NULL NULL
+   var_87__B variable B NULL arg NULL NULL NULL NULL
+   var_88__G variable G NULL arg NULL NULL NULL NULL
+   var_89__R variable R NULL arg NULL NULL NULL NULL
  scp_108__NULL: 
   ir_name: scp_108__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   imm_109 immediate NULL int NULL 128 NULL NULL
-   imm_110 immediate NULL int NULL 255 NULL NULL
-   imm_111 immediate NULL int NULL 0 NULL NULL
-   tmp_112 temporary NULL NULL NULL NULL NULL NULL
-   imm_113 immediate NULL string NULL Hello%032World%033 NULL NULL
-   tmp_114 temporary NULL NULL NULL NULL NULL NULL
-   imm_115 immediate NULL int NULL 255 NULL NULL
-   imm_116 immediate NULL int NULL 255 NULL NULL
-   imm_117 immediate NULL int NULL 255 NULL NULL
-   tmp_118 temporary NULL NULL NULL NULL NULL NULL
-   var_119__buff variable buff NULL NULL NULL NULL NULL
-   imm_120 immediate NULL int NULL 80 NULL NULL
-   tmp_121 temporary NULL NULL NULL NULL NULL NULL
-   var_122__buffI variable buffI int NULL NULL NULL NULL
-   imm_123 immediate NULL int NULL 0 NULL NULL
-   imm_129 immediate NULL int NULL 1 NULL NULL
-   tmp_136 temporary NULL NULL NULL NULL NULL NULL
-   var_140__c variable c NULL NULL NULL NULL NULL
-   tmp_141 temporary NULL NULL NULL NULL NULL NULL
-   imm_145 immediate NULL int NULL 10 NULL NULL
-   tmp_146 temporary NULL NULL NULL NULL NULL NULL
-   tmp_150 temporary NULL NULL NULL NULL NULL NULL
-   tmp_151 temporary NULL NULL NULL NULL NULL NULL
-   imm_152 immediate NULL int NULL 0 NULL NULL
-   tmp_153 temporary NULL NULL NULL NULL NULL NULL
-   imm_154 immediate NULL int NULL 0 NULL NULL
-   tmp_158 temporary NULL NULL NULL NULL NULL NULL
-   imm_159 immediate NULL int NULL 4 NULL NULL
-   imm_160 immediate NULL int NULL 4 NULL NULL
-   tmp_161 temporary NULL NULL NULL NULL NULL NULL
-   tmp_162 temporary NULL NULL NULL NULL NULL NULL
-   imm_163 immediate NULL int NULL 0 NULL NULL
-   tmp_164 temporary NULL NULL NULL NULL NULL NULL
+   imm_109 immediate NULL int NULL 128 NULL NULL NULL
+   imm_110 immediate NULL int NULL 255 NULL NULL NULL
+   imm_111 immediate NULL int NULL 0 NULL NULL NULL
+   tmp_112 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_113 immediate NULL string NULL Hello%032World%033 NULL NULL NULL
+   tmp_114 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_115 immediate NULL int NULL 255 NULL NULL NULL
+   imm_116 immediate NULL int NULL 255 NULL NULL NULL
+   imm_117 immediate NULL int NULL 255 NULL NULL NULL
+   tmp_118 temporary NULL NULL NULL NULL NULL NULL NULL
+   var_119__buff variable buff NULL NULL NULL NULL NULL NULL
+   imm_120 immediate NULL int NULL 80 NULL NULL NULL
+   tmp_121 temporary NULL NULL NULL NULL NULL NULL NULL
+   var_122__buffI variable buffI int NULL NULL NULL NULL NULL
+   imm_123 immediate NULL int NULL 0 NULL NULL NULL
+   imm_129 immediate NULL int NULL 1 NULL NULL NULL
+   tmp_136 temporary NULL NULL NULL NULL NULL NULL NULL
+   var_140__c variable c NULL NULL NULL NULL NULL NULL
+   tmp_141 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_145 immediate NULL int NULL 10 NULL NULL NULL
+   tmp_146 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_150 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_151 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_152 immediate NULL int NULL 0 NULL NULL NULL
+   tmp_153 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_154 immediate NULL int NULL 0 NULL NULL NULL
+   tmp_158 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_159 immediate NULL int NULL 4 NULL NULL NULL
+   imm_160 immediate NULL int NULL 4 NULL NULL NULL
+   tmp_161 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_162 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_163 immediate NULL int NULL 0 NULL NULL NULL
+   tmp_164 temporary NULL NULL NULL NULL NULL NULL NULL
  scp_168__NULL: 
   ir_name: scp_168__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   imm_174 immediate NULL int NULL 1 NULL NULL
+   imm_174 immediate NULL int NULL 1 NULL NULL NULL
  scp_181__NULL: 
   ir_name: scp_181__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   imm_182 immediate NULL int NULL 0 NULL NULL
-   tmp_183 temporary NULL NULL NULL NULL NULL NULL
+   imm_182 immediate NULL int NULL 0 NULL NULL NULL
+   tmp_183 temporary NULL NULL NULL NULL NULL NULL NULL
  scp_187__NULL: 
   ir_name: scp_187__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   var_188__c variable c NULL NULL NULL NULL NULL
-   imm_189 immediate NULL int NULL 1 NULL NULL
-   tmp_190 temporary NULL NULL NULL NULL NULL NULL
-   imm_191 immediate NULL int NULL 0 NULL NULL
-   tmp_192 temporary NULL NULL NULL NULL NULL NULL
-   imm_193 immediate NULL int NULL 1 NULL NULL
+   var_188__c variable c NULL NULL NULL NULL NULL NULL
+   imm_189 immediate NULL int NULL 1 NULL NULL NULL
+   tmp_190 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_191 immediate NULL int NULL 0 NULL NULL NULL
+   tmp_192 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_193 immediate NULL int NULL 1 NULL NULL NULL
  scp_197__NULL: 
   ir_name: scp_197__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   var_198__buff variable buff NULL arg NULL NULL NULL
-   imm_199 immediate NULL int NULL 255 NULL NULL
-   imm_200 immediate NULL int NULL 0 NULL NULL
-   imm_201 immediate NULL int NULL 255 NULL NULL
-   tmp_202 temporary NULL NULL NULL NULL NULL NULL
-   imm_206 immediate NULL string NULL what NULL NULL
-   tmp_207 temporary NULL NULL NULL NULL NULL NULL
-   imm_211 immediate NULL string NULL SAY%032WHAT%032AGAIN NULL NULL
-   tmp_212 temporary NULL NULL NULL NULL NULL NULL
-   imm_216 immediate NULL string NULL help NULL NULL
-   tmp_217 temporary NULL NULL NULL NULL NULL NULL
-   imm_221 immediate NULL string NULL Commands%058%032help%044%032what%044%032beep NULL NULL
-   tmp_222 temporary NULL NULL NULL NULL NULL NULL
-   imm_226 immediate NULL string NULL beep NULL NULL
-   tmp_227 temporary NULL NULL NULL NULL NULL NULL
-   imm_231 immediate NULL string NULL boop NULL NULL
-   tmp_232 temporary NULL NULL NULL NULL NULL NULL
-   imm_236 immediate NULL int NULL 255 NULL NULL
-   imm_237 immediate NULL int NULL 255 NULL NULL
-   imm_238 immediate NULL int NULL 0 NULL NULL
-   tmp_239 temporary NULL NULL NULL NULL NULL NULL
-   imm_240 immediate NULL string NULL unkown%032command%032%091 NULL NULL
-   tmp_241 temporary NULL NULL NULL NULL NULL NULL
-   tmp_242 temporary NULL NULL NULL NULL NULL NULL
-   imm_243 immediate NULL string NULL %093 NULL NULL
-   tmp_244 temporary NULL NULL NULL NULL NULL NULL
-   imm_245 immediate NULL int NULL 255 NULL NULL
-   imm_246 immediate NULL int NULL 255 NULL NULL
-   imm_247 immediate NULL int NULL 255 NULL NULL
-   tmp_248 temporary NULL NULL NULL NULL NULL NULL
+   var_198__buff variable buff NULL arg NULL NULL NULL NULL
+   imm_199 immediate NULL int NULL 255 NULL NULL NULL
+   imm_200 immediate NULL int NULL 0 NULL NULL NULL
+   imm_201 immediate NULL int NULL 255 NULL NULL NULL
+   tmp_202 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_206 immediate NULL string NULL what NULL NULL NULL
+   tmp_207 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_211 immediate NULL string NULL SAY%032WHAT%032AGAIN NULL NULL NULL
+   tmp_212 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_216 immediate NULL string NULL help NULL NULL NULL
+   tmp_217 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_221 immediate NULL string NULL Commands%058%032help%044%032what%044%032beep NULL NULL NULL
+   tmp_222 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_226 immediate NULL string NULL beep NULL NULL NULL
+   tmp_227 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_231 immediate NULL string NULL boop NULL NULL NULL
+   tmp_232 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_236 immediate NULL int NULL 255 NULL NULL NULL
+   imm_237 immediate NULL int NULL 255 NULL NULL NULL
+   imm_238 immediate NULL int NULL 0 NULL NULL NULL
+   tmp_239 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_240 immediate NULL string NULL unkown%032command%032%091 NULL NULL NULL
+   tmp_241 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_242 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_243 immediate NULL string NULL %093 NULL NULL NULL
+   tmp_244 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_245 immediate NULL int NULL 255 NULL NULL NULL
+   imm_246 immediate NULL int NULL 255 NULL NULL NULL
+   imm_247 immediate NULL int NULL 255 NULL NULL NULL
+   tmp_248 temporary NULL NULL NULL NULL NULL NULL NULL
  scp_252__NULL: 
   ir_name: scp_252__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   var_253__size variable size NULL arg NULL NULL NULL
-   var_254__p variable p int NULL NULL NULL NULL
-   tmp_255 temporary NULL NULL NULL NULL NULL NULL
+   var_253__size variable size NULL arg NULL NULL NULL NULL
+   var_254__p variable p int NULL NULL NULL NULL NULL
+   tmp_255 temporary NULL NULL NULL NULL NULL NULL NULL
  scp_259__NULL: 
   ir_name: scp_259__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   var_260__str_B variable str_B NULL arg NULL NULL NULL
-   var_261__str_A variable str_A NULL arg NULL NULL NULL
-   var_262__I variable I int NULL NULL NULL NULL
-   imm_263 immediate NULL int NULL 0 NULL NULL
-   tmp_269 temporary NULL NULL NULL NULL NULL NULL
-   tmp_276 temporary NULL NULL NULL NULL NULL NULL
-   tmp_277 temporary NULL NULL NULL NULL NULL NULL
-   tmp_278 temporary NULL NULL NULL NULL NULL NULL
-   imm_282 immediate NULL int NULL 0 NULL NULL
-   imm_283 immediate NULL int NULL 4 NULL NULL
-   imm_284 immediate NULL int NULL 4 NULL NULL
-   tmp_285 temporary NULL NULL NULL NULL NULL NULL
-   imm_286 immediate NULL int NULL 1 NULL NULL
+   var_260__str_B variable str_B NULL arg NULL NULL NULL NULL
+   var_261__str_A variable str_A NULL arg NULL NULL NULL NULL
+   var_262__I variable I int NULL NULL NULL NULL NULL
+   imm_263 immediate NULL int NULL 0 NULL NULL NULL
+   tmp_269 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_276 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_277 temporary NULL NULL NULL NULL NULL NULL NULL
+   tmp_278 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_282 immediate NULL int NULL 0 NULL NULL NULL
+   imm_283 immediate NULL int NULL 4 NULL NULL NULL
+   imm_284 immediate NULL int NULL 4 NULL NULL NULL
+   tmp_285 temporary NULL NULL NULL NULL NULL NULL NULL
+   imm_286 immediate NULL int NULL 1 NULL NULL NULL

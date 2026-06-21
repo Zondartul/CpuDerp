@@ -245,6 +245,8 @@ func analyze_expr_call(ast):
 				args.push_front(expr_stack.pop_back()); 
 		else:
 			internal_error(E.ERR_26); return;
+	if (fun.argc >= 0) and (args.size() != fun.argc):
+		user_error(E.ERR_36 % [fun.user_name, fun.argc, args.size()]);
 	var res = IR.new_val_temp();
 	IR.save_variable(res);
 	IR.emit_IR(["CALL", fun, args, res], ast.get_location());
@@ -284,10 +286,13 @@ func analyze_func_decl_stmt(ast):
 	assert(expr_ident.tok_class == "expr_ident");
 	var tok_ident = expr_ident.children[0];
 	assert(tok_ident.tok_class == "IDENT");
+	
+	var arg_names = analyze_arg_names(expr_call);
 	var fun_name = tok_ident.text;
 	var fun_scp = IR.new_val_none();
 	var fun_cb = IR.new_val_none();
 	var fun_handle = IR.new_val_func(fun_name,fun_scp,fun_cb);
+	fun_handle.argc = arg_names.size()
 	IR.save_function(fun_handle);
 
 func analyze_decl_extern_stmt(ast):
@@ -550,17 +555,7 @@ func analyze_func_def_stmt(ast):
 	assert(tok_ident.tok_class == "IDENT");
 	var fun_name = tok_ident.text;
 	
-	var arg_names = [];
-	if expr_call.children[2].text != ")":
-		var expr = expr_call.children[2];
-		if expr.tok_class == "expr":
-			analyze_func_def_arg_expr(expr, arg_names);
-		elif expr.tok_class == "expr_list":
-			for expr2 in expr.children:
-				assert(expr2.tok_class == "expr");
-				analyze_func_def_arg_expr(expr2, arg_names);
-		else:
-			internal_error(E.ERR_28); return;
+	var arg_names = analyze_arg_names(expr_call);
 		#while true:
 			#if expr.tok_class == "expr_list":
 				#var arg = expr.children[2].children[0].children[0];
@@ -577,6 +572,7 @@ func analyze_func_def_stmt(ast):
 	var ocb = IR.push_code_block();
 	var osc = IR.push_scope();
 	IR.emit_IR(["ENTER", IR.cur_scope.ir_name], ast.get_location());
+	var argc = arg_names.size()
 	for arg_name in arg_names:
 		var arg_handle = IR.new_val_var(arg_name);
 		arg_handle.storage = "arg";
@@ -589,9 +585,26 @@ func analyze_func_def_stmt(ast):
 	if fun_handle:
 		fun_handle.code = fun_code.ir_name;
 		fun_handle.scope = fun_scope.ir_name;
+		if fun_handle.argc != argc:
+			user_error(E.ERR_37 % [fun_handle.user_name, fun_handle.argc, argc])
 	else:
 		fun_handle = IR.new_val_func(fun_name, fun_scope, fun_code);
+		fun_handle.argc = argc;
 		IR.save_function(fun_handle);
+
+func analyze_arg_names(expr_call):
+	var arg_names = [];
+	if expr_call.children[2].text != ")":
+		var expr = expr_call.children[2];
+		if expr.tok_class == "expr":
+			analyze_func_def_arg_expr(expr, arg_names);
+		elif expr.tok_class == "expr_list":
+			for expr2 in expr.children:
+				assert(expr2.tok_class == "expr");
+				analyze_func_def_arg_expr(expr2, arg_names);
+		else:
+			internal_error(E.ERR_28); return;
+	return arg_names;
 
 func analyze_func_def_arg_expr(expr, arg_names):
 	assert(expr.tok_class == "expr");

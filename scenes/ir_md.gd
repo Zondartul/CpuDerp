@@ -84,6 +84,7 @@ func new_val_func(fun_name, fun_scope, fun_code):
 	val.user_name = fun_name;
 	val["scope"] = fun_scope.ir_name;
 	val["code"] = fun_code.ir_name;
+	val["argc"] = -1;
 	return val;
 
 func new_val_lbl(lbl_name=null):
@@ -211,9 +212,10 @@ func serialize_vals(arr):
 	for i in range(len(arr)):
 			var old_var = arr[i];
 			var new_var = [];
-			for key2 in ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code"]:
+			for key2 in ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code", "argc"]:
 				if (key2 in old_var) and (old_var[key2] != null):
 					var val = old_var[key2];
+					if not (val is String): val = str(val)
 					val = escape_string(val);
 					new_var.append(val);
 				else:
