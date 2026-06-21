@@ -96,6 +96,8 @@ const rules = [
 	["expr", "OP",						"/)", "expr_postfix"],
 	["expr", "OP", 						"/]", "expr_postfix"],
 	# -- expr_infix
+	["expr", "OP", "expr",				"/[", "SHIFT"],
+	["expr", "OP", "expr", 				"/(", "SHIFT"],
 	["expr", "OP", "expr", 				"*", "expr_infix"],
 	["expr", "/[", "expr", "/]",		"*", "expr_infix"],
 	# -- expr_call
