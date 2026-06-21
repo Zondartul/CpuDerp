@@ -58,6 +58,9 @@ func process_command(buff){
 		println("Commands: help, what, beep");
 	}elif(str_eq(buff,"beep")){
 		println("boop");
+	}elif(str_eq(buff,"restart")){
+		var f = 0;
+		f();
 	}else{
 		set_col(255,255,0);
 		print("unkown command [");

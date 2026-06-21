@@ -270,6 +270,7 @@ func generate_cmd(cmd:IR_Cmd)->void:
 		"ELSE": generate_cmd_else(cmd);
 		"WHILE": generate_cmd_while(cmd);
 		"CALL": generate_cmd_call(cmd);
+		"CALL_INDIRECT": generate_cmd_call_indirect(cmd);
 		"RETURN": generate_cmd_return(cmd);
 		"ENTER": generate_cmd_enter(cmd);
 		"LEAVE": generate_cmd_leave(cmd);
@@ -436,6 +437,29 @@ func generate_cmd_call(cmd:IR_Cmd)->void:
 		var cb = all_syms[cb_name];
 		if cb not in referenced_cbs: referenced_cbs.append(cb);
 
+func generate_cmd_call_indirect(cmd:IR_Cmd)->void:
+	#CALL fun arg(s) res
+	var funvar = cmd.words[1];
+	assert(funvar in all_syms);
+	var args = [];
+	if cmd.words[2] == "[":
+		var i = 3;
+		while true:
+			if cmd.words[i] == "]": break;
+			args.append(cmd.words[i]);
+			i += 1;
+	else:
+		args.append(cmd.words[3]);
+	var res = cmd.words[-1];
+	args.reverse();
+	var n_args = len(args);
+	var pushed_stack_size = 4*n_args;
+	for arg in args:
+		emit("push $%s;\n" % arg, cmd_size, "generate_cmd_call_indirect.args");
+	emit("call $%s;\n" % funvar, cmd_size, "generate_cmd_call_indirect.call");
+	emit("add ESP, %s;\n" % pushed_stack_size, cmd_size, "generate_cmd_call_indirect.stack");
+	emit("mov ^%s, eax;\n" % res, cmd_size, "generate_cmd_call_indirect.result");
+	
 func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 	var imm_flag = false;
 	var allocs = [];

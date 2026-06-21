@@ -245,11 +245,15 @@ func analyze_expr_call(ast):
 				args.push_front(expr_stack.pop_back()); 
 		else:
 			internal_error(E.ERR_26); return;
-	if (fun.argc >= 0) and (args.size() != fun.argc):
+	
+	if (fun.val_type == "func") and (fun.argc >= 0) and (args.size() != fun.argc):
 		user_error(E.ERR_36 % [fun.user_name, fun.argc, args.size()]);
 	var res = IR.new_val_temp();
 	IR.save_variable(res);
-	IR.emit_IR(["CALL", fun, args, res], ast.get_location());
+	if fun.val_type == "func":
+		IR.emit_IR(["CALL", fun, args, res], ast.get_location());
+	else:
+		IR.emit_IR(["CALL_INDIRECT", fun, args, res], ast.get_location());
 	expr_stack.push_back(res);
 
 func analyze_expr_list(expr_list):
