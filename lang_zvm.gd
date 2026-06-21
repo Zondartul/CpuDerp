@@ -36,6 +36,7 @@ const ctrl_flag_masks = {
 	"CMP_L": BIT_CMP_L,
 	"CMP_G": BIT_CMP_G,
 	"CMP_Z": BIT_CMP_Z,
+	"CMP_NZ": BIT_CMP_L | BIT_CMP_G,
 	"IE": BIT_IE,
 	};
 # option flags

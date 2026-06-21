@@ -21,6 +21,7 @@ const op_map = {
 	"DEC":"dec %a;\n",
 	"INC":"inc %a;\n",
 	"EQUAL":"cmp %a, %b; mov %a, CTRL; band %a, CMP_Z; bnot %a; bnot %a;\n",
+	"NOT_EQUAL":"cmp %a, %b; mov %a, CTRL; band %a, CMP_NZ; bnot %a; bnot %a\n",
 };
 # state
 var IR = {};

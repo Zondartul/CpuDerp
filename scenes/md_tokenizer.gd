@@ -5,7 +5,7 @@ const lang = preload("res://scenes/lang_md.gd")
 signal tokens_ready;
 
 #constants
-const assign_ops = ["=", "+=", "-=", "*=", "/=", "%=","!="];
+const assign_ops = ["=", "+=", "-=", "*=", "/=", "%="];
 
 const recombinations = [
 	["#", "/*"], ["+", "+"], ["-", "-"], ["+", "="], ["-", "="],

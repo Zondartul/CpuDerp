@@ -128,9 +128,7 @@ func str_eq(str_A, str_B){
 		//print("] [",255,255,255);
 		//putch(cB,255,255,255);
 		//print("]",255,255,255);
-		if((str_A[I]) == (str_B[I])) //if(cA == cB)
-		{}
-		else
+		if((str_A[I]) != (str_B[I])) //if(cA == cB)
 		{ return 0; }
 		I = I + 4;
 	}

@@ -263,11 +263,11 @@ code_blocks:
  cb_249: 
   ir_name: cb_249
   code: 
-   ENTER scp_252__NULL %064main.md%058134%0580%126%064main.md%058137%0581
+   ENTER scp_252__NULL %064main.md%058132%0580%126%064main.md%058135%0581
    MOV var_255__I imm_256 %064main.md%058121%0584%126%064main.md%058121%0589
-   WHILE cb_259 tmp_262 cb_263 lbl_257__while_next lbl_258__while_end %064main.md%058134%0580%126%064main.md%058135%0581
-   RETURN imm_281 %064main.md%058136%0585%126%064main.md%058136%05811
-   LEAVE %064main.md%058134%0580%126%064main.md%058137%0581
+   WHILE cb_259 tmp_262 cb_263 lbl_257__while_next lbl_258__while_end %064main.md%058132%0580%126%064main.md%058133%0581
+   RETURN imm_278 %064main.md%058134%0585%126%064main.md%058134%05811
+   LEAVE %064main.md%058132%0580%126%064main.md%058135%0581
   lbl_from: func_13__str_eq
   lbl_to: lbl_to_251
  cb_259: 
@@ -279,10 +279,9 @@ code_blocks:
  cb_263: 
   ir_name: cb_263
   code: 
-   IF cb_266 tmp_271 cb_272 %064main.md%058130%0581%126%064main.md%058131%0582
-   ELSE cb_275 %064main.md%058132%0583%126%064main.md%058131%0582
-   OP ADD var_255__I imm_279 tmp_280 %064main.md%058134%0584%126%064main.md%058134%0589
-   MOV var_255__I tmp_280 %064main.md%058134%0580%126%064main.md%058134%0589
+   IF cb_266 tmp_271 cb_272 %064main.md%058130%0581%126%064main.md%058131%05813
+   OP ADD var_255__I imm_276 tmp_277 %064main.md%058132%0584%126%064main.md%058132%0589
+   MOV var_255__I tmp_277 %064main.md%058132%0580%126%064main.md%058132%0589
   lbl_from: lbl_from_264
   lbl_to: lbl_to_265
  cb_266: 
@@ -290,29 +289,25 @@ code_blocks:
   code: 
    OP INDEX var_254__str_A var_255__I tmp_269 %064main.md%058130%0588%126%064main.md%058130%05813
    OP INDEX var_253__str_B var_255__I tmp_270 %064main.md%058130%05822%126%064main.md%058130%05827
-   OP EQUAL tmp_269 tmp_270 tmp_271 %064main.md%058130%0583%126%064main.md%058130%05827
+   OP NOT_EQUAL tmp_269 tmp_270 tmp_271 %064main.md%058130%0583%126%064main.md%058130%05827
   lbl_from: lbl_from_267
   lbl_to: lbl_to_268
  cb_272: 
   ir_name: cb_272
+  code: 
+   RETURN imm_275 %064main.md%058131%0587%126%064main.md%058131%05813
   lbl_from: lbl_from_273
   lbl_to: lbl_to_274
- cb_275: 
-  ir_name: cb_275
+ cb_279: 
+  ir_name: cb_279
   code: 
-   RETURN imm_278 %064main.md%058133%0587%126%064main.md%058133%05813
-  lbl_from: lbl_from_276
-  lbl_to: lbl_to_277
- cb_282: 
-  ir_name: cb_282
-  code: 
-   ENTER scp_285__NULL %064main.md%058142%0584%126%064main.md%058143%0581
-   MOV var_29__col_R var_288__R %064main.md%058140%0584%126%064main.md%058140%0589
-   MOV var_31__col_G var_287__G %064main.md%058141%0584%126%064main.md%058141%0589
-   MOV var_33__col_B var_286__B %064main.md%058142%0584%126%064main.md%058142%0589
-   LEAVE %064main.md%058142%0584%126%064main.md%058143%0581
+   ENTER scp_282__NULL %064main.md%058140%0584%126%064main.md%058141%0581
+   MOV var_29__col_R var_285__R %064main.md%058138%0584%126%064main.md%058138%0589
+   MOV var_31__col_G var_284__G %064main.md%058139%0584%126%064main.md%058139%0589
+   MOV var_33__col_B var_283__B %064main.md%058140%0584%126%064main.md%058140%0589
+   LEAVE %064main.md%058140%0584%126%064main.md%058141%0581
   lbl_from: func_14__set_col
-  lbl_to: lbl_to_284
+  lbl_to: lbl_to_281
 scopes: 
  scp_0__global: 
   ir_name: scp_0__global
@@ -352,7 +347,7 @@ scopes:
    func_11__malloc func malloc NULL NULL NULL scp_245__NULL cb_242
    func_12__process_command func process_command NULL NULL NULL scp_190__NULL cb_187
    func_13__str_eq func str_eq NULL NULL NULL scp_252__NULL cb_249
-   func_14__set_col func set_col NULL NULL NULL scp_285__NULL cb_282
+   func_14__set_col func set_col NULL NULL NULL scp_282__NULL cb_279
    func_15__println func println NULL NULL NULL scp_100__NULL cb_97
    func_16__newline func newline NULL NULL NULL scp_107__NULL cb_104
  scp_42__NULL: 
@@ -529,15 +524,15 @@ scopes:
    tmp_269 temporary NULL NULL NULL NULL NULL NULL
    tmp_270 temporary NULL NULL NULL NULL NULL NULL
    tmp_271 temporary NULL NULL NULL NULL NULL NULL
-   imm_278 immediate NULL int NULL 0 NULL NULL
-   imm_279 immediate NULL int NULL 4 NULL NULL
-   tmp_280 temporary NULL NULL NULL NULL NULL NULL
-   imm_281 immediate NULL int NULL 1 NULL NULL
- scp_285__NULL: 
-  ir_name: scp_285__NULL
+   imm_275 immediate NULL int NULL 0 NULL NULL
+   imm_276 immediate NULL int NULL 4 NULL NULL
+   tmp_277 temporary NULL NULL NULL NULL NULL NULL
+   imm_278 immediate NULL int NULL 1 NULL NULL
+ scp_282__NULL: 
+  ir_name: scp_282__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   var_286__B variable B NULL arg NULL NULL NULL
-   var_287__G variable G NULL arg NULL NULL NULL
-   var_288__R variable R NULL arg NULL NULL NULL
+   var_283__B variable B NULL arg NULL NULL NULL
+   var_284__G variable G NULL arg NULL NULL NULL
+   var_285__R variable R NULL arg NULL NULL NULL
