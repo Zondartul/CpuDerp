@@ -42,6 +42,7 @@ const rules = [
 	#sub-statements
 	#-- var_decl_stmt
 	["/var", "IDENT",					"/;", "var_decl_stmt"],
+	["/var", "expr_index", 				"/;", "var_decl_stmt"],
 	#-- assignment_stmt
 	#["IDENT", "/=", "expr", 			"/;", "assignment_stmt"],
 	["expr", "/=", "expr",				"/;", "assignment_stmt"],
@@ -90,6 +91,7 @@ const rules = [
 	["expr_infix", 						"*", "expr"],
 	["expr_call",						"*", "expr"],
 	["expr_parenthesis",				"*", "expr"],
+	["expr_array_literal",				"*", "expr"],
 	
 	# sub-expressions
 	# -- expr_immediate
@@ -107,7 +109,8 @@ const rules = [
 	["expr", "OP", "expr",				"/[", "SHIFT"],
 	["expr", "OP", "expr", 				"/(", "SHIFT"],
 	["expr", "OP", "expr", 				"*", "expr_infix"],
-	["expr", "/[", "expr", "/]",		"*", "expr_infix"],
+	["expr", "/[", "expr", "/]",		"*", "expr_index"],
+	["expr_index",						"*", "expr_infix"],
 	# -- expr_call
 	["expr", "/,", "expr", 				"/[", "SHIFT"],
 	["expr", "/,", "expr", 				"OP", "SHIFT"],
@@ -117,6 +120,10 @@ const rules = [
 	["expr", "/(", "expr", "/)",		"*", "expr_call"],
 	["expr", "/(", "expr_list", "/)",	"*", "expr_call"],
 	["/(", "expr", "/)",				"*", "expr_parenthesis"],
+	# -- expr_array_literal
+	["/[", "expr", "/]",   				"*", "expr_array_literal"],
+	["/[", "expr_list", "/]",			"*", "expr_array_literal"],
+	["/[", "/]",						"*", "expr_array_literal"],
 ];
 
 func get_syntax():

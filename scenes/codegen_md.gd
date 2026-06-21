@@ -104,7 +104,7 @@ func deserialize(text:String)->void:
 			#cmd.push_back(loc);
 
 func inflate_vals(arr:Array)->void:
-	const props = ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code", "argc"];
+	const props = ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code", "argc", "is_array", "array_size"];
 	for i in range(len(arr)):
 		var val = arr[i];
 		assert(len(val) == len(props));
@@ -274,6 +274,8 @@ func generate_cmd(cmd:IR_Cmd)->void:
 		"RETURN": generate_cmd_return(cmd);
 		"ENTER": generate_cmd_enter(cmd);
 		"LEAVE": generate_cmd_leave(cmd);
+		"ALLOC": generate_cmd_alloc(cmd);
+		"MOV_ARR": generate_cmd_mov_arr(cmd);
 		_: push_error("codegen: unknown IR command ["+str(cmd.words[0])+"]");
 
 func generate_cmd_mov(cmd:IR_Cmd)->void:
@@ -332,6 +334,12 @@ func new_imm(val)->Dictionary:
 		handle["data_type"] = "int";
 	elif val is String:
 		handle["data_type"] = "string";
+	all_syms[ir_name] = handle;
+	return handle;
+
+func new_arr(size)->Dictionary:
+	var ir_name = "arr_"+str(len(all_syms)+1)+"__"+str(size);
+	var handle = {"ir_name":ir_name, "val_type":"array", "value":str(size), "data_type":"error", "storage":"NULL"};
 	all_syms[ir_name] = handle;
 	return handle;
 
@@ -709,6 +717,15 @@ func generate_cmd_leave(_cmd:IR_Cmd)->void:
 	var scp_name = cur_scope.ir_name;
 	emit("__LEAVE_%s;\n" % scp_name, enter_leave_size, "generate_cmd_leave");
 	leave_scope();
+
+func generate_cmd_alloc(cmd:IR_Cmd)->void:
+	var size = cmd.words[1];
+	var res = cmd.words[2];
+	var arr_storage = new_arr(size);
+	cur_scope.vars.append(arr_storage);
+	emit("mov ^%s $%s" % [res, arr_storage], cmd_size, "generate_cmd_alloc");
+
+
 
 func fixup_enter_leave(assy_block:AssyBlock)->void:
 	for key in IR.scopes:

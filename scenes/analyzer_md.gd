@@ -74,11 +74,13 @@ func analyze(input):
 	prepare_sym_table();
 	return IR;
 
-func user_error(msg):
-	#error_code = msg;
-	#push_error(msg);
-	sig_user_error.emit(msg);
 
+func user_error(msg):
+	error_code = msg;
+	push_error(msg);
+	sig_user_error.emit(msg);
+	assert(false); # while debugging
+	
 func internal_error(msg):
 	user_error(msg); #still gotta emit the signal so that compiler knows to stop
 #	error_code = msg;
@@ -129,6 +131,7 @@ func sym_table_append_scope(user_name, ir_name, scp, cb):
 	return fun_handle;
 
 func analyze_expr(ast):
+	if error_code != "": return;
 	assert(ast.tok_class == "expr");
 	var ch = ast.children[0];
 	match ch.tok_class:
@@ -138,6 +141,7 @@ func analyze_expr(ast):
 		"expr_ident": analyze_expr_ident(ch);
 		"expr_call": analyze_expr_call(ch);
 		"expr_parenthesis": analyze_expr_parenthesis(ch);
+		"expr_array_literal": analyze_expr_array_literal(ch);
 		_: internal_error(E.ERR_22 % ch.tok_class); return;
 
 func analyze_expr_parenthesis(ast):
@@ -177,8 +181,11 @@ func analyze_all(list):
 
 func analyze_expr_infix(ast):
 	if error_code != "": return;
-	assert(ast.tok_class == "expr_infix");
+	assert(ast.tok_class in ["expr_infix", "expr_index"]);
 	var expr1 = ast.children[0];
+	if (ast.children.size()) == 1 and (expr1.tok_class == "expr_index"):
+		analyze_expr_infix(expr1);
+		return;
 	assert(expr1.tok_class == "expr");
 	var op = ast.children[1];
 	var expr2 = ast.children[2];
@@ -265,6 +272,25 @@ func analyze_expr_list(expr_list):
 		res.append(expr_stack.pop_back());
 	expr_stack.push_back(res);
 
+func analyze_expr_array_literal(expr):
+	if error_code != "": return;
+	assert(expr.tok_class == "expr_array_literal");
+	var body = expr.children[1];
+	var list;
+	if body.tok_class == "expr":
+		analyze_expr(body);
+		list = [expr_stack.pop_back()];
+	elif body.tok_class == "expr_list":
+		analyze_expr_list(body);
+		list = expr_stack.pop_back();
+	else:
+		internal_error(E.ERR_38); return;
+	
+	var res = IR.new_val_temp();
+	IR.emit_IR(["ALLOC", str(list.size()), res], expr.get_location());
+	IR.emit_IR(["MOV_ARR", res, list], expr.get_location());
+	expr_stack.push_back(res);
+
 func analyze_preproc_stmt(ast):
 	if error_code != "": return;
 	assert(ast.tok_class == "preproc_stmt");
@@ -274,9 +300,20 @@ func analyze_var_decl_stmt(ast):
 	if error_code != "": return;
 	assert(ast.tok_class == "var_decl_stmt");
 	var tok_ident = ast.children[1];
+	var is_arr = false;
+	var arr_size = 0;
+	if tok_ident.tok_class == "expr_index":
+		var tok_index = ast.children[1];
+		tok_ident = tok_index.children[0].children[0].children[0];
+		is_arr = true;
+		var tok_size = tok_index.children[2].children[0].children[0];
+		assert(tok_size.tok_class == "NUMBER");
+		arr_size = int(tok_size.text);
 	assert(tok_ident.tok_class == "IDENT");
 	var var_name = tok_ident.text;
 	var var_handle = IR.new_val_var(var_name);
+	var_handle.is_array = is_arr;
+	var_handle.array_size = arr_size;
 	IR.save_variable(var_handle);
 
 func analyze_func_decl_stmt(ast):

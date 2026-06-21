@@ -33,3 +33,4 @@ const ERR_34 = "Error 34: #include syntax error";
 const ERR_35 = "Error 35: #include file not found: [%s]";
 const ERR_36 = "Error 36: function [%s] expected %d arguments, got %d";
 const ERR_37 = "Error 37: function [%s] previously declared with %d arguments, now redeclared with %d arguments";
+const ERR_38 = "Error 38: analyzer: array literal: unexpected expr class";

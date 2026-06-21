@@ -10,7 +10,8 @@ var adr_kb = 81648;
 var alloc_head = 10000;
 //var char_newline = 5;
 var char_backspace = 4;
-
+var buff[80];
+var buffI = 0;
 main();
 infloop();
 
@@ -18,8 +19,8 @@ func main(){
 	set_col(128,255,0);
 	println("Hello World!");
 	set_col(255,255,255);
-	var buff = malloc(80);
-	var buffI = 0;
+	//var buff = malloc(80);
+	//var buffI = 0;
 	while(1){
 		if(has_char()){
 			var c = get_char(); // btw another c exists

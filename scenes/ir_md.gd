@@ -55,6 +55,8 @@ func new_val_var(val_name):
 	val.val_type = "variable";
 	val.ir_name = make_unique_IR_name("var", val_name);
 	val.user_name = val_name;
+	val.is_array = 0;
+	val.array_size = 0;
 	return val;
 
 func new_val_immediate(value, type):
@@ -212,7 +214,7 @@ func serialize_vals(arr):
 	for i in range(len(arr)):
 			var old_var = arr[i];
 			var new_var = [];
-			for key2 in ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code", "argc"]:
+			for key2 in ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code", "argc", "is_array", "array_size"]:
 				if (key2 in old_var) and (old_var[key2] != null):
 					var val = old_var[key2];
 					if not (val is String): val = str(val)

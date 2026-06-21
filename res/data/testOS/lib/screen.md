@@ -33,13 +33,18 @@ func print(str){
 }
 
 func putch(c){
-	scr_push_byte(c); //char
-	scr_push_byte(col_R); // color_fg.r
-	scr_push_byte(col_G); // color_fg.g
-	scr_push_byte(col_B); // color_fg.b
-	scr_push_byte(0); // color_bg.r
-	scr_push_byte(0); // color_bg.g
-	scr_push_byte(0); // color_bg.b
+	var arr = [c, col_R, col_G, col_B, 0, 0, 0];
+	var I = 0;
+	while(I < 0){
+		scr_push_byte(arr[I]);
+	}
+	//scr_push_byte(c); //char
+	//scr_push_byte(col_R); // color_fg.r
+	//scr_push_byte(col_G); // color_fg.g
+	//scr_push_byte(col_B); // color_fg.b
+	//scr_push_byte(0); // color_bg.r
+	//scr_push_byte(0); // color_bg.g
+	//scr_push_byte(0); // color_bg.b
 }
 
 func scr_push_byte(b){
