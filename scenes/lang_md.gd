@@ -88,6 +88,7 @@ const rules = [
 	# -- expr_immediate
 	["NUMBER", 							"*", "expr_immediate"],
 	["STRING", 							"*", "expr_immediate"],
+	["CHAR", 							"*", "expr_immediate"],
 	# -- expr_ident
 	#["IDENT", 							"/=", "SHIFT"],
 	["IDENT", 							"*", "expr_ident"],

@@ -1,8 +1,11 @@
 extends Node
 
+@export var erep:ErrorReporter;
+
 const script_tokenizer = preload("res://scenes/word_boundary_tokenizer.gd")
 const lang = preload("res://scenes/lang_md.gd")
 signal tokens_ready;
+signal sig_user_error(msg:String);
 
 #constants
 const assign_ops = ["=", "+=", "-=", "*=", "/=", "%="];
@@ -21,6 +24,7 @@ const token_colors = {
 	"NUMBER":Color(1.0, 1.0, 0.0, 1.0),
 	"STRING":Color(0.0, 0.827, 0.0, 1.0),
 	"PUNCT":Color(0.293, 0.506, 1.0, 1.0),
+	"CHAR": Color(1.0, 1.0, 0.0, 1.0),
 };
 
 #state
@@ -29,7 +33,7 @@ var cur_filename;
 var cur_path;
 var cur_line = "";
 var cur_line_idx = 0;
-var error_code = 0;
+var error_code = "";
 var output_tokens = [];
 
 
@@ -40,15 +44,17 @@ func reset():
 	cur_path = "";
 	cur_line = "";
 	cur_line_idx = 0;
-	error_code = 0;
+	error_code = "";
 	output_tokens = [];
 
+func user_error(msg): sig_user_error.emit(msg);
 
 func _ready():
 	reset();
 
 func tokenize(input:Dictionary)->Array[Token]:
 	reset();
+	erep.proxy = self
 	var text:String = input.text;
 	cur_filename = input.filename;
 	#output_tokens.clear();
@@ -58,9 +64,11 @@ func tokenize(input:Dictionary)->Array[Token]:
 	#tokens_ready.emit(tokens);
 	recombine_tokens(tokens);
 	reclassify_tokens(tokens);
+	resolve_char_tokens(tokens);
 	colorize_tokens(tokens);
 	tokens = filter_tokens(tokens);
 	
+	if error_code != "": return [];
 	output_tokens = tokens;
 	tokens_ready.emit(output_tokens);	
 	return output_tokens;
@@ -87,7 +95,7 @@ func basic_tokenize(text:String)->Array[Token]:
 					dest.set(prop, cur_loc.get(prop));
 		tokens.append_array(line_tokens);
 		cur_line_idx += 1;
-		if error_code: return [];
+		if error_code != "": return [];
 	return tokens;
 # ---------- Basic preprocess ---------------------------------
 ## preprocess the line: remove comments, trim whitespace, etc
@@ -175,12 +183,26 @@ func reclassify_tokens(tokens:Array[Token]):
 			if tok.text[0] == "#":
 				tok.tok_class = "PREPROC";
 
+## converts 'a' to ASCII code
+func resolve_char_tokens(tokens:Array[Token]):
+	for tok:Token in tokens:
+		if tok.tok_class == "CHAR":
+			var unescaped = tok.text.c_unescape();
+			var buff = unescaped.to_ascii_buffer();
+			var num = 0;
+			if (buff.size() == 1):
+				num = buff[0];
+			else: 
+				erep.error(E.ERR_33 % tok.text); # bad char literal
+				break;
+			var old_text = tok.text;
+			tok.text = str(num);
+			print("md_tokenizer: char token resolved [%s]->[%s]" % [old_text, tok.text]);
+
 ## removes unneded tokens
 func filter_tokens(tokens:Array[Token])->Array[Token]:
-	var filtered = ["SPACE", "ENDSTRING"];
+	var filtered = ["SPACE", "ENDSTRING", "ENDCHAR"];
 	return tokens.filter(func(tok:Token): return tok.tok_class not in filtered);
-
-
 
 func colorize_tokens(toks:Array):
 	for tok in toks:

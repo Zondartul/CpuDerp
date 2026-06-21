@@ -153,6 +153,12 @@ Integer or float.
 ```
 Double-quoted string.
 
+**Character Literal**
+```c
+'a'
+'\n'
+```
+
 **Identifier Reference**
 ```c
 x, str, main, putch

@@ -15,7 +15,7 @@ var adr_scr = 67536;
 var adr_kb = 81648;
 var scr_I = 0;
 var alloc_head = 10000;
-var char_newline = 5;
+//var char_newline = 5;
 var char_backspace = 4;
 var col_R = 255;
 var col_G = 255;
@@ -34,7 +34,7 @@ func main(){
 	while(1){
 		if(has_char()){
 			var c = get_char(); // btw another c exists
-			if (c == char_newline){
+			if (c == '\n'){
 				newline();
 				process_command(buff);
 				buffI = 0;

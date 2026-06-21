@@ -2,6 +2,9 @@ extends Node
 
 var buffer = [0];
 var has_capture = false;
+var last_captured = 0;
+signal sig_keypress(character, byte);
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	pass # Replace with function body.
@@ -17,17 +20,36 @@ func _int_to_char(N:int):
 	if(N == 0): return "";
 	else: return PackedByteArray([N]).get_string_from_ascii();
 
-
 func _input(event):
 	if not has_capture: return;
 	if event is InputEventKey:
 		if event.pressed:
 			#print("kb.input "+str(event));
 			#var C = _char_to_int(OS.get_keycode_string(event.key_label));
-			var C = event.get_unicode();
-			if(C == 0): C = event.keycode;
-			buffer.append(C);
+			#var C = event.get_unicode();
+			#if(C == 0): C = event.keycode;
+			var character:String = get_special_ASCII(event);
+			var buff = character.to_utf8_buffer()
+			#var number = character.to_ascii_buffer()[0]
+			var number = 0;
+			if buff.size() == 1:
+				number = buff[0];
+			else:
+				print("KB: non-ascii codepoint ignored: [%s]" % character)
+			buffer.append(number);
 			buffer[0] += 1;
+			last_captured = number;
+			sig_keypress.emit(character, number);
+
+func get_special_ASCII(event):
+	match event.keycode:
+		KEY_ENTER:		return "\n"  # ASCII 10
+		KEY_BACKSPACE:	return "\b"  # ASCII 8
+		KEY_TAB:        return "\t"  # ASCII 9
+		KEY_ESCAPE:     return char(27) # ASCII 27
+		KEY_DELETE:     return char(127)  # ASCII 127 (DEL)
+		KEY_SPACE:      return " "  # ASCII 32
+		_: return char(event.get_unicode())
 
 func getSize(): return 64;
 

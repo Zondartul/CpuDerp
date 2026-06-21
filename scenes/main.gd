@@ -166,3 +166,8 @@ func _on_comp_compile_md_open_file_request(filename) -> void:
 	automenu($Panel/TabContainer/Editor/V/MenuBar, ["File", "Load"]);
 	autofile($Panel/TabContainer/Editor/comp_file/fd_load, filename);#"C:/Stride/godot/CpuDerp/res/data/main.txt");
 	
+
+
+func _on_kb_sig_keypress(character:String, byte:int):
+	var btn_kb = $Panel/TabContainer/Screen/V/Control/GridContainer/btnKeyboard
+	btn_kb.text = "Keyboard (%s, %d)" % [character.c_escape(), byte]

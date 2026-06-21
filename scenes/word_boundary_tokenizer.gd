@@ -14,6 +14,9 @@ func tokenize(line:String)->Array[Token]:
 			if tok_class == "STRING" and new_tok_class == "STRING":
 				new_tok_class = "ENDSTRING";
 				cur_tok = cur_tok.substr(1); #remove the leading \"
+			if tok_class == "CHAR" and new_tok_class == "CHAR":
+				new_tok_class = "ENDCHAR";
+				cur_tok = cur_tok.substr(1); #remove the leading \'
 			if cur_tok != "":
 				cur_loc.col -= 1;
 				var tok_loc = LocationRange.from_loc_len(cur_loc, len(cur_tok));
@@ -37,6 +40,8 @@ func should_split_on_transition(new_tok_class:String, old_tok_class:String):
 	elif old_tok_class == "WORD" and new_tok_class == "NUMBER": return false; #allow numbers to be included in names
 	elif old_tok_class == "STRING" and new_tok_class == "STRING": return true; #split on beginning and end of string (ie \")  
 	elif old_tok_class == "STRING": return false; # keep building the string
+	elif old_tok_class == "CHAR" and new_tok_class == "CHAR": return true; # split on beginning and end of char literal
+	elif old_tok_class == "CHAR": return false; # keep building the character
 	else: return (old_tok_class != new_tok_class); #split on any other class change
 	
 
@@ -66,5 +71,6 @@ func tok_ch_class(ch:String)->String:
 	if tok_is_num(ch): return "NUMBER";
 	if tok_is_punct(ch): return "PUNCT";
 	if ch == "\"": return "STRING";
+	if ch == "\'": return "CHAR";
 	return "ERROR"
 #-------------------------------------------------------------

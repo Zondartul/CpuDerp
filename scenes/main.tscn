@@ -64,10 +64,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-current_tab = 2
+current_tab = 0
 
 [node name="Screen" type="Control" parent="Panel/TabContainer" unique_id=1199677423]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
@@ -173,6 +172,7 @@ theme_override_colors/default_color = Color(0.497474, 0.497474, 0.497474, 1)
 bbcode_enabled = true
 
 [node name="Editor" type="Control" parent="Panel/TabContainer" unique_id=794743330]
+visible = false
 layout_mode = 2
 script = ExtResource("3_6wt7m")
 metadata/_tab_index = 2
@@ -305,8 +305,9 @@ erep = NodePath("../../comp_erep")
 [node name="comp_compile_md" type="Node" parent="Panel/TabContainer/Editor/comp_build" unique_id=1829756180]
 script = ExtResource("11_yc10j")
 
-[node name="tokenizer_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md" unique_id=35600759]
+[node name="tokenizer_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md" unique_id=35600759 node_paths=PackedStringArray("erep")]
 script = ExtResource("12_pm3ni")
+erep = NodePath("../../../comp_erep")
 
 [node name="parser_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md" unique_id=1819594151 node_paths=PackedStringArray("erep")]
 script = ExtResource("13_yq6so")
@@ -443,6 +444,7 @@ script = ExtResource("19_a20q3")
 [connection signal="parse_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor/win_parse" method="_on_comp_compile_md_parse_ready"]
 [connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor" method="_on_user_error"]
 [connection signal="sym_table_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="on_sym_table_ready"]
+[connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/tokenizer_md" to="Panel/TabContainer/Editor" method="_on_user_error"]
 [connection signal="tokens_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/tokenizer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_tokenizer_md_tokens_ready"]
 [connection signal="sig_cprint" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor" method="_on_cprint"]
 [connection signal="sig_parse_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_parser_md_sig_parse_ready"]
@@ -461,6 +463,7 @@ script = ExtResource("19_a20q3")
 [connection signal="set_highlight" from="Panel/TabContainer/Editor/window_debug/debug_panel" to="Panel/TabContainer/Editor/comp_build" method="_on_debug_panel_set_highlight"]
 [connection signal="close_requested" from="Panel/TabContainer/Editor/win_IR" to="Panel/TabContainer/Editor/win_IR" method="hide"]
 [connection signal="pressed" from="Panel/btn_debugger" to="Panel/TabContainer/Editor/window_debug" method="show"]
+[connection signal="sig_keypress" from="VM/Bus/KB" to="." method="_on_kb_sig_keypress"]
 [connection signal="cpu_step_done" from="VM/CPU_vm" to="Panel/TabContainer/Memory" method="_on_cpu_vm_cpu_step_done"]
 [connection signal="cpu_step_done" from="VM/CPU_vm" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="_on_cpu_vm_cpu_step_done"]
 [connection signal="mem_accessed" from="VM/CPU_vm" to="Panel/TabContainer/Memory" method="_on_cpu_vm_mem_accessed"]

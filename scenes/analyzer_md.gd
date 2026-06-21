@@ -402,6 +402,9 @@ func analyze_expr_immediate(ast):
 	if tok.tok_class == "STRING":
 		value = tok.text;
 		type = "string";
+	if tok.tok_class == "CHAR":
+		value = str(read_number(tok.text));
+		type = "int"
 	var res = IR.new_val_immediate(value, type);	
 	IR.save_variable(res);
 	expr_stack.push_back(res);
