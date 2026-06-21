@@ -30,7 +30,7 @@ func main(){
 				buff[buffI] = 0;
 			}else{
 				buff[buffI] = c;
-				buffI = buffI + 4;
+				buffI += 4;
 				buff[buffI] = 0;
 				putch(c);
 			}
@@ -69,7 +69,7 @@ func process_command(buff){
 
 func malloc(size){
 	var p = alloc_head;
-	alloc_head = alloc_head + size;
+	alloc_head += size;
 	return p;
 }
 
@@ -85,7 +85,7 @@ func str_eq(str_A, str_B){
 		//print("]",255,255,255);
 		if(str_A[I] != str_B[I]) //if(cA == cB)
 		{ return 0; }
-		I = I + 4;
+		I += 4;
 	}
 	return 1;
 }

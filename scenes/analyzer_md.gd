@@ -160,6 +160,7 @@ func analyze_one(ast):
 		"func_decl_stmt": analyze_func_decl_stmt(ast);
 		"decl_assignment_stmt": analyze_decl_assignment(ast);
 		"assignment_stmt": analyze_assignment_stmt(ast);
+		"comp_assignment_stmt": analyze_comp_assignment_stmt(ast);
 		"decl_extern_stmt": analyze_decl_extern_stmt(ast);
 		"if_stmt": analyze_if_stmt(ast);
 		"func_def_stmt": analyze_func_def_stmt(ast);
@@ -365,21 +366,8 @@ func analyze_while_stmt(ast):
 func analyze_assignment_stmt(ast):
 	if error_code != "": return;
 	assert(ast.tok_class == "assignment_stmt");
-	var LHS;
+	var LHS = analyze_lhs(ast.children[0]);
 	var RHS;
-	if ast.children[0].tok_class == "IDENT":
-		var tok_ident = ast.children[0];
-		assert(tok_ident.tok_class == "IDENT");
-		var var_name = tok_ident.text;
-		var var_handle = IR.get_var(var_name);
-		LHS = var_handle;
-	elif ast.children[0].tok_class == "expr":
-		var lhs_expr = ast.children[0];
-		assert(lhs_expr.tok_class == "expr");
-		analyze_expr(lhs_expr);
-		LHS = expr_stack.pop_back();
-	else:
-		assert(false);
 	var rhs_expr = ast.children[2];
 	assert(rhs_expr.tok_class == "expr");
 	analyze_expr(rhs_expr);
@@ -387,6 +375,49 @@ func analyze_assignment_stmt(ast):
 	RHS = arg;
 	IR.emit_IR(["MOV", LHS, RHS], ast.get_location());
 	expr_stack.push_back(arg);
+
+func analyze_comp_assignment_stmt(ast):
+	if error_code != "": return;
+	assert(ast.tok_class == "comp_assignment_stmt");
+	var LHS = analyze_lhs(ast.children[0]);
+	var RHS;
+	var rhs_expr = ast.children[2];
+	assert(rhs_expr.tok_class == "expr");
+	analyze_expr(rhs_expr);
+	var arg = expr_stack.pop_back();
+	RHS = arg;
+	var op_text = ast.children[1].children[0].text.rstrip("=");
+	var op = op_map[op_text];
+	# do the operation first
+	var expr1 = ast.children[0];
+	var expr2 = ast.children[2];
+	analyze_expr(expr1);
+	analyze_expr(expr2);
+	var arg2 = expr_stack.pop_back();
+	var arg1 = expr_stack.pop_back();
+	var res = IR.new_val_temp();
+	IR.save_variable(res);
+	IR.emit_IR(["OP", op, arg1, arg2, res], ast.get_location());
+	#expr_stack.push_back(res);
+	IR.emit_IR(["MOV", LHS, res], ast.get_location());
+	expr_stack.push_back(res);
+
+func analyze_lhs(ast):
+	var LHS;
+	if ast.tok_class == "IDENT":
+		var tok_ident = ast;
+		assert(tok_ident.tok_class == "IDENT");
+		var var_name = tok_ident.text;
+		var var_handle = IR.get_var(var_name);
+		LHS = var_handle;
+	elif ast.tok_class == "expr":
+		var lhs_expr = ast;
+		assert(lhs_expr.tok_class == "expr");
+		analyze_expr(lhs_expr);
+		LHS = expr_stack.pop_back();
+	else:
+		assert(false);
+	return LHS;
 
 func analyze_expr_immediate(ast):
 	if error_code != "": return;

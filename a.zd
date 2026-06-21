@@ -40,7 +40,7 @@ mov *tmp_104, eax;
 # Begin code block cb_105
 :func_90__main:
 # IR: ENTER scp_108__NULL
-sub ESP, 143;
+sub ESP, 147;
 # IR: CALL func_7__set_col [ imm_111 imm_110 imm_109 ] tmp_112
 push 128;
 push 255;
@@ -93,7 +93,7 @@ mov EBP[-67], eax;
 # End code block cb_133
 mov EAX, 0;
 cmp EBP[-67], EAX;
-jz lbl_193__if_else;
+jz lbl_195__if_else;
 # Begin code block cb_137
 :lbl_from_138:
 # IR: CALL func_93__get_char [ ] tmp_141
@@ -115,7 +115,7 @@ mov EBP[-83], EAX;
 # End code block cb_142
 mov EAX, 0;
 cmp EBP[-83], EAX;
-jz lbl_196__if_else;
+jz lbl_198__if_else;
 # Begin code block cb_147
 :lbl_from_148:
 # IR: CALL func_9__newline [ ] tmp_150
@@ -141,8 +141,8 @@ mov EBX, EBP[-99];
 mov *EBX, EAX;
 :lbl_to_149:
 # End code block cb_147
-jmp lbl_197__if_end;
-:lbl_196__if_else:
+jmp lbl_199__if_end;
+:lbl_198__if_else:
 # IR: ELSE cb_155
 # Begin code block cb_155
 :lbl_from_156:
@@ -155,69 +155,69 @@ mov EBP[-107], EAX;
 mov EAX, EBP[-71];
 mov EBX, EBP[-107];
 mov *EBX, EAX;
-# IR: OP ADD var_122__buffI imm_159 tmp_160
+# IR: OP ADD var_122__buffI imm_160 tmp_161
 mov EAX, EBP[-55];
 mov EBX, 4;
 add EAX, EBX;
-mov EBP[-115], EAX;
-# IR: MOV var_122__buffI tmp_160
-mov EAX, EBP[-115];
+mov EBP[-119], EAX;
+# IR: MOV var_122__buffI tmp_161
+mov EAX, EBP[-119];
 mov EBP[-55], EAX;
-# IR: OP INDEX var_119__buff var_122__buffI tmp_161
+# IR: OP INDEX var_119__buff var_122__buffI tmp_162
 mov EAX, EBP[-43];
 mov EBX, EBP[-55];
 add EAX, EBX;
-mov EBP[-119], EAX;
-# IR: MOV tmp_161 imm_162
+mov EBP[-123], EAX;
+# IR: MOV tmp_162 imm_163
 mov EAX, 0;
-mov EBX, EBP[-119];
+mov EBX, EBP[-123];
 mov *EBX, EAX;
-# IR: CALL func_5__putch [ var_140__c ] tmp_163
+# IR: CALL func_5__putch [ var_140__c ] tmp_164
 push EBP[-71];
 call func_5__putch;
 add ESP, 4;
-mov EBP[-127], eax;
+mov EBP[-131], eax;
 :lbl_to_157:
 # End code block cb_155
-:lbl_197__if_end:
+:lbl_199__if_end:
 :lbl_to_139:
 # End code block cb_137
-jmp lbl_194__if_end;
-:lbl_193__if_else:
-:lbl_194__if_end:
+jmp lbl_196__if_end;
+:lbl_195__if_else:
+:lbl_196__if_end:
 :lbl_to_132:
 # End code block cb_130
 jmp lbl_124__while_next;
 :lbl_125__while_end:
 # IR: LEAVE
-sub ESP, -143;
+sub ESP, -147;
 ret;
 :lbl_to_107:
 # End code block cb_105
-# Begin code block cb_164
+# Begin code block cb_165
 :func_91__infloop:
-# IR: ENTER scp_167__NULL
+# IR: ENTER scp_168__NULL
 sub ESP, 11;
-# IR: WHILE cb_170 imm_173 cb_174 lbl_168__while_next lbl_169__while_end
-:lbl_168__while_next:
-# Begin code block cb_170
-:lbl_from_171:
-:lbl_to_172:
-# End code block cb_170
+# IR: WHILE cb_171 imm_174 cb_175 lbl_169__while_next lbl_170__while_end
+:lbl_169__while_next:
+# Begin code block cb_171
+:lbl_from_172:
+:lbl_to_173:
+# End code block cb_171
 mov EAX, 0;
 cmp 1, EAX;
-jz lbl_169__while_end;
-# Begin code block cb_174
-:lbl_from_175:
-:lbl_to_176:
-# End code block cb_174
-jmp lbl_168__while_next;
-:lbl_169__while_end:
+jz lbl_170__while_end;
+# Begin code block cb_175
+:lbl_from_176:
+:lbl_to_177:
+# End code block cb_175
+jmp lbl_169__while_next;
+:lbl_170__while_end:
 # IR: LEAVE
 sub ESP, -11;
 ret;
-:lbl_to_166:
-# End code block cb_164
+:lbl_to_167:
+# End code block cb_165
 # Begin code block cb_83
 :func_7__set_col:
 # IR: ENTER scp_86__NULL
@@ -254,40 +254,40 @@ sub ESP, -11;
 ret;
 :lbl_to_24:
 # End code block cb_22
-# Begin code block cb_248
+# Begin code block cb_249
 :func_94__malloc:
-# IR: ENTER scp_251__NULL
+# IR: ENTER scp_252__NULL
 sub ESP, 11;
-# IR: MOV var_253__p var_99__alloc_head
+# IR: MOV var_254__p var_99__alloc_head
 mov EAX, *var_99__alloc_head;
 mov EBP[-3], EAX;
-# IR: OP ADD var_99__alloc_head var_252__size tmp_254
+# IR: OP ADD var_99__alloc_head var_253__size tmp_255
 mov EAX, *var_99__alloc_head;
 mov EBX, EBP[9];
 add EAX, EBX;
 mov EBP[-7], EAX;
-# IR: MOV var_99__alloc_head tmp_254
+# IR: MOV var_99__alloc_head tmp_255
 mov EAX, EBP[-7];
 mov *var_99__alloc_head, EAX;
-# IR: RETURN var_253__p
+# IR: RETURN var_254__p
 mov EAX, EBP[-3];
 sub ESP, -11;
 ret;
 # IR: LEAVE
 sub ESP, -11;
 ret;
-:lbl_to_250:
-# End code block cb_248
-# Begin code block cb_177
+:lbl_to_251:
+# End code block cb_249
+# Begin code block cb_178
 :func_92__has_char:
-# IR: ENTER scp_180__NULL
+# IR: ENTER scp_181__NULL
 sub ESP, 11;
-# IR: OP INDEX var_97__adr_kb imm_181 tmp_182
+# IR: OP INDEX var_97__adr_kb imm_182 tmp_183
 mov EAX, *var_97__adr_kb;
 mov EBX, 0;
 add EAX, EBX;
 mov EBP[-7], EAX;
-# IR: RETURN tmp_182
+# IR: RETURN tmp_183
 mov EAX, EBP[-7];
 mov EAX, *EAX;
 mov EAX, EAX;
@@ -296,39 +296,39 @@ ret;
 # IR: LEAVE
 sub ESP, -11;
 ret;
-:lbl_to_179:
-# End code block cb_177
-# Begin code block cb_183
+:lbl_to_180:
+# End code block cb_178
+# Begin code block cb_184
 :func_93__get_char:
-# IR: ENTER scp_186__NULL
+# IR: ENTER scp_187__NULL
 sub ESP, 27;
-# IR: OP INDEX var_97__adr_kb imm_188 tmp_189
+# IR: OP INDEX var_97__adr_kb imm_189 tmp_190
 mov EAX, *var_97__adr_kb;
 mov EBX, 1;
 add EAX, EBX;
 mov EBP[-11], EAX;
-# IR: MOV var_187__c tmp_189
+# IR: MOV var_188__c tmp_190
 mov EAX, EBP[-11];
 mov EAX, *EAX;
 mov EBP[-3], EAX;
-# IR: OP INDEX var_97__adr_kb imm_190 tmp_191
+# IR: OP INDEX var_97__adr_kb imm_191 tmp_192
 mov EAX, *var_97__adr_kb;
 mov EBX, 0;
 add EAX, EBX;
 mov EBP[-19], EAX;
-# IR: MOV tmp_191 imm_192
+# IR: MOV tmp_192 imm_193
 mov EAX, 1;
 mov EBX, EBP[-19];
 mov *EBX, EAX;
-# IR: RETURN var_187__c
+# IR: RETURN var_188__c
 mov EAX, EBP[-3];
 sub ESP, -27;
 ret;
 # IR: LEAVE
 sub ESP, -27;
 ret;
-:lbl_to_185:
-# End code block cb_183
+:lbl_to_186:
+# End code block cb_184
 # Begin code block cb_29
 :func_9__newline:
 # IR: ENTER scp_32__NULL
@@ -364,121 +364,121 @@ sub ESP, -27;
 ret;
 :lbl_to_31:
 # End code block cb_29
-# Begin code block cb_193
+# Begin code block cb_194
 :func_95__process_command:
-# IR: ENTER scp_196__NULL
+# IR: ENTER scp_197__NULL
 sub ESP, 131;
-# IR: CALL func_7__set_col [ imm_200 imm_199 imm_198 ] tmp_201
+# IR: CALL func_7__set_col [ imm_201 imm_200 imm_199 ] tmp_202
 push 255;
 push 0;
 push 255;
 call func_7__set_col;
 add ESP, 12;
 mov EBP[-15], eax;
-# IR: IF cb_202 tmp_206 cb_207
-# Begin code block cb_202
-:lbl_from_203:
-# IR: CALL func_96__str_eq [ imm_205 var_197__buff ] tmp_206
+# IR: IF cb_203 tmp_207 cb_208
+# Begin code block cb_203
+:lbl_from_204:
+# IR: CALL func_96__str_eq [ imm_206 var_198__buff ] tmp_207
 push EBP[9];
-push imm_205;
+push imm_206;
 call func_96__str_eq;
 add ESP, 8;
 mov EBP[-23], eax;
-:lbl_to_204:
-# End code block cb_202
+:lbl_to_205:
+# End code block cb_203
 mov EAX, 0;
 cmp EBP[-23], EAX;
-jz lbl_200__if_else;
-# Begin code block cb_207
-:lbl_from_208:
-# IR: CALL func_8__println [ imm_210 ] tmp_211
-push imm_210;
+jz lbl_202__if_else;
+# Begin code block cb_208
+:lbl_from_209:
+# IR: CALL func_8__println [ imm_211 ] tmp_212
+push imm_211;
 call func_8__println;
 add ESP, 4;
 mov EBP[-31], eax;
-:lbl_to_209:
-# End code block cb_207
-jmp lbl_201__if_end;
-:lbl_200__if_else:
-# IR: ELSE_IF cb_212 tmp_216 cb_217
-# Begin code block cb_212
-:lbl_from_213:
-# IR: CALL func_96__str_eq [ imm_215 var_197__buff ] tmp_216
+:lbl_to_210:
+# End code block cb_208
+jmp lbl_203__if_end;
+:lbl_202__if_else:
+# IR: ELSE_IF cb_213 tmp_217 cb_218
+# Begin code block cb_213
+:lbl_from_214:
+# IR: CALL func_96__str_eq [ imm_216 var_198__buff ] tmp_217
 push EBP[9];
-push imm_215;
+push imm_216;
 call func_96__str_eq;
 add ESP, 8;
 mov EBP[-39], eax;
-:lbl_to_214:
-# End code block cb_212
+:lbl_to_215:
+# End code block cb_213
 mov EAX, 0;
 cmp EBP[-39], EAX;
-jz lbl_203__if_else;
-# Begin code block cb_217
-:lbl_from_218:
-# IR: CALL func_8__println [ imm_220 ] tmp_221
-push imm_220;
+jz lbl_205__if_else;
+# Begin code block cb_218
+:lbl_from_219:
+# IR: CALL func_8__println [ imm_221 ] tmp_222
+push imm_221;
 call func_8__println;
 add ESP, 4;
 mov EBP[-47], eax;
-:lbl_to_219:
-# End code block cb_217
-jmp lbl_201__if_end
-:lbl_203__if_else:
-# IR: ELSE_IF cb_222 tmp_226 cb_227
-# Begin code block cb_222
-:lbl_from_223:
-# IR: CALL func_96__str_eq [ imm_225 var_197__buff ] tmp_226
+:lbl_to_220:
+# End code block cb_218
+jmp lbl_203__if_end
+:lbl_205__if_else:
+# IR: ELSE_IF cb_223 tmp_227 cb_228
+# Begin code block cb_223
+:lbl_from_224:
+# IR: CALL func_96__str_eq [ imm_226 var_198__buff ] tmp_227
 push EBP[9];
-push imm_225;
+push imm_226;
 call func_96__str_eq;
 add ESP, 8;
 mov EBP[-55], eax;
-:lbl_to_224:
-# End code block cb_222
+:lbl_to_225:
+# End code block cb_223
 mov EAX, 0;
 cmp EBP[-55], EAX;
-jz lbl_205__if_else;
-# Begin code block cb_227
-:lbl_from_228:
-# IR: CALL func_8__println [ imm_230 ] tmp_231
-push imm_230;
+jz lbl_207__if_else;
+# Begin code block cb_228
+:lbl_from_229:
+# IR: CALL func_8__println [ imm_231 ] tmp_232
+push imm_231;
 call func_8__println;
 add ESP, 4;
 mov EBP[-63], eax;
-:lbl_to_229:
-# End code block cb_227
-jmp lbl_201__if_end
-:lbl_205__if_else:
-# IR: ELSE cb_232
-# Begin code block cb_232
-:lbl_from_233:
-# IR: CALL func_7__set_col [ imm_237 imm_236 imm_235 ] tmp_238
+:lbl_to_230:
+# End code block cb_228
+jmp lbl_203__if_end
+:lbl_207__if_else:
+# IR: ELSE cb_233
+# Begin code block cb_233
+:lbl_from_234:
+# IR: CALL func_7__set_col [ imm_238 imm_237 imm_236 ] tmp_239
 push 255;
 push 255;
 push 0;
 call func_7__set_col;
 add ESP, 12;
 mov EBP[-79], eax;
-# IR: CALL func_4__print [ imm_239 ] tmp_240
-push imm_239;
+# IR: CALL func_4__print [ imm_240 ] tmp_241
+push imm_240;
 call func_4__print;
 add ESP, 4;
 mov EBP[-87], eax;
-# IR: CALL func_4__print [ var_197__buff ] tmp_241
+# IR: CALL func_4__print [ var_198__buff ] tmp_242
 push EBP[9];
 call func_4__print;
 add ESP, 4;
 mov EBP[-91], eax;
-# IR: CALL func_8__println [ imm_242 ] tmp_243
-push imm_242;
+# IR: CALL func_8__println [ imm_243 ] tmp_244
+push imm_243;
 call func_8__println;
 add ESP, 4;
 mov EBP[-99], eax;
-:lbl_to_234:
-# End code block cb_232
-:lbl_201__if_end:
-# IR: CALL func_7__set_col [ imm_246 imm_245 imm_244 ] tmp_247
+:lbl_to_235:
+# End code block cb_233
+:lbl_203__if_end:
+# IR: CALL func_7__set_col [ imm_247 imm_246 imm_245 ] tmp_248
 push 255;
 push 255;
 push 255;
@@ -488,8 +488,8 @@ mov EBP[-115], eax;
 # IR: LEAVE
 sub ESP, -131;
 ret;
-:lbl_to_195:
-# End code block cb_193
+:lbl_to_196:
+# End code block cb_194
 # Begin code block cb_61
 :func_5__putch:
 # IR: ENTER scp_64__NULL
@@ -593,44 +593,44 @@ sub ESP, -43;
 ret;
 :lbl_to_41:
 # End code block cb_39
-# Begin code block cb_255
+# Begin code block cb_256
 :func_96__str_eq:
-# IR: ENTER scp_258__NULL
-sub ESP, 51;
-# IR: MOV var_261__I imm_262
+# IR: ENTER scp_259__NULL
+sub ESP, 55;
+# IR: MOV var_262__I imm_263
 mov EAX, 0;
 mov EBP[-3], EAX;
-# IR: WHILE cb_265 tmp_268 cb_269 lbl_263__while_next lbl_264__while_end
-:lbl_263__while_next:
-# Begin code block cb_265
-:lbl_from_266:
-# IR: OP INDEX var_260__str_A var_261__I tmp_268
+# IR: WHILE cb_266 tmp_269 cb_270 lbl_264__while_next lbl_265__while_end
+:lbl_264__while_next:
+# Begin code block cb_266
+:lbl_from_267:
+# IR: OP INDEX var_261__str_A var_262__I tmp_269
 mov EAX, EBP[13];
 mov EBX, EBP[-3];
 add EAX, EBX;
 mov EBP[-11], EAX;
-:lbl_to_267:
-# End code block cb_265
+:lbl_to_268:
+# End code block cb_266
 mov EAX, EBP[-11];
 mov EAX, *EAX;
 cmp EAX, 0;
-jz lbl_264__while_end;
-# Begin code block cb_269
-:lbl_from_270:
-# IR: IF cb_272 tmp_277 cb_278
-# Begin code block cb_272
-:lbl_from_273:
-# IR: OP INDEX var_260__str_A var_261__I tmp_275
+jz lbl_265__while_end;
+# Begin code block cb_270
+:lbl_from_271:
+# IR: IF cb_273 tmp_278 cb_279
+# Begin code block cb_273
+:lbl_from_274:
+# IR: OP INDEX var_261__str_A var_262__I tmp_276
 mov EAX, EBP[13];
 mov EBX, EBP[-3];
 add EAX, EBX;
 mov EBP[-15], EAX;
-# IR: OP INDEX var_259__str_B var_261__I tmp_276
+# IR: OP INDEX var_260__str_B var_262__I tmp_277
 mov EAX, EBP[9];
 mov EBX, EBP[-3];
 add EAX, EBX;
 mov EBP[-19], EAX;
-# IR: OP NOT_EQUAL tmp_275 tmp_276 tmp_277
+# IR: OP NOT_EQUAL tmp_276 tmp_277 tmp_278
 mov EBX, EBP[-15];
 mov EBX, *EBX;
 mov EAX, EBX;
@@ -639,43 +639,43 @@ mov ECX, *ECX;
 mov EBX, ECX;
 cmp EAX, EBX; mov EAX, CTRL; band EAX, CMP_NZ; bnot EAX; bnot EAX
 mov EBP[-23], EAX;
-:lbl_to_274:
-# End code block cb_272
+:lbl_to_275:
+# End code block cb_273
 mov EAX, 0;
 cmp EBP[-23], EAX;
-jz lbl_209__if_else;
-# Begin code block cb_278
-:lbl_from_279:
-# IR: RETURN imm_281
+jz lbl_211__if_else;
+# Begin code block cb_279
+:lbl_from_280:
+# IR: RETURN imm_282
 mov EAX, 0;
-sub ESP, -51;
+sub ESP, -55;
 ret;
-:lbl_to_280:
-# End code block cb_278
-jmp lbl_210__if_end;
-:lbl_209__if_else:
-:lbl_210__if_end:
-# IR: OP ADD var_261__I imm_282 tmp_283
+:lbl_to_281:
+# End code block cb_279
+jmp lbl_212__if_end;
+:lbl_211__if_else:
+:lbl_212__if_end:
+# IR: OP ADD var_262__I imm_284 tmp_285
 mov EAX, EBP[-3];
 mov EBX, 4;
 add EAX, EBX;
-mov EBP[-35], EAX;
-# IR: MOV var_261__I tmp_283
-mov EAX, EBP[-35];
+mov EBP[-39], EAX;
+# IR: MOV var_262__I tmp_285
+mov EAX, EBP[-39];
 mov EBP[-3], EAX;
-:lbl_to_271:
-# End code block cb_269
-jmp lbl_263__while_next;
-:lbl_264__while_end:
-# IR: RETURN imm_284
+:lbl_to_272:
+# End code block cb_270
+jmp lbl_264__while_next;
+:lbl_265__while_end:
+# IR: RETURN imm_286
 mov EAX, 1;
-sub ESP, -51;
+sub ESP, -55;
 ret;
 # IR: LEAVE
-sub ESP, -51;
+sub ESP, -55;
 ret;
-:lbl_to_257:
-# End code block cb_255
+:lbl_to_258:
+# End code block cb_256
 # Begin code block cb_76
 :func_6__scr_push_byte:
 # IR: ENTER scp_79__NULL
@@ -710,11 +710,11 @@ ret;
 :tmp_103: db 0;
 :tmp_104: db 0;
 :imm_113: db "Hello World!", 0;
-:imm_205: db "what", 0;
-:imm_210: db "SAY WHAT AGAIN", 0;
-:imm_215: db "help", 0;
-:imm_220: db "Commands: help, what, beep", 0;
-:imm_225: db "beep", 0;
-:imm_230: db "boop", 0;
-:imm_239: db "unkown command [", 0;
-:imm_242: db "]", 0;
+:imm_206: db "what", 0;
+:imm_211: db "SAY WHAT AGAIN", 0;
+:imm_216: db "help", 0;
+:imm_221: db "Commands: help, what, beep", 0;
+:imm_226: db "beep", 0;
+:imm_231: db "boop", 0;
+:imm_240: db "unkown command [", 0;
+:imm_243: db "]", 0;

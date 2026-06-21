@@ -28,6 +28,7 @@ const rules = [
 	# statements
 	["var_decl_stmt", "/;",			"*", "stmt"],
 	["assignment_stmt", "/;",		"*", "stmt"],
+	["comp_assignment_stmt", "/;",	"*", "stmt"],
 	["decl_assignment_stmt", "/;",	"*", "stmt"],
 	["decl_extern_stmt","/;",		"*", "stmt"],
 	["func_decl_stmt",	"/;",		"*", "stmt"],
@@ -44,6 +45,12 @@ const rules = [
 	#-- assignment_stmt
 	#["IDENT", "/=", "expr", 			"/;", "assignment_stmt"],
 	["expr", "/=", "expr",				"/;", "assignment_stmt"],
+	["expr", "comp_asn_op", "expr",		"/;", "comp_assignment_stmt"],
+	["/+=", 							"*", "comp_asn_op"],
+	["/-=", 							"*", "comp_asn_op"],
+	["/*=", 							"*", "comp_asn_op"],
+	["//=", 							"*", "comp_asn_op"],
+	["/%=", 							"*", "comp_asn_op"],
 	#-- decl_assignment_stmt
 	["/var", "assignment_stmt", 		"*", "decl_assignment_stmt"],
 	#-- decl_extern_stmt
