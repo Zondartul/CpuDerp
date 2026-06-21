@@ -1,26 +1,15 @@
+#include "lib/screen.md"
 func main();
-func print(str);
-func putch(c);
 func infloop();
-func scr_push_byte(b);
 func has_char();
 func get_char();
 func malloc(size);
 func process_command(buff);
 func str_eq(str_A, str_B); // returns 1 if strings are equal 
-func set_col(R,G,B);
-func println(str);
-func newline();
-var adr_scr = 67536;
 var adr_kb = 81648;
-var scr_I = 0;
 var alloc_head = 10000;
 //var char_newline = 5;
 var char_backspace = 4;
-var col_R = 255;
-var col_G = 255;
-var col_B = 255;
-var scr_width = 56;
 
 main();
 infloop();
@@ -47,40 +36,6 @@ func main(){
 			}
 		}
 	}
-}
-
-func println(str){
-	print(str);
-	newline();
-}
-
-func newline(){
-	var width_I = scr_width*7;
-	scr_I = scr_I + (width_I - (scr_I % width_I));
-}
-
-func print(str){
-	var i = 0;	
-	var c = str[i];
-	while(c){
-		c = str[i*4];
-		i++;
-		putch(c);
-	}
-}
-
-func putch(c){
-	scr_push_byte(c); //char
-	scr_push_byte(col_R); // color_fg.r
-	scr_push_byte(col_G); // color_fg.g
-	scr_push_byte(col_B); // color_fg.b
-	scr_push_byte(0); // color_bg.r
-	scr_push_byte(0); // color_bg.g
-	scr_push_byte(0); // color_bg.b
-}
-
-func scr_push_byte(b){
-	adr_scr[scr_I] = b; scr_I++;
 }
 
 func infloop(){while(1){}}
@@ -135,8 +90,3 @@ func str_eq(str_A, str_B){
 	return 1;
 }
 
-func set_col(R,G,B){
-	col_R = R;
-	col_G = G;
-	col_B = B;
-}

@@ -20,9 +20,10 @@ func reset():
 	cur_filename = "";
 	cur_path = "";
 	has_error = false;
+	tokenizer.reset();
 
 func compile(input):
-	reset();
+	tokenizer.cur_path = cur_path;
 	input["tokens"] = tokenizer.tokenize(input);		if has_error: return false;
 	if not input.tokens: return;
 	input["ast"] = parser.parse(input);				if has_error: return false;
@@ -45,8 +46,8 @@ func save_file(text:String, filename:String):
 func _on_tokenizer_md_tokens_ready(tokens) -> void:
 	tokens_ready.emit(tokens);
 
-func set_cur_filename(val): tokenizer.cur_filename = val;
-func set_cur_path(val): tokenizer.cur_path = val;
+func set_cur_filename(val): cur_filename = val; tokenizer.cur_filename = val;
+func set_cur_path(val): cur_path = val; tokenizer.cur_path = val;
 
 
 

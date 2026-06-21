@@ -29,3 +29,5 @@ const ERR_30 = "Error 30: 'Continue' statement outside of a loop";
 const ERR_31 = "Error 31: Operator '%s' is not allowed here.";
 const ERR_32 = "Error 32: Variable declaration can't have [%s] as left-hand-side of assignment";
 const ERR_33 = "Error 33: Invalid character literal: [%s]";
+const ERR_34 = "Error 34: #include syntax error";
+const ERR_35 = "Error 35: #include file not found: [%s]";

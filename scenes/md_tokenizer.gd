@@ -53,13 +53,14 @@ func _ready():
 	reset();
 
 func tokenize(input:Dictionary)->Array[Token]:
-	reset();
+	#reset();
 	erep.proxy = self
 	var text:String = input.text;
 	cur_filename = input.filename;
 	#output_tokens.clear();
 	#cur_line = "";
 	#cur_line_idx = 0;
+	text = process_includes(text);
 	var tokens:Array[Token] = basic_tokenize(text);
 	#tokens_ready.emit(tokens);
 	recombine_tokens(tokens);
@@ -98,6 +99,39 @@ func basic_tokenize(text:String)->Array[Token]:
 		if error_code != "": return [];
 	return tokens;
 # ---------- Basic preprocess ---------------------------------
+
+func process_includes(text:String):
+	var I = text.find("#include")
+	while(I != -1):
+		var next_word = get_word_at(text, I+len("#include"));
+		var file_text = include_file(next_word);
+		text = text.erase(I, text.find("\n",I)) # remove this line
+		text = text.insert(I, file_text);
+		I = text.find("#include", I);
+	return text;
+
+func get_word_at(text:String, I:int):
+	while(text[I] in " \t"): I+=1; # skip spaces
+	if text[I] == "\n": erep.error(E.ERR_34); return ""; # #include syntax error
+	var word = "";
+	while(text[I] not in " \t\n\r"): word += text[I]; I+=1;
+	return word;
+
+func include_file(filepath:String):
+	if (cur_path == null) or (cur_path == ""):
+		push_error("can't process includes, cur_path is not set");
+		assert(false);
+	print("Looking for include file [%s]" % filepath);
+	var base_dir = cur_path.rstrip("/\\"); #remove trailing slash
+	filepath = filepath.strip_edges().lstrip("\"").rstrip("\"").lstrip("/\\")
+	var canon_path = base_dir.path_join(filepath)
+	if FileAccess.file_exists(canon_path):
+		var fp:FileAccess = FileAccess.open(canon_path, FileAccess.READ)
+		return fp.get_as_text();
+	else:
+		erep.error(E.ERR_35 % canon_path);
+		return "";
+
 ## preprocess the line: remove comments, trim whitespace, etc
 func preproc(line:String)->String:
 	line = remove_comments(line);
