@@ -121,7 +121,9 @@ func sym_table_append_scope(user_name, ir_name, scp, cb):
 	var fun_handle = {"user_name":user_name, "ir_name":ir_name, "lbl":null, "args":[], "vars":[], "constants":[]};
 	fun_handle.lbl = {"from":cb.lbl_from, "to":cb.lbl_to};
 	for ir_var in scp.vars:
-		var handle = {"user_name":ir_var.user_name, "ir_name":ir_var.ir_name, "pos":"query"};
+		if not "is_array" in ir_var: ir_var["is_array"] = "0";
+		if not "array_size" in ir_var: ir_var["array_size"] = "0";
+		var handle = {"user_name":ir_var.user_name, "ir_name":ir_var.ir_name, "pos":"query", "is_array":ir_var.is_array, "array_size":ir_var.array_size};
 		match ir_var.val_type:
 			"arg": fun_handle.args.append(handle);
 			"variable": fun_handle.vars.append(handle);
@@ -287,6 +289,7 @@ func analyze_expr_array_literal(expr):
 		internal_error(E.ERR_38); return;
 	
 	var res = IR.new_val_temp();
+	IR.save_variable(res);
 	IR.emit_IR(["ALLOC", str(list.size()), res], expr.get_location());
 	IR.emit_IR(["MOV_ARR", res, list], expr.get_location());
 	expr_stack.push_back(res);
@@ -300,20 +303,20 @@ func analyze_var_decl_stmt(ast):
 	if error_code != "": return;
 	assert(ast.tok_class == "var_decl_stmt");
 	var tok_ident = ast.children[1];
-	var is_arr = false;
+	var is_arr = 1;
 	var arr_size = 0;
 	if tok_ident.tok_class == "expr_index":
 		var tok_index = ast.children[1];
 		tok_ident = tok_index.children[0].children[0].children[0];
-		is_arr = true;
+		is_arr = 1;
 		var tok_size = tok_index.children[2].children[0].children[0];
 		assert(tok_size.tok_class == "NUMBER");
 		arr_size = int(tok_size.text);
 	assert(tok_ident.tok_class == "IDENT");
 	var var_name = tok_ident.text;
 	var var_handle = IR.new_val_var(var_name);
-	var_handle.is_array = is_arr;
-	var_handle.array_size = arr_size;
+	var_handle["is_array"] = is_arr;
+	var_handle["array_size"] = arr_size;
 	IR.save_variable(var_handle);
 
 func analyze_func_decl_stmt(ast):

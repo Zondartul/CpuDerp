@@ -103,7 +103,7 @@ Modifications to `allocate_value` (codegen_md.gd:631):
 # If the variable has an array_size, allocate more space
 var data_size = 4
 if "array_size" in handle and handle.array_size:
-    data_size = int(handle.array_size) * 4
+	data_size = int(handle.array_size) * 4
 # ... rest of existing allocation logic using data_size
 ```
 
@@ -136,30 +136,30 @@ Add to `analyze_expr` in the match block:
 New function:
 ```gdscript
 func analyze_expr_array_literal(ast):
-    assert(ast.tok_class == "expr_array_literal")
-    var elements = []
+	assert(ast.tok_class == "expr_array_literal")
+	var elements = []
 
-    if len(ast.children) == 0:
-        pass  # empty array: []
-    elif len(ast.children) == 1 and ast.children[0].tok_class == "expr":
-        # Single element: [10] or [x]
-        analyze_expr(ast.children[0])
-        elements.append(expr_stack.pop_back())
-    elif len(ast.children) == 1 and ast.children[0].tok_class == "expr_list":
-        # Multiple elements: [a, b, c]
-        for child in ast.children[0].children:
-            assert(child.tok_class == "expr")
-            analyze_expr(child)
-            elements.push_front(expr_stack.pop_back())
-        elements.reverse()
-    else:
-        internal_error("Unexpected expr_array_literal structure")
-        return
+	if len(ast.children) == 0:
+		pass  # empty array: []
+	elif len(ast.children) == 1 and ast.children[0].tok_class == "expr":
+		# Single element: [10] or [x]
+		analyze_expr(ast.children[0])
+		elements.append(expr_stack.pop_back())
+	elif len(ast.children) == 1 and ast.children[0].tok_class == "expr_list":
+		# Multiple elements: [a, b, c]
+		for child in ast.children[0].children:
+			assert(child.tok_class == "expr")
+			analyze_expr(child)
+			elements.push_front(expr_stack.pop_back())
+		elements.reverse()
+	else:
+		internal_error("Unexpected expr_array_literal structure")
+		return
 
-    var res = IR.new_val_temp()
-    IR.save_variable(res)
-    IR.emit_IR(["ARRAY", elements, res], ast.get_location())
-    expr_stack.push_back(res)
+	var res = IR.new_val_temp()
+	IR.save_variable(res)
+	IR.emit_IR(["ARRAY", elements, res], ast.get_location())
+	expr_stack.push_back(res)
 ```
 
 ### B4: Codegen for ARRAY
@@ -227,11 +227,11 @@ mov ^result, EBP-12 ; result points to base
 
 ```miniderp
 func main() {
-    var arr = [10];
-    arr[0] = 5;
-    arr[9] = 42;
-    var x = arr[0];  # 5
-    # arr[10] = 1;   # out-of-bounds (VM behavior)
+	var arr = [10];
+	arr[0] = 5;
+	arr[9] = 42;
+	var x = arr[0];  # 5
+	# arr[10] = 1;   # out-of-bounds (VM behavior)
 }
 ```
 
@@ -239,11 +239,11 @@ func main() {
 
 ```miniderp
 func main() {
-    var a = 1; var b = 2; var c = 3;
-    var lit = [a, b, c];
-    var x = lit[0] + lit[1] + lit[2];  # 6
-    var single = [42];
-    var empty = [];
+	var a = 1; var b = 2; var c = 3;
+	var lit = [a, b, c];
+	var x = lit[0] + lit[1] + lit[2];  # 6
+	var single = [42];
+	var empty = [];
 }
 ```
 
@@ -251,10 +251,10 @@ func main() {
 
 ```miniderp
 func main() {
-    var dest = [3];
-    var src = [10, 20, 30];
-    dest[0] = src[0];
-    dest[1] = src[1];
-    dest[2] = src[2];
+	var dest = [3];
+	var src = [10, 20, 30];
+	dest[0] = src[0];
+	dest[1] = src[1];
+	dest[2] = src[2];
 }
 ```

@@ -392,6 +392,7 @@ func process(tokens:Array[Token])->bool:
 	while iter.pos != len(iter.tokens):
 		if parse_label(iter) \
 		or parse_db(iter) \
+		or parse_alloc(iter) \
 		or parse_command(iter):
 			pass # all ok, continue to next command
 		else:
@@ -438,6 +439,38 @@ func parse_db(iter:Iter)->bool:
 		#print("Parsed DB (count "+str(len(items))+")");
 		return true;
 	else: return false;
+
+func parse_alloc(iter:Iter)->bool:
+	var old_iter = iter.duplicate();
+	if match_tokens(iter, ["\\alloc"]):
+		var toks = [];
+		if match_tokens(iter, ["NUMBER"],toks):
+			match_tokens(iter, ["\\;"]); #optional semicolon
+			var size = int(toks[0]["text"])
+			if size <= 0:
+				erep.error(E.ERR_10 % size);
+				return false;
+			record_op_position(old_iter, iter);
+			# Advance write_pos by the specified size, padding to maintain alignment
+			var old_write_pos = write_pos;
+			write_pos += size;
+			# Pad to maintain command size alignment if needed
+			while(write_pos % cmd_size):
+				write_pos += 1;
+			# Ensure code and shadow arrays are large enough
+			if len(code) < write_pos:
+				code.resize(write_pos);
+			if len(shadow) < write_pos:
+				shadow.resize(write_pos);
+			# Mark the allocated region as data in shadow
+			for i in range(old_write_pos, old_write_pos+size):
+				shadow[i] = ISA.SHADOW_DATA;
+			return true;
+		else:
+			erep.error(E.ERR_12);
+			return false;
+	else: return false;
+
 
 func record_op_position(old_iter:Iter, iter:Iter)->void:
 	var tok_first = old_iter.tokens[old_iter.pos];

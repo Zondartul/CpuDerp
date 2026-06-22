@@ -205,7 +205,10 @@ func generate_globals()->String:
 		var sym = all_syms[key];
 		if sym.val_type == "variable":
 			if sym.storage.type == "global":
-				text += ":%s: db 0;\n" % sym.ir_name;
+				if ("is_array" in sym) and (int(sym.is_array) == 1):
+					text += ":%s: alloc %s;\n" % [sym.ir_name, str(4*int(sym.array_size))];
+				else:
+					text += ":%s: db 0;\n" % sym.ir_name;
 		if sym.val_type == "temporary":
 			if sym.storage.type == "global":
 				text += ":%s: db 0;\n" % sym.ir_name;
@@ -663,6 +666,8 @@ func allocate_vars():
 
 func allocate_value(handle:Dictionary, scope:Dictionary)->void:
 	var data_size = 4;
+	if "is_array" in handle and int(handle.is_array):
+		data_size *= int(handle.array_size);
 	if handle.storage == "NULL":
 		var storage_type;
 		var pos;
@@ -722,9 +727,28 @@ func generate_cmd_alloc(cmd:IR_Cmd)->void:
 	var size = cmd.words[1];
 	var res = cmd.words[2];
 	var arr_storage = new_arr(size);
+	allocate_value(arr_storage, cur_scope);
 	cur_scope.vars.append(arr_storage);
-	emit("mov ^%s $%s" % [res, arr_storage], cmd_size, "generate_cmd_alloc");
+	emit("mov ^%s @%s;\n" % [res, arr_storage.ir_name], cmd_size, "generate_cmd_alloc");
 
+func generate_cmd_mov_arr(cmd:IR_Cmd)->void:
+	var dest = cmd.words[1];
+	var src = cmd.words.slice(3,-1);
+	var dest_handle = all_syms[dest];
+	#assert(int(dest_handle.is_array)==1)
+	assert(cmd.words[2] == "[");
+	assert(cmd.words[-1] == "]");
+	var tmp = alloc_temporary();
+	#var imm_0 = new_imm(0);
+	#var imm_4_handle = new_imm(4);
+	#allocate_value(imm_4_handle, cur_scope);
+	#var imm_4 = imm_4_handle.ir_name;
+	emit("mov %s, $%s;\n" % [tmp, dest], cmd_size, "generate_cmd_mov_arr.init");
+	#emit("sub %s, %s;\n" % [tmp, src.size()*4], cmd_size, "generate_cmd_mov_arr.offset");
+	for val in src:
+		emit("mov *%s, $%s;\n" % [tmp, val], cmd_size, "generate_cmd_mov_arr.mov");
+		emit("add %s, 4;\n" % tmp, cmd_size, "generate_cmd_mov_arr.inc");
+	free_val(tmp);
 
 
 func fixup_enter_leave(assy_block:AssyBlock)->void:

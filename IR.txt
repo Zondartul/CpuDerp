@@ -67,7 +67,7 @@ code_blocks:
   ir_name: cb_61
   code: 
    ENTER scp_64__NULL %064main.md%05838%05812%126%064main.md%05847%0581
-   ALLOC tmp_70 %064main.md%05835%05810%126%064main.md%05835%05843
+   ALLOC 7 tmp_70 %064main.md%05835%05810%126%064main.md%05835%05843
    MOV_ARR tmp_70 [ var_65__c var_14__col_R var_16__col_G var_18__col_B imm_67 imm_68 imm_69 ] %064main.md%05835%05810%126%064main.md%05835%05843
    MOV var_66__arr tmp_70 %064main.md%05835%0586%126%064main.md%05835%05843
    MOV var_71__I imm_72 %064main.md%05836%0584%126%064main.md%05836%0589
@@ -354,7 +354,7 @@ scopes:
    imm_109 immediate NULL int NULL 10000 NULL NULL NULL NULL NULL
    var_110__char_backspace variable char_backspace int NULL NULL NULL NULL NULL 0 0
    imm_111 immediate NULL int NULL 4 NULL NULL NULL NULL NULL
-   var_112__buff variable buff NULL NULL NULL NULL NULL NULL true 80
+   var_112__buff variable buff NULL NULL NULL NULL NULL NULL 1 80
    var_113__buffI variable buffI int NULL NULL NULL NULL NULL 0 0
    imm_114 immediate NULL int NULL 0 NULL NULL NULL NULL NULL
    tmp_115 temporary NULL NULL NULL NULL NULL NULL NULL NULL NULL
@@ -417,6 +417,7 @@ scopes:
    imm_67 immediate NULL int NULL 0 NULL NULL NULL NULL NULL
    imm_68 immediate NULL int NULL 0 NULL NULL NULL NULL NULL
    imm_69 immediate NULL int NULL 0 NULL NULL NULL NULL NULL
+   tmp_70 temporary NULL NULL NULL NULL NULL NULL NULL NULL NULL
    var_71__I variable I int NULL NULL NULL NULL NULL 0 0
    imm_72 immediate NULL int NULL 0 NULL NULL NULL NULL NULL
    imm_78 immediate NULL int NULL 0 NULL NULL NULL NULL NULL
