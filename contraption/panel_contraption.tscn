@@ -1,0 +1,92 @@
+[gd_scene format=3 uid="uid://dwkdasshjscjg"]
+
+[sub_resource type="Theme" id="Theme_ghaiv"]
+MarginContainer/colors/border = Color(0, 0, 0, 1)
+
+[node name="Contraption" type="Control" unique_id=1795281574]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="B" type="BoxContainer" parent="." unique_id=31187232]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="V" type="BoxContainer" parent="B" unique_id=1695405602]
+layout_mode = 2
+size_flags_horizontal = 3
+vertical = true
+
+[node name="Label" type="Label" parent="B/V" unique_id=1272876152]
+layout_mode = 2
+text = "Contraptions"
+
+[node name="Tree" type="Tree" parent="B/V" unique_id=1775611209]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="V2" type="BoxContainer" parent="B" unique_id=1004372372]
+layout_mode = 2
+size_flags_horizontal = 3
+vertical = true
+
+[node name="MarginContainer" type="MarginContainer" parent="B/V2" unique_id=1884317157]
+layout_mode = 2
+theme = SubResource("Theme_ghaiv")
+theme_override_constants/margin_left = 2
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 2
+theme_override_constants/margin_bottom = 2
+
+[node name="B2" type="BoxContainer" parent="B/V2/MarginContainer" unique_id=2034204889]
+layout_mode = 2
+vertical = true
+
+[node name="Label" type="Label" parent="B/V2/MarginContainer/B2" unique_id=2091921374]
+layout_mode = 2
+text = "Add elements"
+
+[node name="F" type="FlowContainer" parent="B/V2/MarginContainer/B2" unique_id=787211639]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="B/V2/MarginContainer/B2/F" unique_id=15040435]
+layout_mode = 2
+text = "CPU"
+
+[node name="MenuButton" type="MenuButton" parent="B/V2/MarginContainer/B2/F" unique_id=1445619984]
+layout_mode = 2
+text = "Memory"
+item_count = 3
+popup/item_0/text = "RAM"
+popup/item_0/id = 0
+popup/item_1/text = "ROM"
+popup/item_1/id = 1
+popup/item_2/text = "EEPROM"
+popup/item_2/id = 2
+
+[node name="Button2" type="Button" parent="B/V2/MarginContainer/B2/F" unique_id=1999107519]
+layout_mode = 2
+text = "Keyboard"
+
+[node name="Button3" type="Button" parent="B/V2/MarginContainer/B2/F" unique_id=391815520]
+layout_mode = 2
+text = "Mouse"
+
+[node name="Button4" type="Button" parent="B/V2/MarginContainer/B2/F" unique_id=1366144962]
+layout_mode = 2
+text = "Screen"
+
+[node name="Button5" type="Button" parent="B/V2/MarginContainer/B2/F" unique_id=1835698235]
+layout_mode = 2
+text = "Address Bus"
+
+[node name="Button6" type="Button" parent="B/V2/MarginContainer/B2/F" unique_id=858439372]
+layout_mode = 2
+text = "MMU"
