@@ -355,11 +355,83 @@ func update_top():
         # ... rest of existing rendering ...
 ```
 
-### 5.3 `slider_bot` Usage
+### 5.3 Hover Hints on `slider_top` for Overlapping Known Values
+
+**Goal**: When hovering over a top-bar `ColorRect` (which interprets a multi-byte range as e.g. uint32, float, char), display a tooltip listing all known codegen variables whose storage range overlaps that byte region, with their current values formatted according to the current view type.
+
+**Current tooltip** (`update_top()`, line 458-459):
+```gdscript
+var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
+view_box.tooltip_text = "Value at %d+%d (EBP%+d)" % [pos, view_size, pos-cur_ebp];
+```
+
+**New tooltip content** should include:
+1. The existing address/EBP summary
+2. A list of every known codegen variable whose `[ebp+offset, ebp+offset+size)` range overlaps `[pos, pos+view_size)`
+3. For each such variable: its `user_name`, function name, EBP offset range, and **current value read at its `ebp+offset` interpreted via the current view type**
+
+**Design**:
+
+Introduce a helper function that collects overlapping codegen vars for a given absolute address range:
+
+```gdscript
+func get_overlapping_vars(pos: int, view_size: int) -> Array:
+    ## Returns Array of Dictionaries for known codegen vars whose
+    ## storage range overlaps [pos, pos+view_size).
+    ## Each entry: {name, func, ebp_offset, size, value_str}
+    var cur_ebp = cpu.regs[ISA.REG_EBP]
+    var results = []
+    for offset in known_stack_offsets:
+        for info in known_stack_offsets[offset]:
+            var var_abs = cur_ebp + offset
+            var var_end = var_abs + info.size
+            # check overlap: [var_abs, var_end) ∩ [pos, pos+view_size)
+            if var_abs < pos + view_size and var_end > pos:
+                var val = read32(var_abs) if info.size >= 4 else bus.readCell(var_abs)
+                results.append({
+                    "name": info.user_name,
+                    "func": info.func_name,
+                    "ebp_offset": offset,
+                    "size": info.size,
+                    "value_str": str(val)
+                })
+    return results
+```
+
+**Integration in `update_top()`**: After building `view_box` and before setting its tooltip:
+
+```gdscript
+var cur_ebp = cpu.regs[cpu.ISA.REG_EBP]
+var tooltip = "Value at %d+%d (EBP%+d)" % [pos, view_size, pos - cur_ebp]
+
+var overlapping = get_overlapping_vars(pos, view_size)
+if overlapping:
+    tooltip += "\n--- Known Vars ---"
+    for var_info in overlapping:
+        tooltip += "\n  %s (%s) @EBP%+d..%+d = %s" % [
+            var_info.name,
+            var_info.func,
+            var_info.ebp_offset,
+            var_info.ebp_offset + var_info.size,
+            var_info.value_str
+        ]
+
+view_box.tooltip_text = tooltip
+```
+
+**Perf note**: `get_overlapping_vars()` iterates all `known_stack_offsets` entries (typically <100) and for each checks overlap with a 1–8 byte range. Called once per `update_top()` view (typically 2–4 views). This is negligible.
+
+**Edge cases**:
+- **No overlapping vars**: Tooltip shows the original address/EBP text only
+- **Single byte view types** (char, uint8, sint8): Each `view_size=1` column overlaps at most a single variable, tooltip is concise
+- **Multi-byte view types** (uint32, float32, double): A single aggregated view may overlap multiple variables if they are densely packed; tooltip lists all of them
+- **Same variable shown in multiple adjacent views**: Expected; each view independently reports its own overlaps
+
+### 5.4 `slider_bot` Usage
 
 The currently unused `slider_bot` `ItemList` could be repurposed to show a color legend or additional metadata about the codegen variables. For example, it could display: "Known Vars: EBP-3(x) EBP-7(y) EBP+9(z)" with color swatches.
 
-### 5.4 Shadow Memory Alternative (for Memory.gd)
+### 5.5 Shadow Memory Alternative (for Memory.gd)
 
 If the feature is also desired in the main Memory tab (`Memory.gd`), a new shadow memory type should be added:
 
@@ -376,6 +448,10 @@ ISA.SHADOW_CODEGEN_VAR: Color(0.3, 0.0, 0.5, 1.0),  # Purple
 And in the compilation pipeline (`comp_build.gd`), after codegen runs, populate shadow bytes for the stack region with `SHADOW_CODEGEN_VAR` at offsets corresponding to known variables.
 
 **However**, this is more complex because it requires the compilation pipeline to know about the stack frame at upload time. The simpler approach is to keep the highlighting only in the debug panel's pointers tab, which has direct access to both `cur_sym_table` and `cpu.regs[REG_EBP]`.
+
+### 5.6 Interaction: Click Known Value → See Overlaps in Tooltip
+
+When a user clicks a known variable in the `n_known_vars` list (Step 8), the slider base address jumps to that variable's absolute address. The user can then hover over the top bar to see the tooltip listing overlapping variables — including the one they just navigated to. This creates a natural click-then-hover inspection workflow.
 
 ---
 
@@ -424,10 +500,13 @@ And in the compilation pipeline (`comp_build.gd`), after codegen runs, populate 
 - [ ] Check `offset in known_stack_offsets` and apply `COLOR_CODEGEN_VAR` as a third blending layer
 - [ ] For arrays, check if `offset` falls within `[base_offset, base_offset + size)`
 
-### Step 7: Add Highlight in `update_top()` (Bottom Bar)
+### Step 7: Add Highlight and Hover Hints in `update_top()` (Bottom Bar)
 
 - [ ] After computing `pos` for each view, check if any byte `[pos, pos+view_size)` overlaps with known codegen var ranges
 - [ ] Apply purple tint to the `ColorRect` when overlap exists
+- [ ] Implement `get_overlapping_vars(pos, view_size)` helper that returns all known codegen vars whose storage range overlaps the given address range
+- [ ] Modify tooltip assignment in `update_top()` to append known vars section when overlaps exist
+- [ ] Ensure tooltip lists: variable name, function name, EBP offset range, and current value read at that address
 
 ### Step 8: Add Click-to-Navigate
 
@@ -449,6 +528,11 @@ And in the compilation pipeline (`comp_build.gd`), after codegen runs, populate 
 - [ ] Test performance with many variables (use perf limiter)
 - [ ] Test the click-to-navigate interaction
 - [ ] Test `slider_bot` color legend
+- [ ] Test hover hints on `slider_top` overlays:
+    - [ ] Single-byte view (uint8) overlapping one variable: tooltip shows name, func, offset, value
+    - [ ] Multi-byte view (uint32) overlapping two adjacent variables: tooltip lists both
+    - [ ] No overlap: tooltip shows only the original address/EBP summary
+    - [ ] Click known var in list then hover slider_top: tooltip includes that var
 
 ---
 
@@ -459,6 +543,7 @@ And in the compilation pipeline (`comp_build.gd`), after codegen runs, populate 
 - **Per-frame iteration**: `update_known_values()` iterates all known stack offsets each frame. With the perf limiter at `1.0` (once per second), this is acceptable.
 - **calc_highlight_color()** is called 16 times per frame (once per `slider_mid` item). Dictionary lookup by offset is O(1). Acceptable.
 - **update_top()** recreates `ColorRect` children each frame. Checking each byte for codegen overlap adds O(view_size) per view. For views of up to 8 bytes and ~4 views, this is ~32 extra operations. Acceptable.
+- **Hover hint generation** (`get_overlapping_vars()`): Called once per `update_top()` view (2-4 times per frame). Iterates `known_stack_offsets` (typically <100 entries) with a simple O(1) overlap check per entry. ~400 operations total per frame. Acceptable with GPU-driven UI.
 - **Mitigation**: If many known values (hundreds), consider using a sorted array and binary search instead of dictionary iteration.
 
 ### 7.2 Edge Cases

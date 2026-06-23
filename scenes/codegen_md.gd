@@ -342,7 +342,7 @@ func new_imm(val)->Dictionary:
 
 func new_arr(size)->Dictionary:
 	var ir_name = "arr_"+str(len(all_syms)+1)+"__"+str(size);
-	var handle = {"ir_name":ir_name, "val_type":"array", "value":str(size), "data_type":"error", "storage":"NULL"};
+	var handle = {"ir_name":ir_name, "val_type":"array", "value":str(size), "data_type":"error", "storage":"NULL", "is_array":1, "array_size":size};
 	all_syms[ir_name] = handle;
 	return handle;
 

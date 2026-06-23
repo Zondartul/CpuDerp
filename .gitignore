@@ -20,6 +20,10 @@ mono_crash.*.json
 # Temporary data
 #data/
 
+# Miniderp builds
+IR.txt
+a.zd
+
 # Releases
 bin/
 export/
