@@ -15,6 +15,7 @@ const ISA = preload("res://lang_zvm.gd")
 @onready var n_sb_addr = $V/TabContainer/pointers/H/sb_addr
 @onready var n_ob_view = $V/TabContainer/pointers/H/ob_view
 @onready var n_sb_offs = $V/TabContainer/pointers/H/sb_offs
+@onready var n_known_vars:ItemList = $V/TabContainer/pointers/known_vals
 
 const class_PerfLimitDirectory = preload("res://PerfLimitDirectory.gd");
 
@@ -81,6 +82,11 @@ var symtable_label_names = [];
 enum HighlightMode {NONE, ASM, HIGH_LEVEL};
 var highlight_mode = HighlightMode.HIGH_LEVEL;
 var loc_map:LocationMap;
+
+# Maps: stack_offset (int, e.g. -3, -7, 9, 13) -> [value_info, ...]
+var known_stack_offsets: Dictionary = {}
+# where value_info = {user_name: String, ir_name: String, size: int, is_array: bool}
+
 
 signal set_highlight(loc:LocationRange);#(from_line, from_col, to_line, to_col);
 # Called when the node enters the scene tree for the first time.
@@ -334,6 +340,27 @@ func _on_cb_hex_toggled(toggled_on: bool) -> void:
 	mode_hex = toggled_on;
 	perf.all.prime();
 
+func get_overlapping_vars(pos: int, view_size: int) -> Array:
+	## Returns Array of Dictionaries for known codegen vars whose
+	## storage range overlaps [pos, pos+view_size).
+	## Each entry: {name, func, ebp_offset, size, value_str}
+	var cur_ebp = cpu.regs[ISA.REG_EBP]
+	var results = []
+	for offset in known_stack_offsets:
+		for info in known_stack_offsets[offset]:
+			var var_abs = cur_ebp + offset
+			var var_end = var_abs + info.size
+			# check overlap: [var_abs, var_end) ∩ [pos, pos+view_size)
+			if var_abs < pos + view_size and var_end > pos:
+				var val = read32(var_abs) if info.size >= 4 else bus.readCell(var_abs)
+				results.append({
+					"name": info.user_name,
+					"func": info.func_name,
+					"ebp_offset": offset,
+					"size": info.size,
+					"value_str": str(val)
+				})
+	return results
 
 func get_pointer_tooltip(addr, val)->String:
 	var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
@@ -358,6 +385,7 @@ func init_sliders():
 	
 func update_pointers():
 	if not perf.pointers.run(0): return;
+	update_known_values();
 	update_mid();
 	update_top();
 
@@ -375,9 +403,30 @@ func update_mid():
 		slider_mid.set_item_custom_bg_color(idx, item_col);
 		idx += 1;
 
+func update_known_values():
+	if not perf.pointers.run(0): return  # reuse same perf limiter
+	if not n_known_vars: return
+	n_known_vars.clear()
+
+	var cur_ebp = cpu.regs[ISA.REG_EBP]
+	known_vars_display_list.clear()
+
+	for offset in known_stack_offsets:
+		for info in known_stack_offsets[offset]:
+			var addr = cur_ebp + offset
+			var val = read32(addr) if info.size >= 4 else bus.readCell(addr)
+
+			var idx = n_known_vars.add_item(info.user_name)
+			n_known_vars.set_item_text(idx, 1, "EBP%+d" % offset)
+			n_known_vars.set_item_text(idx, 2, str(val))
+			n_known_vars.set_item_text(idx, 3, info.func_name)
+
+			known_vars_display_list.append(info)
+
 func calc_highlight_color(addr):
 	var item1_col = Color.BLACK;
 	var item2_col = Color.BLACK;
+	var item3_col = Color.BLACK;
 	for item in stack_items:
 		if addr == item.ip:
 			item2_col = Color(0.35, 0.0, 0.0, 1.0);
@@ -389,7 +438,14 @@ func calc_highlight_color(addr):
 			item1_col = Color.GREEN;
 	if addr == cpu.regs[cpu.ISA.REG_ESP]:
 		item2_col = Color.CYAN;
-	return item1_col.lerp(item2_col, 0.5);
+	
+	# for codegen known values
+	var cur_ebp = cpu.regs[ISA.REG_EBP]
+	var offset = addr - cur_ebp
+	if offset in known_stack_offsets:
+		item3_col = Color.PURPLE;
+	
+	return item1_col.lerp(item2_col, 0.5).lerp(item3_col,0.33);
 
 func is_in_range(x,from,to):
 	return (x >= from) and (x < to);
@@ -456,6 +512,19 @@ func update_top():
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER;
 		
 		var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
+		var tooltip = "Value at %d+%d (EBP%+d)" % [pos, view_size, pos - cur_ebp]
+		
+		var overlapping = get_overlapping_vars(pos, view_size)
+		if overlapping:
+			tooltip += "\n--- Known Vars ---"
+			for var_info in overlapping:
+				tooltip += "\n  %s (%s) @EBP%+d..%+d = %s" % [
+				var_info.name,
+				var_info.func,
+				var_info.ebp_offset,
+				var_info.ebp_offset + var_info.size,
+				var_info.value_str
+			]
 		view_box.tooltip_text = "Value at %d+%d (EBP%+d)" % [pos, view_size, pos-cur_ebp];
 	#if offs_real:
 	#	first_is_blank = 1;
@@ -850,6 +919,31 @@ func print_cpu_hist(n_events):
 
 func on_sym_table_ready(sym_table) -> void:
 	cur_sym_table = sym_table;
+	build_known_values();
+	perf.pointers.prime()
+	
+func build_known_values():
+	known_stack_offsets.clear()
+	if not cur_sym_table: return
+	
+	for func_name in cur_sym_table.funcs:
+		var fun = cur_sym_table.funcs[func_name]
+		for cat in [fun.args, fun.vars]:  # include constants?
+			for val in cat:
+				if val.pos.type == "stack":
+					var offset = val.pos.pos  # EBP-relative offset
+					if offset not in known_stack_offsets:
+						known_stack_offsets[offset] = []
+					var size = 4
+					if val.is_array:
+						size = 4 * int(val.array_size)
+					known_stack_offsets[offset].append({
+						"user_name": val.user_name,
+						"ir_name": val.ir_name,
+						"size": size,
+						"is_array": val.is_array,
+						"func_name": func_name
+					})
 
 func update_HL_locals():
 	n_hl_locals.clear();

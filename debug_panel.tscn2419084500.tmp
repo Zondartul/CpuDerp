@@ -66,7 +66,7 @@ fixed_column_width = 24
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="known_vals" type="ItemList" parent="V/TabContainer/pointers" unique_id=1407183091]
+[node name="known_vals" type="Tree" parent="V/TabContainer/pointers" unique_id=1683042485]
 layout_mode = 2
 
 [node name="H" type="HBoxContainer" parent="V/TabContainer/pointers" unique_id=987810260]

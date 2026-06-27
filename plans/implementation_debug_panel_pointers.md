@@ -149,31 +149,31 @@ On `on_sym_table_ready()`:
 
 ```gdscript
 func on_sym_table_ready(sym_table) -> void:
-    cur_sym_table = sym_table
-    build_known_values()  # NEW
+	cur_sym_table = sym_table
+	build_known_values()  # NEW
 
 func build_known_values():
-    known_stack_offsets.clear()
-    if not cur_sym_table: return
-    
-    for func_name in cur_sym_table.funcs:
-        var fun = cur_sym_table.funcs[func_name]
-        for cat in [fun.args, fun.vars]:  # include constants?
-            for val in cat:
-                if val.pos.type == "stack":
-                    var offset = val.pos.pos  # EBP-relative offset
-                    if offset not in known_stack_offsets:
-                        known_stack_offsets[offset] = []
-                    var size = 4
-                    if val.is_array:
-                        size = 4 * int(val.array_size)
-                    known_stack_offsets[offset].append({
-                        "user_name": val.user_name,
-                        "ir_name": val.ir_name,
-                        "size": size,
-                        "is_array": val.is_array,
-                        "func_name": func_name
-                    })
+	known_stack_offsets.clear()
+	if not cur_sym_table: return
+	
+	for func_name in cur_sym_table.funcs:
+		var fun = cur_sym_table.funcs[func_name]
+		for cat in [fun.args, fun.vars]:  # include constants?
+			for val in cat:
+				if val.pos.type == "stack":
+					var offset = val.pos.pos  # EBP-relative offset
+					if offset not in known_stack_offsets:
+						known_stack_offsets[offset] = []
+					var size = 4
+					if val.is_array:
+						size = 4 * int(val.array_size)
+					known_stack_offsets[offset].append({
+						"user_name": val.user_name,
+						"ir_name": val.ir_name,
+						"size": size,
+						"is_array": val.is_array,
+						"func_name": func_name
+					})
 ```
 
 ### 2.3 Size Consideration for Arrays
@@ -309,21 +309,21 @@ Add a new color entry in `calc_highlight_color()` for bytes whose EBP-relative o
 const COLOR_CODEGEN_VAR = Color(0.3, 0.0, 0.5, 1.0)  # Purple/magenta for codegen vars
 
 func calc_highlight_color(addr):
-    var item1_col = Color.BLACK
-    var item2_col = Color.BLACK
-    var item3_col = Color.BLACK   # NEW: third layer for codegen vars
-    
-    # ... existing stack frame highlighting logic ...
-    
-    # NEW: Codegen known values highlighting
-    var cur_ebp = cpu.regs[ISA.REG_EBP]
-    var offset = addr - cur_ebp
-    if offset in known_stack_offsets:
-        item3_col = COLOR_CODEGEN_VAR
-    
-    # Three-way blend
-    var tmp = item1_col.lerp(item2_col, 0.5)
-    return tmp.lerp(item3_col, 0.33)  # blend in codegen color with lower weight
+	var item1_col = Color.BLACK
+	var item2_col = Color.BLACK
+	var item3_col = Color.BLACK   # NEW: third layer for codegen vars
+	
+	# ... existing stack frame highlighting logic ...
+	
+	# NEW: Codegen known values highlighting
+	var cur_ebp = cpu.regs[ISA.REG_EBP]
+	var offset = addr - cur_ebp
+	if offset in known_stack_offsets:
+		item3_col = COLOR_CODEGEN_VAR
+	
+	# Three-way blend
+	var tmp = item1_col.lerp(item2_col, 0.5)
+	return tmp.lerp(item3_col, 0.33)  # blend in codegen color with lower weight
 ```
 
 ### 5.2 New Highlight in `slider_top` (Bottom Bar)
@@ -332,27 +332,27 @@ In `update_top()`, when creating `ColorRect` overlays, add a check for whether a
 
 ```gdscript
 func update_top():
-    # ... existing cleanup and setup ...
-    
-    for i in range(n_views):
-        # ... existing position calculation ...
-        
-        # NEW: Check if this view range contains known codegen variables
-        var has_codegen_var = false
-        for b in range(view_size):
-            var byte_addr = pos + b
-            var ebp_offset = byte_addr - cpu.regs[ISA.REG_EBP]
-            if ebp_offset in known_stack_offsets:
-                has_codegen_var = true
-                break
-        
-        var view_box = ColorRect.new()
-        if has_codegen_var:
-            view_box.color = Color(0.3, 0.0, 0.5, 0.3)  # Purple tint for codegen vars
-        else:
-            view_box.color = col_odd if not is_even else col_even
-        
-        # ... rest of existing rendering ...
+	# ... existing cleanup and setup ...
+	
+	for i in range(n_views):
+		# ... existing position calculation ...
+		
+		# NEW: Check if this view range contains known codegen variables
+		var has_codegen_var = false
+		for b in range(view_size):
+			var byte_addr = pos + b
+			var ebp_offset = byte_addr - cpu.regs[ISA.REG_EBP]
+			if ebp_offset in known_stack_offsets:
+				has_codegen_var = true
+				break
+		
+		var view_box = ColorRect.new()
+		if has_codegen_var:
+			view_box.color = Color(0.3, 0.0, 0.5, 0.3)  # Purple tint for codegen vars
+		else:
+			view_box.color = col_odd if not is_even else col_even
+		
+		# ... rest of existing rendering ...
 ```
 
 ### 5.3 Hover Hints on `slider_top` for Overlapping Known Values
@@ -376,26 +376,26 @@ Introduce a helper function that collects overlapping codegen vars for a given a
 
 ```gdscript
 func get_overlapping_vars(pos: int, view_size: int) -> Array:
-    ## Returns Array of Dictionaries for known codegen vars whose
-    ## storage range overlaps [pos, pos+view_size).
-    ## Each entry: {name, func, ebp_offset, size, value_str}
-    var cur_ebp = cpu.regs[ISA.REG_EBP]
-    var results = []
-    for offset in known_stack_offsets:
-        for info in known_stack_offsets[offset]:
-            var var_abs = cur_ebp + offset
-            var var_end = var_abs + info.size
-            # check overlap: [var_abs, var_end) ∩ [pos, pos+view_size)
-            if var_abs < pos + view_size and var_end > pos:
-                var val = read32(var_abs) if info.size >= 4 else bus.readCell(var_abs)
-                results.append({
-                    "name": info.user_name,
-                    "func": info.func_name,
-                    "ebp_offset": offset,
-                    "size": info.size,
-                    "value_str": str(val)
-                })
-    return results
+	## Returns Array of Dictionaries for known codegen vars whose
+	## storage range overlaps [pos, pos+view_size).
+	## Each entry: {name, func, ebp_offset, size, value_str}
+	var cur_ebp = cpu.regs[ISA.REG_EBP]
+	var results = []
+	for offset in known_stack_offsets:
+		for info in known_stack_offsets[offset]:
+			var var_abs = cur_ebp + offset
+			var var_end = var_abs + info.size
+			# check overlap: [var_abs, var_end) ∩ [pos, pos+view_size)
+			if var_abs < pos + view_size and var_end > pos:
+				var val = read32(var_abs) if info.size >= 4 else bus.readCell(var_abs)
+				results.append({
+					"name": info.user_name,
+					"func": info.func_name,
+					"ebp_offset": offset,
+					"size": info.size,
+					"value_str": str(val)
+				})
+	return results
 ```
 
 **Integration in `update_top()`**: After building `view_box` and before setting its tooltip:
@@ -406,15 +406,15 @@ var tooltip = "Value at %d+%d (EBP%+d)" % [pos, view_size, pos - cur_ebp]
 
 var overlapping = get_overlapping_vars(pos, view_size)
 if overlapping:
-    tooltip += "\n--- Known Vars ---"
-    for var_info in overlapping:
-        tooltip += "\n  %s (%s) @EBP%+d..%+d = %s" % [
-            var_info.name,
-            var_info.func,
-            var_info.ebp_offset,
-            var_info.ebp_offset + var_info.size,
-            var_info.value_str
-        ]
+	tooltip += "\n--- Known Vars ---"
+	for var_info in overlapping:
+		tooltip += "\n  %s (%s) @EBP%+d..%+d = %s" % [
+			var_info.name,
+			var_info.func,
+			var_info.ebp_offset,
+			var_info.ebp_offset + var_info.size,
+			var_info.value_str
+		]
 
 view_box.tooltip_text = tooltip
 ```
@@ -529,10 +529,10 @@ When a user clicks a known variable in the `n_known_vars` list (Step 8), the sli
 - [ ] Test the click-to-navigate interaction
 - [ ] Test `slider_bot` color legend
 - [ ] Test hover hints on `slider_top` overlays:
-    - [ ] Single-byte view (uint8) overlapping one variable: tooltip shows name, func, offset, value
-    - [ ] Multi-byte view (uint32) overlapping two adjacent variables: tooltip lists both
-    - [ ] No overlap: tooltip shows only the original address/EBP summary
-    - [ ] Click known var in list then hover slider_top: tooltip includes that var
+	- [ ] Single-byte view (uint8) overlapping one variable: tooltip shows name, func, offset, value
+	- [ ] Multi-byte view (uint32) overlapping two adjacent variables: tooltip lists both
+	- [ ] No overlap: tooltip shows only the original address/EBP summary
+	- [ ] Click known var in list then hover slider_top: tooltip includes that var
 
 ---
 
@@ -594,35 +594,35 @@ When a user clicks a known variable in the `n_known_vars` list (Step 8), the sli
 
 ```mermaid
 flowchart TD
-    subgraph Compilation Pipeline
-        A[analyzer_md.gd] -->|IR_ready| B[comp_compile_md.gd]
-        B -->|parse_file| C[codegen_md.gd]
-        C -->|fixup_symtable| D[sym_table with pos info]
-        D -->|sym_table_ready signal| E[debug_panel.gd]
-    end
+	subgraph Compilation Pipeline
+		A[analyzer_md.gd] -->|IR_ready| B[comp_compile_md.gd]
+		B -->|parse_file| C[codegen_md.gd]
+		C -->|fixup_symtable| D[sym_table with pos info]
+		D -->|sym_table_ready signal| E[debug_panel.gd]
+	end
 
-    subgraph Debug Panel
-        E -->|on_sym_table_ready| F[build_known_values]
-        F --> G[known_stack_offsets dict]
-        
-        H[_process loop] -->|update_cpu| I[update_pointers]
-        I --> J[update_mid]
-        I --> K[update_top]
-        I --> L[update_known_values NEW]
-        
-        L --> M[n_known_vars ItemList]
-        J --> N[calc_highlight_color + COLOR_CODEGEN_VAR]
-        K --> O[slider_top ColorRect + purple tint]
-        
-        G --> J
-        G --> K
-        G --> L
-    end
+	subgraph Debug Panel
+		E -->|on_sym_table_ready| F[build_known_values]
+		F --> G[known_stack_offsets dict]
+		
+		H[_process loop] -->|update_cpu| I[update_pointers]
+		I --> J[update_mid]
+		I --> K[update_top]
+		I --> L[update_known_values NEW]
+		
+		L --> M[n_known_vars ItemList]
+		J --> N[calc_highlight_color + COLOR_CODEGEN_VAR]
+		K --> O[slider_top ColorRect + purple tint]
+		
+		G --> J
+		G --> K
+		G --> L
+	end
 
-    subgraph CPU State
-        P[CPU_vm.gd] -->|regs.REG_EBP| E
-        P -->|regs.REG_ESP| E
-    end
+	subgraph CPU State
+		P[CPU_vm.gd] -->|regs.REG_EBP| E
+		P -->|regs.REG_ESP| E
+	end
 ```
 
 ## Summary of Files to Modify
