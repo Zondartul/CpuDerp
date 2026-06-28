@@ -35,6 +35,8 @@
 [ext_resource type="PackedScene" uid="uid://bo8535irp46bf" path="res://scenes/win_ed_dbg.tscn" id="21_fv21b"]
 [ext_resource type="Script" uid="uid://vqh76ivpomru" path="res://scenes/comp_search.gd" id="21_pibwh"]
 [ext_resource type="Script" uid="uid://bc3i5p12hm1p1" path="res://class_ErrorReporter.gd" id="22_tel4y"]
+[ext_resource type="Script" uid="uid://cn03wgo1btbwo" path="res://scenes/comp_codegen_new.gd" id="23_m1s2c"]
+[ext_resource type="Script" uid="uid://dc8v8a4iipxwl" path="res://scenes/codegen_master.gd" id="24_n3p4q"]
 
 [sub_resource type="SystemFont" id="SystemFont_30trl"]
 font_names = PackedStringArray("Courier New")
@@ -99,85 +101,29 @@ columns = 4
 layout_mode = 2
 text = "On"
 
-[node name="cr_led_on" type="ColorRect" parent="Panel/TabContainer/Screen/V/Control/GridContainer" unique_id=915338326]
-custom_minimum_size = Vector2(16, 16)
+[node name="sb_freq" type="SpinBox" parent="Panel/TabContainer/Screen/V/Control/GridContainer" unique_id=1790493736]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-color = Color(0.168627, 0.168627, 0.168627, 1)
+min_value = 1.0
+max_value = 1000.0
+value = 1.0
 
-[node name="status" type="Label" parent="Panel/TabContainer/Screen/V/Control/GridContainer" unique_id=1273263530]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.392157, 0.392157, 0.392157, 1)
-text = "status"
-
-[node name="btnKeyboard" type="Button" parent="Panel/TabContainer/Screen/V/Control/GridContainer" unique_id=563160321]
-layout_mode = 2
-size_flags_horizontal = 3
-toggle_mode = true
-text = "Keyboard"
-
-[node name="btnReset" type="Button" parent="Panel/TabContainer/Screen/V/Control/GridContainer" unique_id=422611619]
+[node name="btn_reset" type="Button" parent="Panel/TabContainer/Screen/V/Control/GridContainer" unique_id=1266985767]
 layout_mode = 2
 text = "Reset"
 
-[node name="cr_led_error" type="ColorRect" parent="Panel/TabContainer/Screen/V/Control/GridContainer" unique_id=1177142973]
-custom_minimum_size = Vector2(16, 16)
+[node name="cr_led_on" type="ColorRect" parent="Panel/TabContainer/Screen/V/Control/GridContainer" unique_id=1708574914]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-color = Color(0.196078, 0.196078, 0.196078, 1)
+color = Color(0, 0, 0, 1)
 
-[node name="error" type="Label" parent="Panel/TabContainer/Screen/V/Control/GridContainer" unique_id=1306276640]
+[node name="cr_led_error" type="ColorRect" parent="Panel/TabContainer/Screen/V/Control/GridContainer" unique_id=894135065]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.364706, 0.364706, 0.364706, 1)
-text = "error"
+color = Color(0, 0, 0, 1)
 
-[node name="sb_freq" type="SpinBox" parent="Panel/TabContainer/Screen/V/Control/GridContainer" unique_id=1212554935]
+[node name="Editor" type="Control" parent="Panel/TabContainer" unique_id=1509986975]
 layout_mode = 2
-min_value = 1.0
-max_value = 100000.0
-value = 10000.0
-suffix = "Hz"
-
-[node name="Memory" type="Control" parent="Panel/TabContainer" unique_id=2052677681]
-visible = false
-layout_mode = 2
-script = ExtResource("2_0ld40")
-metadata/_tab_index = 1
-
-[node name="BoxContainer" type="BoxContainer" parent="Panel/TabContainer/Memory" unique_id=893380831]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="mem_map" type="ItemList" parent="Panel/TabContainer/Memory/BoxContainer" unique_id=1934098091]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 2.0
-max_text_lines = 2
-icon_mode = 0
-
-[node name="VSeparator" type="VSeparator" parent="Panel/TabContainer/Memory/BoxContainer" unique_id=1228437562]
-layout_mode = 2
-
-[node name="TextEdit" type="RichTextLabel" parent="Panel/TabContainer/Memory/BoxContainer" unique_id=1863478347]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 5.0
-theme_override_colors/default_color = Color(0.497474, 0.497474, 0.497474, 1)
-bbcode_enabled = true
-
-[node name="Editor" type="Control" parent="Panel/TabContainer" unique_id=794743330]
-visible = false
-layout_mode = 2
-script = ExtResource("3_6wt7m")
 metadata/_tab_index = 2
 
-[node name="V" type="VBoxContainer" parent="Panel/TabContainer/Editor" unique_id=1045607978]
+[node name="V" type="VBoxContainer" parent="Panel/TabContainer/Editor" unique_id=1674516771]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -185,17 +131,17 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MenuBar" type="MenuBar" parent="Panel/TabContainer/Editor/V" unique_id=2051255657]
+[node name="MenuBar" type="MenuBar" parent="Panel/TabContainer/Editor/V" unique_id=1807228736]
 layout_mode = 2
 
-[node name="File" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar" unique_id=875281834]
+[node name="File" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar" unique_id=1855308410]
 item_count = 5
 item_0/text = "New"
 item_0/id = 0
 item_1/text = "Save"
 item_1/id = 1
 item_1/disabled = true
-item_2/text = "Save as..."
+item_2/text = "Save as"
 item_2/id = 2
 item_2/disabled = true
 item_3/text = "Load"
@@ -325,6 +271,12 @@ script = ExtResource("14_vxglm")
 [node name="codegen_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md" unique_id=1243224611]
 script = ExtResource("15_2f3dj")
 
+[node name="comp_codegen_new" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md" unique_id=1999999999]
+script = ExtResource("23_m1s2c")
+
+[node name="codegen_master" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md/comp_codegen_new" unique_id=2099999999]
+script = ExtResource("24_n3p4q")
+
 [node name="comp_file" type="Node" parent="Panel/TabContainer/Editor" unique_id=1733834376]
 script = ExtResource("4_3f0fj")
 
@@ -347,125 +299,73 @@ visible = false
 
 [node name="comp_erep" type="Node" parent="Panel/TabContainer/Editor" unique_id=1834569858 node_paths=PackedStringArray("Editor")]
 script = ExtResource("22_tel4y")
-Editor = NodePath("..")
 
-[node name="comp_search" type="Node" parent="Panel/TabContainer/Editor" unique_id=1787879745 node_paths=PackedStringArray("Editor", "comp_file")]
+[node name="comp_search" type="Node" parent="Panel/TabContainer/Editor" unique_id=1464964782]
 script = ExtResource("21_pibwh")
-Editor = NodePath("..")
-comp_file = NodePath("../comp_file")
 
-[node name="window_debug" type="Window" parent="Panel/TabContainer/Editor" unique_id=567077281]
-oversampling_override = 1.0
-title = "Debug"
-initial_position = 2
-size = Vector2i(490, 500)
+[node name="win_token_view" type="Window" parent="Panel/TabContainer/Editor" unique_id=915955272]
 visible = false
 
-[node name="debug_panel" parent="Panel/TabContainer/Editor/window_debug" unique_id=89678793 instance=ExtResource("10_cypyl")]
-
-[node name="win_token_view" parent="Panel/TabContainer/Editor" unique_id=1521281730 instance=ExtResource("13_jscy8")]
+[node name="win_parse" type="Window" parent="Panel/TabContainer/Editor" unique_id=435032644 instance=ExtResource("15_y6deb")]
 visible = false
 
-[node name="win_parse" parent="Panel/TabContainer/Editor" unique_id=1331710905 instance=ExtResource("15_y6deb")]
-title = "Parse (AST)"
+[node name="win_IR" type="Window" parent="Panel/TabContainer/Editor" unique_id=702731013 instance=ExtResource("16_og1vs")]
 visible = false
 
-[node name="win_IR" parent="Panel/TabContainer/Editor" unique_id=1988237901 instance=ExtResource("16_og1vs")]
+[node name="win_ed_dbg" type="Window" parent="Panel/TabContainer/Editor" unique_id=613685780 instance=ExtResource("21_fv21b")]
 visible = false
 
-[node name="win_ed_dbg" parent="Panel/TabContainer/Editor" unique_id=2029206856 node_paths=PackedStringArray("Editor", "comp_file", "tab_EFiles", "comp_build") instance=ExtResource("21_fv21b")]
+[node name="window_debug" type="Window" parent="Panel/TabContainer/Editor" unique_id=915955271]
 visible = false
-Editor = NodePath("..")
-comp_file = NodePath("../comp_file")
-tab_EFiles = NodePath("../V/EFiles")
-comp_build = NodePath("../comp_build")
 
-[node name="btn_debugger" type="Button" parent="Panel" unique_id=1870504613]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -25.0
-offset_top = 1.0
-offset_right = -1.0
-offset_bottom = 25.0
-grow_horizontal = 0
-icon = ExtResource("11_nykja")
+[node name="debug_panel" parent="Panel/TabContainer/Editor/window_debug" instance=ExtResource("10_cypyl")]
+visible = false
 
-[node name="VM" type="Node" parent="." unique_id=698884529]
+[node name="VM" type="Node" parent="." unique_id=1715618666]
 script = ExtResource("3_m68nv")
 
-[node name="Bus" type="Node" parent="VM" unique_id=279478614]
+[node name="CPU_vm" type="Node" parent="VM" unique_id=1726819496]
+script = ExtResource("7_p2205")
+
+[node name="Bus" type="Node" parent="VM" unique_id=1867496827]
 script = ExtResource("11_37vc5")
 
-[node name="RAM_64k" type="Node" parent="VM/Bus" unique_id=1098215758]
+[node name="RAM_64k" type="Node" parent="VM/Bus" unique_id=762182543]
 script = ExtResource("11_1g7n4")
 
-[node name="GPU_cs" type="Node" parent="VM/Bus" unique_id=673429378]
+[node name="KB" type="Node" parent="VM/Bus" unique_id=1494836607]
+script = ExtResource("6_jv3qg")
+
+[node name="GPU_cs" type="Node" parent="VM/Bus" unique_id=1191987613]
 script = ExtResource("4_yy5uk")
 font = SubResource("SystemFont_30trl")
 
-[node name="SubViewport" type="SubViewport" parent="VM/Bus/GPU_cs" unique_id=211890465]
-render_target_update_mode = 0
+[node name="SubViewport" type="SubViewport" parent="VM/Bus/GPU_cs" unique_id=184415382]
+transparent_bg = true
+size = Vector2i(512, 512)
 
-[node name="GPU_scene" parent="VM/Bus/GPU_cs/SubViewport" unique_id=153986497 instance=ExtResource("5_5bfjd")]
+[node name="GPU_scene" parent="VM/Bus/GPU_cs/SubViewport" instance=ExtResource("5_5bfjd")]
 
-[node name="KB" type="Node" parent="VM/Bus" unique_id=1599629429]
-script = ExtResource("6_jv3qg")
+[node name="Memory" type="Control" parent="Panel/TabContainer" unique_id=1817448037]
+layout_mode = 2
+metadata/_tab_index = 3
 
-[node name="CPU_vm" type="Node" parent="VM" unique_id=30034980]
-script = ExtResource("7_p2205")
+[node name="BoxContainer" type="HBoxContainer" parent="Panel/TabContainer/Memory" unique_id=974145208]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="todo" type="Node" parent="." unique_id=146969807]
-script = ExtResource("19_a20q3")
+[node name="mem_map" type="ItemList" parent="Panel/TabContainer/Memory/BoxContainer" unique_id=706385760]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+size_flags_horizontal = 3
 
-[connection signal="toggled" from="Panel/TabContainer/Screen/V/Control/GridContainer/cbOn" to="." method="_on_cb_on_toggled"]
-[connection signal="toggled" from="Panel/TabContainer/Screen/V/Control/GridContainer/btnKeyboard" to="." method="_on_btn_keyboard_toggled"]
-[connection signal="pressed" from="Panel/TabContainer/Screen/V/Control/GridContainer/btnReset" to="." method="_on_btn_reset_pressed"]
-[connection signal="value_changed" from="Panel/TabContainer/Screen/V/Control/GridContainer/sb_freq" to="VM" method="_on_sb_freq_value_changed"]
-[connection signal="item_selected" from="Panel/TabContainer/Memory/BoxContainer/mem_map" to="Panel/TabContainer/Memory" method="_on_mem_map_item_selected"]
-[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/File" to="Panel/TabContainer/Editor/comp_file" method="_on_file_index_pressed"]
-[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Edit" to="Panel/TabContainer/Editor" method="_on_edit_index_pressed"]
-[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/View" to="Panel/TabContainer/Editor" method="_on_view_index_pressed"]
-[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Settings" to="Panel/TabContainer/Editor" method="_on_settings_index_pressed"]
-[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Settings/Language" to="Panel/TabContainer/Editor/comp_build" method="_on_language_index_pressed"]
-[connection signal="index_pressed" from="Panel/TabContainer/Editor/V/MenuBar/Build" to="Panel/TabContainer/Editor/comp_build" method="_on_build_index_pressed"]
-[connection signal="tab_changed" from="Panel/TabContainer/Editor/V/EFiles" to="Panel/TabContainer/Editor/comp_file" method="_on_e_files_tab_changed"]
-[connection signal="gui_input" from="Panel/TabContainer/Editor/V/VSearch/H/LineEdit" to="Panel/TabContainer/Editor/comp_search" method="_on_line_edit_gui_input"]
-[connection signal="text_changed" from="Panel/TabContainer/Editor/V/VSearch/H/LineEdit" to="Panel/TabContainer/Editor/comp_search" method="_on_line_edit_text_changed"]
-[connection signal="text_submitted" from="Panel/TabContainer/Editor/V/VSearch/H/LineEdit" to="Panel/TabContainer/Editor/comp_search" method="_on_line_edit_text_submitted"]
-[connection signal="pressed" from="Panel/TabContainer/Editor/V/VSearch/H/btn_prev" to="Panel/TabContainer/Editor/comp_search" method="_on_btn_prev_pressed"]
-[connection signal="pressed" from="Panel/TabContainer/Editor/V/VSearch/H/btn_next" to="Panel/TabContainer/Editor/comp_search" method="_on_btn_next_pressed"]
-[connection signal="pressed" from="Panel/TabContainer/Editor/V/VSearch/H/btn_close_search" to="Panel/TabContainer/Editor/comp_search" method="_on_btn_close_search_pressed"]
-[connection signal="sig_cprint" from="Panel/TabContainer/Editor/comp_build/comp_asm_zd" to="Panel/TabContainer/Editor" method="_on_cprint"]
-[connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_asm_zd" to="Panel/TabContainer/Editor" method="_on_user_error"]
-[connection signal="IR_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor/win_IR" method="_on_comp_compile_md_ir_ready"]
-[connection signal="open_file_request" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="." method="_on_comp_compile_md_open_file_request"]
-[connection signal="parse_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor/win_parse" method="_on_comp_compile_md_parse_ready"]
-[connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor" method="_on_user_error"]
-[connection signal="sym_table_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="on_sym_table_ready"]
-[connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/tokenizer_md" to="Panel/TabContainer/Editor" method="_on_user_error"]
-[connection signal="tokens_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/tokenizer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_tokenizer_md_tokens_ready"]
-[connection signal="sig_cprint" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor" method="_on_cprint"]
-[connection signal="sig_parse_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_parser_md_sig_parse_ready"]
-[connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor" method="_on_user_error"]
-[connection signal="IR_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_analyzer_md_ir_ready"]
-[connection signal="sig_cprint" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor" method="_on_cprint"]
-[connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/analyzer_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_analyzer_md_sig_user_error"]
-[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor" method="_on_comp_file_cur_efile_changed"]
-[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_highlight" method="_on_comp_file_cur_efile_changed"]
-[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_build" method="_on_comp_file_cur_efile_changed"]
-[connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_save" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_save_file_selected"]
-[connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_load" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_load_file_selected"]
-[connection signal="sig_highlight_line" from="Panel/TabContainer/Editor/comp_erep" to="Panel/TabContainer/Editor" method="_on_highlight_line"]
-[connection signal="sig_highlight_line" from="Panel/TabContainer/Editor/comp_search" to="Panel/TabContainer/Editor" method="_on_highlight_line"]
-[connection signal="close_requested" from="Panel/TabContainer/Editor/window_debug" to="Panel/TabContainer/Editor/window_debug" method="hide"]
-[connection signal="set_highlight" from="Panel/TabContainer/Editor/window_debug/debug_panel" to="Panel/TabContainer/Editor/comp_build" method="_on_debug_panel_set_highlight"]
-[connection signal="close_requested" from="Panel/TabContainer/Editor/win_IR" to="Panel/TabContainer/Editor/win_IR" method="hide"]
-[connection signal="pressed" from="Panel/btn_debugger" to="Panel/TabContainer/Editor/window_debug" method="show"]
-[connection signal="sig_keypress" from="VM/Bus/KB" to="." method="_on_kb_sig_keypress"]
-[connection signal="cpu_step_done" from="VM/CPU_vm" to="Panel/TabContainer/Memory" method="_on_cpu_vm_cpu_step_done"]
-[connection signal="cpu_step_done" from="VM/CPU_vm" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="_on_cpu_vm_cpu_step_done"]
-[connection signal="mem_accessed" from="VM/CPU_vm" to="Panel/TabContainer/Memory" method="_on_cpu_vm_mem_accessed"]
-[connection signal="mem_accessed" from="VM/CPU_vm" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="_on_cpu_vm_mem_accessed"]
-[connection signal="on_cpu_error" from="VM/CPU_vm" to="." method="_on_cpu_vm_on_cpu_error"]
+[node name="TextEdit" type="TextEdit" parent="Panel/TabContainer/Memory/BoxContainer" unique_id=21963647]
+custom_minimum_size = Vector2(390, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+editable = false
+wrap_mode = 0

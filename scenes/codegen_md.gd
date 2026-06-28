@@ -1,3 +1,28 @@
+# ============================================================================
+# codegen_md.gd — DEPRECATED: Old monolithic codegen
+# ============================================================================
+#
+# ⚠️  DEPRECATED  ⚠️
+# This file is the OLD codegen implementation. It has been superseded by the
+# new data-driven pipeline:
+#
+#   codegen_master.gd       — Pipeline orchestrator (the new entry point)
+#   codegen_templates.tg    — Human-readable assembly template format
+#   template_parser.gd      — .tg → InflatedTemplateGraph parser
+#   abi_scanner.gd          — Pass 1: symbol discovery + allocation
+#   stor_alloc.gd            — Pass 1: storage allocation
+#   tmpl_expand.gd           — Pass 2: template expansion + emit
+#   asm_emit.gd              — Pass 2: assembly emitter + fixup
+#   reg_resolve.gd           — Register / stack resolver
+#   globals_emit.gd          — Global data section emitter
+#
+# This file is kept for backward compatibility during incremental migration.
+# New features should be implemented in the new pipeline; this file will be
+# removed once all IR commands are migrated.
+#
+# See: plans/synthesis_master_plan_v2.md for the full migration strategy.
+# ============================================================================
+
 extends Node
 
 signal locations_ready(loc_map:Dictionary);

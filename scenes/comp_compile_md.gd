@@ -4,6 +4,7 @@ extends Node
 @onready var parser = $parser_md;
 @onready var analyzer = $analyzer_md;
 @onready var codegen = $codegen_md;
+@onready var codegen_new = $comp_codegen_new if has_node("comp_codegen_new") else null;
 const lang = preload("res://scenes/lang_md.gd");
 signal tokens_ready;
 signal parse_ready;
@@ -22,6 +23,16 @@ func reset():
 	has_error = false;
 	tokenizer.reset();
 
+# Switch between old and new codegen.
+# When use_new_codegen is true (default), the new data-driven
+# template-based codegen pipeline is used (codegen_master.gd).
+# Set to false to fall back to the old codegen_md.gd.
+#
+# The new pipeline uses the .tg template system and supports
+# incremental migration of individual IR commands via
+# codegen_master.migrate_op().
+var use_new_codegen: bool = true
+
 func compile(input):
 	tokenizer.cur_path = cur_path;
 	input["tokens"] = tokenizer.tokenize(input);		if has_error: return false;
@@ -30,10 +41,13 @@ func compile(input):
 	if not input.ast: return;
 	input["IR"] = analyzer.analyze(input);			if has_error: return false;
 	input.filename = "IR.txt";
-	input["assy"] = codegen.parse_file(input);	if has_error: return false;
-	codegen.fixup_symtable(analyzer.sym_table); if has_error: return false;
+	if use_new_codegen and codegen_new != null:
+		input["assy"] = codegen_new.parse_file(input);	if has_error: return false;
+		codegen_new.fixup_symtable(analyzer.sym_table); if has_error: return false;
+	else:
+		input["assy"] = codegen.parse_file(input);	if has_error: return false;
+		codegen.fixup_symtable(analyzer.sym_table); if has_error: return false;
 	sym_table_ready.emit(analyzer.sym_table);
-	#print(_assy);
 	save_file(input.assy, "a.zd");
 	open_file_request.emit("a.zd");
 	return true;

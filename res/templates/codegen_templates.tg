@@ -1,0 +1,278 @@
+# res://templates/codegen_templates.tg
+# CpuDerp Codegen Templates — IR Command → Assembly Mapping
+#
+# Format:
+#   @template NAME(param_slot:type, ...):
+#       @bind local_name = $cmd.words[N]
+#       ...emitted lines with {local_name} references...
+#   @end
+#
+# Slot types:
+#   load    — value to be loaded from storage ($name)
+#   store   — value to be stored to (^name)
+#   addr    — address of value (@name)
+#   variadic — slurps 0+ words from array
+#   codeblock — name of a code block to emit inline
+#   label   — label name from the IR
+#   optional — may not exist in words
+
+
+# ═══════════════════════════════════════════════════════════════
+# MOV: Move src into dest
+# ═══════════════════════════════════════════════════════════════
+
+@template MOV(dest:store, src:load):
+    @bind dest = $cmd.words[1]
+    @bind src  = $cmd.words[2]
+
+    mov {dest}, {src};
+@end
+
+
+# ═══════════════════════════════════════════════════════════════
+# OP: Arithmetic/logic operation
+# ═══════════════════════════════════════════════════════════════
+# Patterns: OP op a b res
+
+@template OP(op:immediate, a:load, b:load, res:store):
+    @bind op  = $cmd.words[1]
+    @bind a   = $cmd.words[2]
+    @bind b   = $cmd.words[3]
+    @bind res = $cmd.words[4]
+
+    # --- Mono-operand ops (INC, DEC) ---
+    @variant INC:
+        mov {res}, {a};
+        inc {res};
+    @variant DEC:
+        mov {res}, {a};
+        dec {res};
+
+    # --- Standard binary ops (need temporaries) ---
+    @variant ADD, SUB, MUL, DIV, MOD:
+        @temp tmp_a, tmp_b
+        mov {tmp_a}, {a};
+        mov {tmp_b}, {b};
+        {op} {tmp_a}, {tmp_b};
+        mov {res}, {tmp_a};
+
+    # --- Comparison ops (use CTRL register) ---
+    @variant GREATER:
+        cmp {a}, {b};
+        mov {res}, CTRL;
+        band {res}, CMP_G;
+        bnot {res};
+        bnot {res};
+    @variant LESS:
+        cmp {a}, {b};
+        mov {res}, CTRL;
+        band {res}, CMP_L;
+        bnot {res};
+        bnot {res};
+    @variant EQUAL:
+        cmp {a}, {b};
+        mov {res}, CTRL;
+        band {res}, CMP_Z;
+        bnot {res};
+        bnot {res};
+    @variant NOT_EQUAL:
+        cmp {a}, {b};
+        mov {res}, CTRL;
+        band {res}, CMP_NZ;
+        bnot {res};
+        bnot {res};
+
+    # --- INDEX: array offset computation (load a, add b, store to res) ---
+    @variant INDEX:
+        @temp tmp_a, tmp_b
+        mov {tmp_a}, {a};
+        mov {tmp_b}, {b};
+        add {tmp_a}, {tmp_b};
+        mov {res}, {tmp_a};
+        @needs_deref(res)
+@end
+
+
+# ═══════════════════════════════════════════════════════════════
+# IF: Conditional branch
+# ═══════════════════════════════════════════════════════════════
+# Patterns: IF cb_cond res cb_block
+
+@template IF(cb_cond:codeblock, res:load, cb_block:codeblock):
+    @bind cb_cond  = $cmd.words[1]
+    @bind res      = $cmd.words[2]
+    @bind cb_block = $cmd.words[3]
+
+    @label lbl_else, lbl_end
+    @new_imm(0) → imm_0
+
+    @emit_cb(cb_cond)
+    cmp {res}, {imm_0};
+    jz  {lbl_else};
+    @emit_cb(cb_block)
+    jmp {lbl_end};
+    :{lbl_else}:
+    :{lbl_end}:
+@end
+
+
+# ═══════════════════════════════════════════════════════════════
+# ELSE_IF: Else-if chain
+# ═══════════════════════════════════════════════════════════════
+
+@template ELSE_IF(cb_cond:codeblock, res:load, cb_block:codeblock):
+    @bind cb_cond  = $cmd.words[1]
+    @bind res      = $cmd.words[2]
+    @bind cb_block = $cmd.words[3]
+
+    @label lbl_else
+    @new_imm(0) → imm_0
+
+    @emit_cb(cb_cond)
+    cmp {res}, {imm_0};
+    jz  {lbl_else};
+    @emit_cb(cb_block)
+    jmp {%if_block_lbl_end};
+    :{lbl_else}:
+@end
+
+
+# ═══════════════════════════════════════════════════════════════
+# ELSE: Else block
+# ═══════════════════════════════════════════════════════════════
+
+@template ELSE(cb_block:codeblock):
+    @bind cb_block = $cmd.words[1]
+
+    @emit_cb(cb_block)
+    :{%if_block_lbl_end}:
+@end
+
+
+# ═══════════════════════════════════════════════════════════════
+# WHILE: While loop
+# ═══════════════════════════════════════════════════════════════
+# Patterns: WHILE cb_cond res cb_block lbl_next lbl_end
+
+@template WHILE(cb_cond:codeblock, res:load, cb_block:codeblock, lbl_next:immediate, lbl_end:immediate):
+    @bind cb_cond  = $cmd.words[1]
+    @bind res      = $cmd.words[2]
+    @bind cb_block = $cmd.words[3]
+    @bind lbl_next = $cmd.words[4]
+    @bind lbl_end  = $cmd.words[5]
+
+    @new_imm(0) → imm_0
+
+    :{lbl_next}:
+    @emit_cb(cb_cond)
+    cmp {res}, {imm_0};
+    jz  {lbl_end};
+    @emit_cb(cb_block)
+    jmp {lbl_next};
+    :{lbl_end}:
+@end
+
+
+# ═══════════════════════════════════════════════════════════════
+# CALL: Function call
+# ═══════════════════════════════════════════════════════════════
+# Patterns: CALL fun [args...] res
+# Note: args are in brackets, res is after
+
+@template CALL(fun:addr, args:variadic, res:store):
+    @bind fun  = $cmd.words[1]
+    @bind args = $cmd.words[2..-2]   # from [ to just before res
+    @bind res  = $cmd.words[-1]
+
+    @ref_cb(fun)
+    @reverse(args)
+
+    for arg in args:
+        push {arg};
+    endfor
+    call {fun};
+    add  ESP, {len(args) * 4};
+    mov  {res}, EAX;
+@end
+
+
+# ═══════════════════════════════════════════════════════════════
+# CALL_INDIRECT: Call via variable (function pointer)
+# ═══════════════════════════════════════════════════════════════
+
+@template CALL_INDIRECT(funvar:load, args:variadic, res:store):
+    @bind funvar = $cmd.words[1]
+    @bind args   = $cmd.words[2..-2]
+    @bind res    = $cmd.words[-1]
+
+    @reverse(args)
+
+    for arg in args:
+        push {arg};
+    endfor
+    call {funvar};
+    add  ESP, {len(args) * 4};
+    mov  {res}, EAX;
+@end
+
+
+# ═══════════════════════════════════════════════════════════════
+# RETURN: Return with optional value
+# ═══════════════════════════════════════════════════════════════
+
+@template RETURN(val:optional):
+    @bind val = $cmd.words[1]?
+
+    if {val}:
+        mov EAX, {val};
+    endif
+    __LEAVE_{scope};
+    ret;
+@end
+
+
+# ═══════════════════════════════════════════════════════════════
+# ENTER: Enter scope (push stack frame)
+# ═══════════════════════════════════════════════════════════════
+
+@template ENTER(scp:immediate):
+    @bind scp = $cmd.words[1]
+    __ENTER_{scp};
+@end
+
+
+# ═══════════════════════════════════════════════════════════════
+# LEAVE: Leave scope (pop stack frame)
+# ═══════════════════════════════════════════════════════════════
+
+@template LEAVE():
+    __LEAVE_{scope};
+@end
+
+
+# ═══════════════════════════════════════════════════════════════
+# ALLOC: Allocate array
+# ═══════════════════════════════════════════════════════════════
+
+@template ALLOC(size:load, res:store):
+    @bind size = $cmd.words[1]
+    @bind res  = $cmd.words[2]
+    mov {res}, @{res};
+@end
+
+
+# ═══════════════════════════════════════════════════════════════
+# MOV_ARR: Array element write (multiple values into array)
+# ═══════════════════════════════════════════════════════════════
+
+@template MOV_ARR(dest:load, vals:variadic):
+    @bind dest = $cmd.words[1]
+    @bind vals = $cmd.words[3..-2]   # skip dest, [, ... , ]
+
+    @temp tmp
+    mov {tmp}, {dest};
+    for val in vals:
+        mov *{tmp}, {val};
+        add {tmp}, 4;
+    endfor
+@end

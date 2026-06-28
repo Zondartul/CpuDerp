@@ -17,6 +17,8 @@ const ISA = preload("res://lang_zvm.gd")
 @onready var n_sb_offs = $V/TabContainer/pointers/H/sb_offs
 @onready var n_known_vars:ItemList = $V/TabContainer/pointers/known_vals
 
+var known_vars_display_list = []
+
 const class_PerfLimitDirectory = preload("res://PerfLimitDirectory.gd");
 
 var perf = PerfLimitDirectory.new({
@@ -417,9 +419,7 @@ func update_known_values():
 			var val = read32(addr) if info.size >= 4 else bus.readCell(addr)
 
 			var idx = n_known_vars.add_item(info.user_name)
-			n_known_vars.set_item_text(idx, 1, "EBP%+d" % offset)
-			n_known_vars.set_item_text(idx, 2, str(val))
-			n_known_vars.set_item_text(idx, 3, info.func_name)
+			n_known_vars.set_item_text(idx, "EBP%+d | " + str(val) + " | " + info.func_name)
 
 			known_vars_display_list.append(info)
 
