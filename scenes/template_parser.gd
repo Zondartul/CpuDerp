@@ -50,7 +50,19 @@ static func parse(text: String) -> InflatedGraph:
 # Otherwise parse the .tg, save the cache, and return the result.
 static func load_or_parse(file_path: String) -> InflatedGraph:
 	var cache_path = file_path.replace(TG_SUFFIX, CACHE_SUFFIX)
-	var tg_path = ProjectSettings.globalize_path(file_path)
+
+	# Resolve the Godot resource path to a real filesystem path.
+	# In headless mode, ProjectSettings.globalize_path() may produce a different
+	# prefix than in editor mode.  We try multiple strategies:
+	#
+	#   1. Use ResourceLoader.exists() to check if Godot can find the file.
+	#   2. Try ProjectSettings.globalize_path() directly.
+	#   3. Fall back to alternate path prefixes (prepend "res://res/" → "res://").
+	var tg_path = _resolve_tg_path(file_path)
+	if tg_path.is_empty():
+		push_error("TemplateParser: cannot open template file: " + file_path)
+		return InflatedGraph.new()
+
 	var cache_path_global = ProjectSettings.globalize_path(cache_path)
 
 	# Determine if we need to re-parse by comparing timestamps.
@@ -64,7 +76,7 @@ static func load_or_parse(file_path: String) -> InflatedGraph:
 		cache_file.close()
 
 	if not needs_parse:
-		var loaded = ResourceLoader.load(cache_path)
+		var loaded = ResourceLoader.load(cache_path_global)
 		if loaded != null and loaded is InflatedGraph:
 			return loaded
 
@@ -80,11 +92,46 @@ static func load_or_parse(file_path: String) -> InflatedGraph:
 	var graph = parse(text)
 
 	# Save cache.
-	var result = ResourceSaver.save(graph, cache_path)
+	var dir = cache_path_global.get_base_dir()
+	if not DirAccess.dir_exists_absolute(dir):
+		DirAccess.make_dir_recursive_absolute(dir)
+
+	var result = ResourceSaver.save(graph, cache_path_global)
 	if result != OK:
-		push_warning("TemplateParser: failed to save cache: " + cache_path)
+		push_warning("TemplateParser: failed to save cache: " + cache_path_global)
 
 	return graph
+
+
+# Resolve a Godot resource path (res://...) to a real filesystem path.
+# Tries multiple strategies to handle differences between headless and editor modes.
+static func _resolve_tg_path(file_path: String) -> String:
+	# Strategy 1: Check if Godot can find the file via ResourceLoader.
+	if ResourceLoader.exists(file_path):
+		return ProjectSettings.globalize_path(file_path)
+
+	# Strategy 2: Try the direct globalize_path result.
+	var direct_path = ProjectSettings.globalize_path(file_path)
+	if direct_path != file_path:
+		var f = FileAccess.open(direct_path, FileAccess.READ)
+		if f != null:
+			f.close()
+			return direct_path
+
+	# Strategy 3: Try alternate path prefixes.
+	# In some headless builds, the project root may be mapped differently
+	# and "res://" needs to become "res://res/" (or vice versa).
+	if file_path.begins_with("res://"):
+		# Try removing "res/" from the path after res://
+		var alt_path = "res://res/" + file_path.substr("res://".length())
+		var alt_global = ProjectSettings.globalize_path(alt_path)
+		var f2 = FileAccess.open(alt_global, FileAccess.READ)
+		if f2 != null:
+			f2.close()
+			return alt_global
+
+	# All strategies failed.
+	return ""
 
 
 # ============================================================================

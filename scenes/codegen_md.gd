@@ -79,11 +79,20 @@ func reset():
 
 func parse_file(input:Dictionary)->String:
 	reset();
-	var filename = input.filename;
-	var fp = FileAccess.open(filename, FileAccess.READ);
-	var text = fp.get_as_text();
-	fp.close();
-	deserialize(text);
+	# If in-memory IR is provided, use it directly instead of reading from file.
+	# This allows the compiler pipeline to pass pre-built IR without serializing
+	# to disk first (Bug 1 fix).
+	if input.has("IR") and typeof(input.IR) == TYPE_DICTIONARY and not input.IR.is_empty():
+		IR = input.IR.duplicate(true)
+	else:
+		var filename = input.filename;
+		var fp = FileAccess.open(filename, FileAccess.READ);
+		if fp == null:
+			push_error("codegen: cannot open IR file [" + filename + "]")
+			return ""
+		var text = fp.get_as_text();
+		fp.close();
+		deserialize(text);
 	return generate();
 
 func deserialize(text:String)->void:
@@ -167,30 +176,19 @@ func unescape_string(text:String)->String:
 
 func generate()->String:
 	allocate_vars();
-	#for key in IR.code_blocks:
-	#	var cb = IR.code_blocks[key];
-	#	generate_code_block(cb);
-	var cb_global:CodeBlock = G.first_in_dict(IR.code_blocks); #IR.code_blocks[IR.code_blocks.keys()[0]];
-	referenced_cbs.append(cb_global);
+	# Add ALL code blocks to referenced_cbs, not just the first one.
+	# Previously only the first dictionary entry (cb_1, the empty entry stub)
+	# was added, so cb_4 (the main function body) was never reached (Bug 2 fix).
+	referenced_cbs = []
+	for key in IR.code_blocks:
+		var cb:CodeBlock = IR.code_blocks[key]
+		if cb not in referenced_cbs:
+			referenced_cbs.append(cb)
 	var emitted_cbs:Array[CodeBlock] = [];
-	#referenced_cbs.push_back(cb_global);
 	var scp_global = IR.scopes[IR.scopes.keys()[0]];
 	enter_scope(scp_global);
 	
-	#var assy_full = "";
-	#var write_pointer = 0;
-	#while not referenced_cbs.is_empty(): #we're using the dictionary as a Set.
-	#	var cb = referenced_cbs.pop_front();
-	#	if cb in emitted_cbs: continue;
-	#	else: emitted_cbs.append(cb);
-	#	var ab = generate_code_block(cb);
-	#	fixup_enter_leave(ab);
-	#	translate_ab_locations(ab.location.map, write_pointer);
-	#	write_pointer += ab.write_pointer;
-	#	assy_full += ab.code;
-	#assy_full += generate_globals();
-	#return assy_full;
-	cur_assy_block = AssyBlock.new(); #{"code":"", "write_pos":0, "location_map":{"begin":{}, "end":{}}};
+	cur_assy_block = AssyBlock.new();
 	while not referenced_cbs.is_empty():
 		var cb = referenced_cbs.pop_front();
 		if cb in emitted_cbs: continue;
@@ -200,7 +198,6 @@ func generate()->String:
 	cur_assy_block.code += generate_globals();
 	locations_ready.emit(cur_assy_block.loc_map);
 	return cur_assy_block.code;
-	
 func generate_code_block(cb:CodeBlock)->AssyBlock:
 	if cur_block:
 		cb_stack.push_back(cur_block);

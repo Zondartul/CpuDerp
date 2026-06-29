@@ -1,59 +1,34 @@
 code_blocks: 
  cb_1: 
   ir_name: cb_1
-  code: 
-   MOV var_5__x imm_6 %064test_arr2.md%0581%0584%126%064test_arr2.md%0581%05815
-   MOV var_8__y imm_9 %064test_arr2.md%0583%0584%126%064test_arr2.md%0583%05815
-   CALL func_4__main [ ] tmp_10 %064test_arr2.md%0584%0583%126%064test_arr2.md%0584%0587
   lbl_from: lbl_from_2
   lbl_to: lbl_to_3
- cb_11: 
-  ir_name: cb_11
+ cb_4: 
+  ir_name: cb_4
   code: 
-   ENTER scp_14__NULL %064test_arr2.md%0588%0582%126%064test_arr2.md%05811%0581
-   MOV var_15__x2 imm_16 %064test_arr2.md%0587%0585%126%064test_arr2.md%0587%05816
-   ALLOC 3 tmp_21 %064test_arr2.md%0588%05811%126%064test_arr2.md%0588%05831
-   MOV_ARR tmp_21 [ imm_18 imm_19 imm_20 ] %064test_arr2.md%0588%05811%126%064test_arr2.md%0588%05831
-   MOV var_17__arr2 tmp_21 %064test_arr2.md%0588%0587%126%064test_arr2.md%0588%05831
-   MOV var_22__y2 imm_23 %064test_arr2.md%0589%0585%126%064test_arr2.md%0589%05816
-   WHILE cb_26 imm_29 cb_30 lbl_24__while_next lbl_25__while_end %064test_arr2.md%05810%0584%126%064test_arr2.md%05810%05810
-   LEAVE %064test_arr2.md%0588%0582%126%064test_arr2.md%05811%0581
-  lbl_from: func_4__main
-  lbl_to: lbl_to_13
- cb_26: 
-  ir_name: cb_26
-  lbl_from: lbl_from_27
-  lbl_to: lbl_to_28
- cb_30: 
-  ir_name: cb_30
-  lbl_from: lbl_from_31
-  lbl_to: lbl_to_32
+   ENTER scp_7__NULL %064test_iter2.md%0581%0582%126%064test_iter2.md%0584%0581
+   MOV var_8__x imm_9 %064test_iter2.md%0581%0584%126%064test_iter2.md%0581%05811
+   MOV var_10__y imm_11 %064test_iter2.md%0582%0584%126%064test_iter2.md%0582%05811
+   OP ADD var_8__x var_10__y tmp_13 %064test_iter2.md%0583%0588%126%064test_iter2.md%0583%05813
+   MOV var_12__z tmp_13 %064test_iter2.md%0583%0584%126%064test_iter2.md%0583%05813
+   LEAVE %064test_iter2.md%0581%0582%126%064test_iter2.md%0584%0581
+  lbl_from: func_14__main
+  lbl_to: lbl_to_6
 scopes: 
  scp_0__global: 
   ir_name: scp_0__global
   user_name: global
   parent: none
-  vars: 
-   var_5__x variable x int NULL NULL NULL NULL NULL 0 0
-   imm_6 immediate NULL int NULL 1001 NULL NULL NULL NULL NULL
-   var_7__arr1 variable arr1 NULL NULL NULL NULL NULL NULL 1 10
-   var_8__y variable y int NULL NULL NULL NULL NULL 0 0
-   imm_9 immediate NULL int NULL 1002 NULL NULL NULL NULL NULL
-   tmp_10 temporary NULL NULL NULL NULL NULL NULL NULL NULL NULL
   funcs: 
-   func_4__main func main NULL NULL NULL scp_14__NULL cb_11 0 NULL NULL
- scp_14__NULL: 
-  ir_name: scp_14__NULL
+   func_14__main func main NULL NULL NULL scp_7__NULL cb_4 0 NULL NULL
+ scp_7__NULL: 
+  ir_name: scp_7__NULL
   user_name: NULL
   parent: scp_0__global
   vars: 
-   var_15__x2 variable x2 int NULL NULL NULL NULL NULL 0 0
-   imm_16 immediate NULL int NULL 1003 NULL NULL NULL NULL NULL
-   var_17__arr2 variable arr2 NULL NULL NULL NULL NULL NULL 0 0
-   imm_18 immediate NULL int NULL 1014 NULL NULL NULL NULL NULL
-   imm_19 immediate NULL int NULL 1015 NULL NULL NULL NULL NULL
-   imm_20 immediate NULL int NULL 1016 NULL NULL NULL NULL NULL
-   tmp_21 temporary NULL NULL NULL NULL NULL NULL NULL NULL NULL
-   var_22__y2 variable y2 int NULL NULL NULL NULL NULL 0 0
-   imm_23 immediate NULL int NULL 1004 NULL NULL NULL NULL NULL
-   imm_29 immediate NULL int NULL 1 NULL NULL NULL NULL NULL
+   var_8__x variable x int NULL NULL NULL NULL NULL 0 0
+   imm_9 immediate NULL int NULL 10 NULL NULL NULL NULL NULL
+   var_10__y variable y int NULL NULL NULL NULL NULL 0 0
+   imm_11 immediate NULL int NULL 20 NULL NULL NULL NULL NULL
+   var_12__z variable z NULL NULL NULL NULL NULL NULL 0 0
+   tmp_13 temporary NULL NULL NULL NULL NULL NULL NULL NULL NULL

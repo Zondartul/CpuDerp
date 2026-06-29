@@ -29,7 +29,10 @@ func _ready():
 	};
 	n_VM.setup(dict);
 	n_Editor.setup(dict);
-	n_view_memory.setup(dict);
+	if n_view_memory and n_view_memory.has_method("setup"):
+		n_view_memory.setup(dict);
+	else:
+		push_error("n_view_memory (Memory.gd) not ready: script may not be attached");
 	
 	debug_automation_script();
 	pass # Replace with function body.

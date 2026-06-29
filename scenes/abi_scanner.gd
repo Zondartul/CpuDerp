@@ -71,7 +71,7 @@ static func discover(IR: Dictionary, graph: InflatedGraph) -> ABIManifest:
 		if cb_name not in manifest.reachable_cbs:
 			manifest.reachable_cbs.append(cb_name)
 		for cmd in cb.get("code", []):
-			var tmpl_name = cmd.words[0]
+			var tmpl_name = cmd.words[0] if (cmd is IR_Cmd) else cmd[0]
 			var tmpl = graph.templates.get(tmpl_name)
 			if tmpl == null:
 				push_error("ABIScanner: No template for [%s]" % tmpl_name)
@@ -95,15 +95,25 @@ static func discover(IR: Dictionary, graph: InflatedGraph) -> ABIManifest:
 
 # Registers one IR variable/function handle into the manifest.
 static func _add_symbol(manifest: ABIManifest, handle: Dictionary, scp_name: String) -> void:
-	var ir_name: String = handle.get("ir_name", "")
+	# IR fields like "storage", "scope", "code", "data_type" may be null
+	# (not yet assigned) when the IR comes from the analyzer. Use str() or
+	# explicit null-to-default conversion to avoid nil-to-String crashes.
+	var ir_name_val = handle.get("ir_name")
+	var ir_name: String = "" if ir_name_val == null else str(ir_name_val)
 	if ir_name.is_empty() or ir_name in manifest.symbols:
 		return
 
-	var val_type: String = handle.get("val_type", "variable")
-	var data_type: String = handle.get("data_type", "int")
+	var raw_val_type = handle.get("val_type")
+	var val_type: String = "variable" if raw_val_type == null else str(raw_val_type)
+
+	var raw_data_type = handle.get("data_type")
+	var data_type: String = "int" if raw_data_type == null else str(raw_data_type)
+
 	var is_array: bool = (int(handle.get("is_array", 0)) != 0)
 	var array_size: int = int(handle.get("array_size", 0))
-	var storage_str: String = handle.get("storage", "NULL")
+
+	var raw_storage = handle.get("storage")
+	var storage_str: String = "NULL" if raw_storage == null else str(raw_storage)
 
 	# Determine initial storage type from the original string.
 	# "NULL" and "arg" will be resolved by the allocator.
@@ -185,11 +195,12 @@ static func _resolve_binding(expr: String, cmd) -> String:
 
 
 static func _cmd_word_at(cmd, idx: int) -> String:
-	var n = len(cmd.words)
+	var words = cmd.words if (cmd is IR_Cmd) else cmd
+	var n = len(words)
 	if idx < 0:
 		idx = n + idx
 	if idx >= 0 and idx < n:
-		return cmd.words[idx]
+		return words[idx]
 	return ""
 
 

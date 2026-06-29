@@ -121,6 +121,7 @@ color = Color(0, 0, 0, 1)
 
 [node name="Editor" type="Control" parent="Panel/TabContainer" unique_id=1509986975]
 layout_mode = 2
+script = ExtResource("3_6wt7m")
 metadata/_tab_index = 2
 
 [node name="V" type="VBoxContainer" parent="Panel/TabContainer/Editor" unique_id=1674516771]
@@ -348,6 +349,7 @@ size = Vector2i(512, 512)
 
 [node name="Memory" type="Control" parent="Panel/TabContainer" unique_id=1817448037]
 layout_mode = 2
+script = ExtResource("2_0ld40")
 metadata/_tab_index = 3
 
 [node name="BoxContainer" type="HBoxContainer" parent="Panel/TabContainer/Memory" unique_id=974145208]

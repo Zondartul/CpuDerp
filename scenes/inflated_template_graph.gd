@@ -69,9 +69,9 @@ static func from_dict(data: Dictionary) -> InflatedGraph:
 
 class TemplateDef:
 	var name: String
-	var param_variants: Array[String]    # e.g. ["op"] — empty if no variants
-	var slots: Array[SlotDef]
-	var body: Array[ITGNode]
+	var param_variants: Array    # e.g. ["op"] — empty if no variants
+	var slots: Array
+	var body: Array
 
 	func _init(p_name: String = "", p_slots: Array = [], p_body: Array = [],
 			p_param_variants: Array = []):
@@ -258,7 +258,7 @@ class EmitLineNode:
 	extends ITGNode
 
 	var text_pattern: String          # e.g. "mov {dest}, {src};"
-	var slot_refs: Array[SlotRef]     # extracted from {} during parse
+	var slot_refs: Array              # extracted from {} during parse
 
 	func _init(p_text_pattern: String = "", p_slot_refs: Array = []):
 		super(ITGNode.NodeType.EMIT_LINE)
@@ -296,7 +296,7 @@ class ForEachNode:
 
 	var list_name: String      # "args"
 	var element_name: String   # "arg"
-	var body: Array[ITGNode]
+	var body: Array
 
 	func _init(p_list_name: String = "", p_element_name: String = "", p_body: Array = []):
 		super(ITGNode.NodeType.FOREACH)
@@ -339,7 +339,7 @@ class IfConditionalNode:
 	extends ITGNode
 
 	var slot_name: String       # the slot to test for presence
-	var body: Array[ITGNode]
+	var body: Array
 
 	func _init(p_slot_name: String = "", p_body: Array = []):
 		super(ITGNode.NodeType.IF_CONDITIONAL)
@@ -426,7 +426,7 @@ class CallbackNode:
 	extends ITGNode
 
 	var callback_name: String       # "ref_cb", "needs_deref", "reverse", "emit_cb"
-	var arg_names: Array[String]    # ["fun"]
+	var arg_names: Array            # ["fun"]
 
 	func _init(p_callback_name: String = "", p_arg_names: Array = []):
 		super(ITGNode.NodeType.CALLBACK)
@@ -457,7 +457,7 @@ class CallbackNode:
 class TempAllocNode:
 	extends ITGNode
 
-	var temp_names: Array[String]   # ["tmp_a", "tmp_b"]
+	var temp_names: Array   # ["tmp_a", "tmp_b"]
 
 	func _init(p_temp_names: Array = []):
 		super(ITGNode.NodeType.TEMP_ALLOC)
@@ -483,7 +483,7 @@ class TempAllocNode:
 class LabelDefNode:
 	extends ITGNode
 
-	var label_names: Array[String]   # ["lbl_else", "lbl_end"]
+	var label_names: Array   # ["lbl_else", "lbl_end"]
 
 	func _init(p_label_names: Array = []):
 		super(ITGNode.NodeType.LABEL_DEF)

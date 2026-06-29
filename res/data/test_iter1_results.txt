@@ -1,0 +1,169 @@
+======================================================================
+  CpuDerp - Iteration 1 Test Suite
+  Timestamp: 2026-06-28T12:01:39
+======================================================================
+
+  [SETUP] All components ready.
+
+
+----------------------------------------------------------------------
+  TEST: test_iter1a - Simple variable and arithmetic
+  File: res://res/data/test_iter1a.md
+----------------------------------------------------------------------
+  [INFO] Opened via: res://res/data/test_iter1a.md
+
+  Source code:
+    001 | func main(){
+    002 |     var x = 5;
+    003 |     var y = x + 3;
+    004 |     var z = y * 2;
+    005 | }
+    006 | 
+
+  --- Step 1: Tokenize ---
+  [PASS] 25 tokens
+    [0] [KEYWORD:func]
+    [1] [IDENT:main]
+    [2] [PUNCT:(]
+    [3] [PUNCT:)]
+    [4] [PUNCT:{]
+    [5] [KEYWORD:var]
+    [6] [IDENT:x]
+    [7] [PUNCT:=]
+    [8] [NUMBER:5]
+    [9] [PUNCT:;]
+    [10] [KEYWORD:var]
+    [11] [IDENT:y]
+    [12] [PUNCT:=]
+    [13] [IDENT:x]
+    [14] [OP:+]
+    [15] [NUMBER:3]
+    [16] [PUNCT:;]
+    [17] [KEYWORD:var]
+    [18] [IDENT:z]
+    [19] [PUNCT:=]
+    ... (5 more)
+  --- Step 2: Parse ---
+
+----------------------------------------------------------------------
+  TEST: test_iter1b - Function call
+  File: res://res/data/test_iter1b.md
+----------------------------------------------------------------------
+  [INFO] Opened via: res://res/data/test_iter1b.md
+
+  Source code:
+    001 | func add(a, b){
+    002 |     return a + b;
+    003 | }
+    004 | 
+    005 | func main(){
+    006 |     var x = add(3, 4);
+    007 | }
+    008 | 
+
+  --- Step 1: Tokenize ---
+  [PASS] 30 tokens
+    [0] [KEYWORD:func]
+    [1] [IDENT:add]
+    [2] [PUNCT:(]
+    [3] [IDENT:a]
+    [4] [PUNCT:,]
+    [5] [IDENT:b]
+    [6] [PUNCT:)]
+    [7] [PUNCT:{]
+    [8] [KEYWORD:return]
+    [9] [IDENT:a]
+    [10] [OP:+]
+    [11] [IDENT:b]
+    [12] [PUNCT:;]
+    [13] [PUNCT:}]
+    [14] [KEYWORD:func]
+    [15] [IDENT:main]
+    [16] [PUNCT:(]
+    [17] [PUNCT:)]
+    [18] [PUNCT:{]
+    [19] [KEYWORD:var]
+    ... (10 more)
+  --- Step 2: Parse ---
+
+----------------------------------------------------------------------
+  TEST: test_iter1c - Arrays
+  File: res://res/data/test_iter1c.md
+----------------------------------------------------------------------
+  [INFO] Opened via: res://res/data/test_iter1c.md
+
+  Source code:
+    001 | func main(){
+    002 |     var arr[10];
+    003 |     arr[0] = 42;
+    004 | }
+    005 | 
+
+  --- Step 1: Tokenize ---
+  [PASS] 19 tokens
+    [0] [KEYWORD:func]
+    [1] [IDENT:main]
+    [2] [PUNCT:(]
+    [3] [PUNCT:)]
+    [4] [PUNCT:{]
+    [5] [KEYWORD:var]
+    [6] [IDENT:arr]
+    [7] [PUNCT:[]
+    [8] [NUMBER:10]
+    [9] [PUNCT:]]
+    [10] [PUNCT:;]
+    [11] [IDENT:arr]
+    [12] [PUNCT:[]
+    [13] [NUMBER:0]
+    [14] [PUNCT:]]
+    [15] [PUNCT:=]
+    [16] [NUMBER:42]
+    [17] [PUNCT:;]
+    [18] [PUNCT:}]
+  --- Step 2: Parse ---
+
+----------------------------------------------------------------------
+  TEST: test_iter1d - Control flow (if/else)
+  File: res://res/data/test_iter1d.md
+----------------------------------------------------------------------
+  [INFO] Opened via: res://res/data/test_iter1d.md
+
+  Source code:
+    001 | func main(){
+    002 |     var x = 5;
+    003 |     if(x > 0){
+    004 |         x = x - 1;
+    005 |     }else{
+    006 |         x = 0;
+    007 |     }
+    008 | }
+    009 | 
+
+  --- Step 1: Tokenize ---
+  [PASS] 32 tokens
+    [0] [KEYWORD:func]
+    [1] [IDENT:main]
+    [2] [PUNCT:(]
+    [3] [PUNCT:)]
+    [4] [PUNCT:{]
+    [5] [KEYWORD:var]
+    [6] [IDENT:x]
+    [7] [PUNCT:=]
+    [8] [NUMBER:5]
+    [9] [PUNCT:;]
+    [10] [KEYWORD:if]
+    [11] [PUNCT:(]
+    [12] [IDENT:x]
+    [13] [OP:>]
+    [14] [NUMBER:0]
+    [15] [PUNCT:)]
+    [16] [PUNCT:{]
+    [17] [IDENT:x]
+    [18] [PUNCT:=]
+    [19] [IDENT:x]
+    ... (12 more)
+  --- Step 2: Parse ---
+
+======================================================================
+  [PASS] ALL TESTS COMPLETED
+======================================================================

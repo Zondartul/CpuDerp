@@ -20,7 +20,11 @@ func setup():
 	pass;
 
 func _ready():
+	if Editor == null:
+		return;
 	n_VSearch = Editor.get_node("V/VSearch");
+	if n_VSearch == null:
+		return;
 	n_LE = n_VSearch.get_node("H/LineEdit");
 	n_lbl_results = n_VSearch.get_node("H/lbl_res");
 
