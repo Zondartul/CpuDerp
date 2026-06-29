@@ -3,11 +3,11 @@ func main();
 func infloop();
 func has_char();
 func get_char();
-func malloc(size);
+//func malloc(size);
 func process_command(buff);
 func str_eq(str_A, str_B); // returns 1 if strings are equal 
 var adr_kb = 81648;
-var alloc_head = 10000;
+//var alloc_head = 10000;
 //var char_newline = 5;
 var char_backspace = 4;
 var buff[80];
@@ -71,11 +71,11 @@ func process_command(buff){
 	set_col(255,255,255);
 }
 
-func malloc(size){
-	var p = alloc_head;
-	alloc_head += size;
-	return p;
-}
+//func malloc(size){
+//	var p = alloc_head;
+//	alloc_head += size;
+//	return p;
+//}
 
 func str_eq(str_A, str_B){
 	var I = 0;

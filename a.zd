@@ -1,60 +1,308 @@
+#generate.referenced_cbs
+#generate_code_block.intro
 # Begin code block cb_1
+#generate_code_block.lbl_from
 :lbl_from_2:
+#generate_cmd.trace
 # IR: MOV var_5__x imm_6
+#generate_cmd_mov:emit(mov EAX, 1001;)
 mov EAX, 1001;
+#generate_cmd_mov:emit(mov EAX, 1001;).store
 mov *var_5__x, EAX;
+#generate_cmd.trace
 # IR: MOV var_8__y imm_9
+#generate_cmd_mov:emit(mov EAX, 1002;)
 mov EAX, 1002;
+#generate_cmd_mov:emit(mov EAX, 1002;).store
 mov *var_8__y, EAX;
+#generate_cmd.trace
 # IR: CALL func_4__main [ ] tmp_10
+#generate_cmd_call.call:emit(call func_4__main;)
 call func_4__main;
+#generate_cmd_call.stack:emit(add ESP, 0;)
 add ESP, 0;
+#generate_cmd_call.result:emit(mov *tmp_10, eax;)
 mov *tmp_10, eax;
+#generate_code_block.lbl_to
 :lbl_to_3:
+#generate_code_block.exit
 # End code block cb_1
+#generate.referenced_cbs
+#generate_code_block.intro
 # Begin code block cb_11
+#generate_code_block.lbl_from
 :func_4__main:
+#generate_cmd.trace
 # IR: ENTER scp_14__NULL
-sub ESP, 59;
+#generate_cmd_enter
+sub ESP, 87;
+#generate_cmd_enter.shadow
+#-- SHADOW.enter begin
+mov eax, ebp;
+sub eax, 15607;
+mov *eax, 12;
+#g.s.e.u: EBP[-71] is SHADOW.FRAME_VAR called "arr_29__3"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-67] is SHADOW.FRAME_VAR called "imm_36"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-63] is SHADOW.FRAME_VAR called "imm_30"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-59] is SHADOW.FRAME_VAR called "var_29__y2"
+add eax, 4;
+mov *eax, 13;
+#g.s.e.u: EBP[-55] is SHADOW.FRAME_TEMP called "tmp_28"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-51] is SHADOW.FRAME_VAR called "imm_27"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-47] is SHADOW.FRAME_VAR called "imm_26"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-43] is SHADOW.FRAME_VAR called "imm_25"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-39] is SHADOW.FRAME_VAR called "var_24__arr2"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-35] is SHADOW.FRAME_VAR called "imm_23"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-31] is SHADOW.FRAME_VAR called "imm_22"
+add eax, 4;
+mov *eax, 13;
+#g.s.e.u: EBP[-27] is SHADOW.FRAME_TEMP called "tmp_21"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-23] is SHADOW.FRAME_VAR called "imm_20"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-19] is SHADOW.FRAME_VAR called "imm_19"
+add eax, 4;
+mov *eax, 13;
+#g.s.e.u: EBP[-15] is SHADOW.FRAME_TEMP called "tmp_18"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-11] is SHADOW.FRAME_VAR called "imm_17"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-7] is SHADOW.FRAME_VAR called "imm_16"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-3] is SHADOW.FRAME_VAR called "var_15__x2"
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+#-- SHADOW.enter done
+
+#generate_cmd.trace
 # IR: MOV var_15__x2 imm_16
+#generate_cmd_mov:emit(mov EAX, 1003;)
 mov EAX, 1003;
+#generate_cmd_mov:emit(mov EAX, 1003;).store
 mov EBP[-3], EAX;
-# IR: ALLOC 3 tmp_21
-mov EAX EBP-43;
+#generate_cmd.trace
+# IR: OP INDEX var_7__arr1 imm_17 tmp_18
+#generate_cmd_op.arg1_idx:emit(mov EAX, var_7__arr1;)
+mov EAX, var_7__arr1;
+#generate_cmd_op.find_b:emit(mov EBX, 0;)
+mov EBX, 0;
+#generate_cmd_op.op_str:emit(mul EBX, 4; add EAX, EBX;)
+mul EBX, 4; add EAX, EBX;
+#generate_cmd_op.result1:emit(mov EBP[-15], EAX;)
+mov EBP[-15], EAX;
+#generate_cmd.trace
+# IR: MOV tmp_18 imm_19
+#generate_cmd_mov:emit(mov EAX, 1014;)
+mov EAX, 1014;
+#generate_cmd_mov:emit(mov EAX, 1014;).store_deref_3
+mov EBX, EBP[-15];
+#generate_cmd_mov:emit(mov EAX, 1014;).store_deref_4
+mov *EBX, EAX;
+#generate_cmd.trace
+# IR: OP INDEX var_7__arr1 imm_20 tmp_21
+#generate_cmd_op.arg1_idx:emit(mov EAX, var_7__arr1;)
+mov EAX, var_7__arr1;
+#generate_cmd_op.find_b:emit(mov EBX, 1;)
+mov EBX, 1;
+#generate_cmd_op.op_str:emit(mul EBX, 4; add EAX, EBX;)
+mul EBX, 4; add EAX, EBX;
+#generate_cmd_op.result1:emit(mov EBP[-27], EAX;)
 mov EBP[-27], EAX;
-# IR: MOV_ARR tmp_21 [ imm_18 imm_19 imm_20 ]
-mov EAX, EBP[-27];
-mov *EAX, 1014;
+#generate_cmd.trace
+# IR: MOV tmp_21 imm_22
+#generate_cmd_mov:emit(mov EAX, 1015;)
+mov EAX, 1015;
+#generate_cmd_mov:emit(mov EAX, 1015;).store_deref_3
+mov EBX, EBP[-27];
+#generate_cmd_mov:emit(mov EAX, 1015;).store_deref_4
+mov *EBX, EAX;
+#generate_cmd.trace
+# IR: MOV var_5__x imm_23
+#generate_cmd_mov:emit(mov EAX, 1006;)
+mov EAX, 1006;
+#generate_cmd_mov:emit(mov EAX, 1006;).store
+mov *var_5__x, EAX;
+#generate_cmd.trace
+# IR: ALLOC 3 tmp_28
+#generate_cmd_alloc:emit(mov EAX EBP-71;)
+mov EAX EBP-71;
+#generate_cmd_alloc:emit(mov EAX EBP-71;).store
+mov EBP[-55], EAX;
+#generate_cmd.trace
+# IR: MOV_ARR tmp_28 [ imm_25 imm_26 imm_27 ]
+#generate_cmd_mov_arr.init:emit(mov EAX, EBP[-55];)
+mov EAX, EBP[-55];
+#generate_cmd_mov_arr.mov:emit(mov *EAX, 1027;)
+mov *EAX, 1027;
+#generate_cmd_mov_arr.inc:emit(add EAX, 4;)
 add EAX, 4;
-mov *EAX, 1015;
+#generate_cmd_mov_arr.mov:emit(mov *EAX, 1028;)
+mov *EAX, 1028;
+#generate_cmd_mov_arr.inc:emit(add EAX, 4;)
 add EAX, 4;
-mov *EAX, 1016;
+#generate_cmd_mov_arr.mov:emit(mov *EAX, 1029;)
+mov *EAX, 1029;
+#generate_cmd_mov_arr.inc:emit(add EAX, 4;)
 add EAX, 4;
-# IR: MOV var_17__arr2 tmp_21
-mov EAX, EBP[-27];
-mov EBP[-11], EAX;
-# IR: MOV var_22__y2 imm_23
-mov EAX, 1004;
-mov EBP[-31], EAX;
-# IR: WHILE cb_26 imm_29 cb_30 lbl_24__while_next lbl_25__while_end
-:lbl_24__while_next:
-# Begin code block cb_26
-:lbl_from_27:
-:lbl_to_28:
-# End code block cb_26
+#generate_cmd.trace
+# IR: MOV var_24__arr2 tmp_28
+#generate_cmd_mov:emit(mov EAX, EBP[-55];)
+mov EAX, EBP[-55];
+#generate_cmd_mov:emit(mov EAX, EBP[-55];).store
+mov EBP[-39], EAX;
+#generate_cmd.trace
+# IR: MOV var_29__y2 imm_30
+#generate_cmd_mov:emit(mov EAX, 1007;)
+mov EAX, 1007;
+#generate_cmd_mov:emit(mov EAX, 1007;).store
+mov EBP[-59], EAX;
+#generate_cmd.trace
+# IR: WHILE cb_33 imm_36 cb_37 lbl_31__while_next lbl_32__while_end
+#generate_cmd_while.lbl_next:emit(:lbl_31__while_next:)
+:lbl_31__while_next:
+#generate_cmd_while.cb_cond
+#generate_code_block.intro
+# Begin code block cb_33
+#generate_code_block.lbl_from
+:lbl_from_34:
+#generate_code_block.lbl_to
+:lbl_to_35:
+#generate_code_block.exit
+# End code block cb_33
+#promote:emit(mov EAX, 0;)
 mov EAX, 0;
+#generate_cmd_while.cmp:emit(cmp 1, EAX;)
 cmp 1, EAX;
-jz lbl_25__while_end;
-# Begin code block cb_30
-:lbl_from_31:
-:lbl_to_32:
-# End code block cb_30
-jmp lbl_24__while_next;
-:lbl_25__while_end:
+#generate_cmd_while.jz_end:emit(jz lbl_32__while_end;)
+jz lbl_32__while_end;
+#generate_cmd_while.cb_block
+#generate_code_block.intro
+# Begin code block cb_37
+#generate_code_block.lbl_from
+:lbl_from_38:
+#generate_code_block.lbl_to
+:lbl_to_39:
+#generate_code_block.exit
+# End code block cb_37
+#generate_cmd_while.jmp_next:emit(jmp lbl_31__while_next;)
+jmp lbl_31__while_next;
+#generate_cmd_while.lbl_end:emit(:lbl_32__while_end:)
+:lbl_32__while_end:
+#generate_cmd.trace
 # IR: LEAVE
-sub ESP, -59;
+#generate_cmd_leave
+sub ESP, -87;
+#generate_cmd_leave.shadow
+#-- SHADOW.leave begin
+mov eax, ebp;
+sub eax, 15607;
+mov *eax, 12;
+#g.s.e.u: EBP[-71] is SHADOW.FRAME_VAR called "arr_29__3"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-67] is SHADOW.FRAME_VAR called "imm_36"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-63] is SHADOW.FRAME_VAR called "imm_30"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-59] is SHADOW.FRAME_VAR called "var_29__y2"
+add eax, 4;
+mov *eax, 13;
+#g.s.e.u: EBP[-55] is SHADOW.FRAME_TEMP called "tmp_28"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-51] is SHADOW.FRAME_VAR called "imm_27"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-47] is SHADOW.FRAME_VAR called "imm_26"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-43] is SHADOW.FRAME_VAR called "imm_25"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-39] is SHADOW.FRAME_VAR called "var_24__arr2"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-35] is SHADOW.FRAME_VAR called "imm_23"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-31] is SHADOW.FRAME_VAR called "imm_22"
+add eax, 4;
+mov *eax, 13;
+#g.s.e.u: EBP[-27] is SHADOW.FRAME_TEMP called "tmp_21"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-23] is SHADOW.FRAME_VAR called "imm_20"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-19] is SHADOW.FRAME_VAR called "imm_19"
+add eax, 4;
+mov *eax, 13;
+#g.s.e.u: EBP[-15] is SHADOW.FRAME_TEMP called "tmp_18"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-11] is SHADOW.FRAME_VAR called "imm_17"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-7] is SHADOW.FRAME_VAR called "imm_16"
+add eax, 4;
+mov *eax, 12;
+#g.s.e.u: EBP[-3] is SHADOW.FRAME_VAR called "var_15__x2"
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+nop;
+#-- SHADOW.leave done
+
+#maybe_emit_func_ret(cb_11)
 ret;
+#generate_code_block.lbl_to
 :lbl_to_13:
+#generate_code_block.exit
 # End code block cb_11
 :var_5__x: db 0;
 :var_7__arr1: alloc 40;

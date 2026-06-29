@@ -98,6 +98,7 @@ func update_mem_view():
 			line_text += "[/color]";
 		if i == ip: line_text += "[/bgcolor]";
 		line_text += "| " + interp_text(i,i+step);
+		line_text += "| " + interp_numbers(i,i+step);
 		text += line_text + "\n";
 	memview.text = text;
 #	apply_color_fixups();
@@ -144,6 +145,18 @@ func interp_text(from, to):
 		text = to_bb(Color.DEEP_PINK, interp_as_text(bytes));
 	return text;
 
+func interp_numbers(from, to):
+	var bytes:PackedByteArray = PackedByteArray();
+	for i in range(from,to):
+		bytes.append(read_cell(i));
+	var text = ""
+	var I = 0;
+	while(I+4 <= bytes.size()):
+		var num = bytes.decode_u32(I);
+		text += "%d " % num;
+		I += 4;
+	return text;
+
 func to_bb(col:Color, text):
 	return "[color=" + col.to_html(false)+"]" + text + "[/color]";
 
@@ -173,6 +186,12 @@ const shadow_colors = {
 	ISA.SHADOW_PADDING: Color.WHITE,
 	ISA.SHADOW_DATA_UNRESOLVED: Color.ORANGE,
 	ISA.SHADOW_DATA_RESOLVED: Color.CYAN,
+	ISA.SHADOW_FRAME_PREV_EBP: Color.RED,
+	ISA.SHADOW_FRAME_PREV_ESP: Color.CYAN,
+	ISA.SHADOW_FRAME_ARGUMENT: Color.ORANGE,
+	ISA.SHADOW_FRAME_VAR: Color.YELLOW,
+	ISA.SHADOW_FRAME_TEMP: Color.PURPLE,
+	ISA.SHADOW_FRAME_PADDING: Color.DARK_BLUE,
 };
 
 const allowed_cmd_tail_bytes = [

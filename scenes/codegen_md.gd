@@ -3,12 +3,18 @@ extends Node
 signal locations_ready(loc_map:Dictionary);
 
 const uYaml = preload("res://scenes/uYaml.gd")
+const ISA = preload("res://lang_zvm.gd")
+
 # constants
-const ADD_DEBUG_TRACE = false; # in emitted assembly, specify where it came from.
+const ADD_DEBUG_TRACE = true; # in emitted assembly, specify where it came from.
 const ADD_IR_TRACE = true; # print the IR commands that are being generated
+const WRITE_SHADOW = true; # mark bytes in shadow
+const SHADOW_CODE_ADR = 30000;
+const SHADOW_STACK_ADR = 50000;
 const regs = ["EAX", "EBX", "ECX", "EDX"];
 const cmd_size = 8; # size in bytes of an assembly instruction
 const enter_leave_size = cmd_size; 
+const shadow_update_size = cmd_size*50;
 const op_map = {
 	"ADD":"add %a, %b;\n",
 	"SUB":"sub %a, %b;\n",
@@ -17,7 +23,7 @@ const op_map = {
 	"MOD":"mod %a, %b;\n",
 	"GREATER":"cmp %a, %b; mov %a, CTRL; band %a, CMP_G; bnot %a; bnot %a;\n",
 	"LESS":"cmp %a, %b; mov %a, CTRL; band %a, CMP_L; bnot %a; bnot %a;\n",
-	"INDEX":"add %a, %b;\n", #deref separately?
+	"INDEX":"mul %b, 4; add %a, %b;\n", #deref separately? #MAGIC NUMBER WARNING
 	"DEC":"dec %a;\n",
 	"INC":"inc %a;\n",
 	"EQUAL":"cmp %a, %b; mov %a, CTRL; band %a, CMP_Z; bnot %a; bnot %a;\n",
@@ -302,14 +308,25 @@ func generate_cmd_op(cmd:IR_Cmd)->void:
 	
 	var tmpA = null;
 	var tmpB = null;
+	var arg1_is_array = false;
+	if arg1 in all_syms:
+		var arg1_handle = all_syms[arg1];
+		print("arg1 (%s): %s" % [arg1, arg1_handle]);
+		if int(arg1_handle.is_array) == 1:
+			arg1_is_array = true;
+	else:
+		print("arg1 (%s) NOT IN ALL_SYMS" % arg1);
 	#var arg1_by_addr = false;
 	const mono_ops = ["INC", "DEC"];
 	if op in mono_ops:
 		tmpA = "^%s" % arg1;
 		emit("mov ^%s, $%s;\n" % [res, arg1], cmd_size, "generate_cmd_op.result2");
+	elif arg1_is_array:
+		tmpA = alloc_temporary();
+		emit("mov %s, @%s;\n" % [tmpA, arg1], cmd_size, "generate_cmd_op.arg1_idx");
 	else:
 		tmpA = alloc_temporary();
-		emit("mov %s, $%s;\n" % [tmpA, arg1], cmd_size, "generate_cmd_op.arg1");
+		emit("mov %s, $%s;\n" % [tmpA, arg1], cmd_size, "generate_cmd_op.arg1_normal");
 	
 	op_str = op_str.replace("%a", tmpA);
 	if op_str.find("%b") != -1:
@@ -599,6 +616,7 @@ func alloc_temporary()->String:
 		var ir_name = "tmp_%d" % (len(all_syms)+1);
 		var handle = {"ir_name":ir_name, "val_type":"temporary", "storage":"NULL"};
 		allocate_value(handle, cur_scope);
+		cur_scope.vars.append(handle);
 		all_syms[ir_name] = handle;
 		res = ir_name;
 	return res;
@@ -710,17 +728,20 @@ func generate_cmd_return(cmd:IR_Cmd)->void:
 		var res = cmd.words[1];
 		emit("mov EAX, $%s;\n" % res, cmd_size, "generate_cmd_return.arg");
 	var scp_name = cur_scope.ir_name;
-	emit("__LEAVE_%s;\n" % scp_name, enter_leave_size, "generate_cmd_return.leave");
+	emit_raw("__LEAVE_%s;\n" % scp_name, enter_leave_size, "generate_cmd_return.leave");
+	if(WRITE_SHADOW): emit_raw("__SHADOW_LEAVE_%s\n" % scp_name, shadow_update_size, "generate_cmd_return.shadow");
 	emit("ret;\n", cmd_size, "generate_cmd_return.ret");
 
 func generate_cmd_enter(cmd:IR_Cmd)->void:
 	var scp_name = cmd.words[1];
 	enter_scope(IR.scopes[scp_name]);
-	emit("__ENTER_%s;\n" % scp_name, enter_leave_size, "generate_cmd_enter");
-
+	emit_raw("__ENTER_%s;\n" % scp_name, enter_leave_size, "generate_cmd_enter");
+	if(WRITE_SHADOW): emit_raw("__SHADOW_ENTER_%s\n" % scp_name, shadow_update_size, "generate_cmd_enter.shadow");
+	
 func generate_cmd_leave(_cmd:IR_Cmd)->void:
 	var scp_name = cur_scope.ir_name;
-	emit("__LEAVE_%s;\n" % scp_name, enter_leave_size, "generate_cmd_leave");
+	emit_raw("__LEAVE_%s;\n" % scp_name, enter_leave_size, "generate_cmd_leave");
+	if(WRITE_SHADOW): emit_raw("__SHADOW_LEAVE_%s\n" % scp_name, shadow_update_size, "generate_cmd_leave.shadow");
 	leave_scope();
 
 func generate_cmd_alloc(cmd:IR_Cmd)->void:
@@ -750,6 +771,88 @@ func generate_cmd_mov_arr(cmd:IR_Cmd)->void:
 		emit("add %s, 4;\n" % tmp, cmd_size, "generate_cmd_mov_arr.inc");
 	free_val(tmp);
 
+func calc_shadow_markers(scope):
+	var markers = {};
+	markers["markers"] = {};
+	markers["ir_names"] = {};
+	#3. mark EBP and IP
+	markers[0] = ISA.SHADOW_FRAME_PREV_EBP;
+	markers[4] = ISA.SHADOW_FRAME_PREV_ESP;
+	#4. mark arguments (ecx = number of arguments at time of call)
+	#5. mark locals and temporaries according to their storage location within current scope
+	for handle in scope.vars:
+		if handle.val_type == "func": continue;
+		if handle.storage.type == "stack":
+			var marker = ISA.SHADOW_FRAME_VAR;
+			if handle.val_type == "temporary":
+				marker = ISA.SHADOW_FRAME_TEMP;
+			assert(handle.storage.pos not in markers, "INTERNAL ERROR: stack location double-booked");
+			var pos = handle.storage.pos;
+			markers.markers[pos] = marker;
+			markers.ir_names[pos] = handle.ir_name;
+	return markers;
+
+func flip_markers_when_leaving(markers):
+	for key in markers.markers:
+		markers[key] = ISA.SHADOW_UNUSED;
+
+func text_emit_shadow_frame_pointer(counters):
+	var text = "";
+	text += "mov eax, ebp;\n"
+	text += "sub eax, %d;\n" % (65536 - SHADOW_STACK_ADR - counters.cur_offset);
+	counters.n_emitted += 2;
+	return text;
+
+func text_emit_mark_shadow_positions(markers, positions, counters):
+	var text = "";
+	var first = true;
+	for pos in positions:
+		var delta = pos - counters.cur_offset;
+		if not first: 
+			text += "add eax, %d;\n" % delta;
+			counters.n_emitted += 1;
+			counters.cur_offset += delta;	
+		else: first = false;
+		text += "mov *eax, %d;\n" % markers.markers[pos];
+		text += "#g.s.e.u: EBP[%d] is SHADOW.%s called \"%s\"\n" % [pos, ISA.SHADOW_TO_STRING[markers.markers[pos]], markers.ir_names[pos]];
+		counters.n_emitted += 1;	
+	return text;
+
+func verify_and_text_emit_padding(counters):
+	var text = "";
+	var n_remaining = (shadow_update_size/cmd_size - counters.n_emitted);
+	#7. assert false if out of space in the update block
+	assert(n_remaining >= 0, "INTERNAL ERROR: shadow update size insufficient for this stack frame. Need %d bytes for %d commands" % [counters.n_emitted*cmd_size, counters.n_emitted]);
+	#6. fill out remaining "update block" space with NOPs
+	text += "nop;\n".repeat(n_remaining);
+	return text;
+
+func generate_shadow_update(scope, is_leaving):
+	var text = "";
+	if is_leaving: text += "#-- SHADOW.leave begin\n";
+	else: text += "#-- SHADOW.enter begin\n";
+	var markers = calc_shadow_markers(scope);
+	if is_leaving: flip_markers_when_leaving(markers);
+	var counters = {"cur_offset":0, "n_emitted":0};
+	var positions = markers.markers.keys();
+	if positions.size():
+		positions.sort();
+		counters.cur_offset = positions[0];
+	#1. make a counter for how many unused bytes remain in the update block (=shadow_update_size)
+	#2. get shadow stack frame pointer by shifting EBP from 65536 to SHADOW_STACK_ADR
+	text += text_emit_shadow_frame_pointer(counters);
+	text += text_emit_mark_shadow_positions(markers, positions, counters);
+	text += verify_and_text_emit_padding(counters);
+	if is_leaving: text += "#-- SHADOW.leave done\n";
+	else: text += "#-- SHADOW.enter done\n";
+	#8. return resulting block assembly text.
+	return text;
+
+func generate_shadow_enter_update(scope):
+	return generate_shadow_update(scope, false);
+
+func generate_shadow_leave_update(scope):
+	return generate_shadow_update(scope, true);
 
 func fixup_enter_leave(assy_block:AssyBlock)->void:
 	for key in IR.scopes:
@@ -759,6 +862,10 @@ func fixup_enter_leave(assy_block:AssyBlock)->void:
 		var S:String = assy_block.code;
 		S = S.replace("__ENTER_%s" % scp_name, "sub ESP, %d" % -stack_bytes);
 		S = S.replace("__LEAVE_%s" % scp_name, "sub ESP, %d" % stack_bytes);
+		var shadow_enter_update = generate_shadow_enter_update(scope);
+		var shadow_leave_update = generate_shadow_leave_update(scope);
+		S = S.replace("__SHADOW_ENTER_%s" % scp_name, shadow_enter_update);
+		S = S.replace("__SHADOW_LEAVE_%s" % scp_name, shadow_leave_update);
 		assy_block.code = S;
 
 func fixup_symtable(sym_table:Dictionary)->void:
