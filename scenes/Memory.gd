@@ -52,7 +52,13 @@ func add_memory_region(m_pos, m_size, m_name):
 	var handle_info = {"pos":m_pos, "size":m_size, "name":m_name, "item_no":idx};
 	handle_map[idx] = handle_info;
 	mem_handles.append(handle_info);
+	return handle_info;
 
+func update_memory_handle_text(idx):
+	var handle = handle_map[idx]
+	var text = handle.name + "\n" + str(handle.size);
+	map.set_item_text(idx, text);
+	
 var color_fixups = [];
 var shadow_at = 0;
 
@@ -187,7 +193,7 @@ const shadow_colors = {
 	ISA.SHADOW_DATA_UNRESOLVED: Color.ORANGE,
 	ISA.SHADOW_DATA_RESOLVED: Color.CYAN,
 	ISA.SHADOW_FRAME_PREV_EBP: Color.RED,
-	ISA.SHADOW_FRAME_PREV_ESP: Color.CYAN,
+	ISA.SHADOW_FRAME_PREV_IP: Color.CYAN,
 	ISA.SHADOW_FRAME_ARGUMENT: Color.ORANGE,
 	ISA.SHADOW_FRAME_VAR: Color.YELLOW,
 	ISA.SHADOW_FRAME_TEMP: Color.PURPLE,
@@ -240,8 +246,22 @@ func _on_cpu_vm_mem_accessed(addr: Variant, _val: Variant, _is_write: Variant) -
 			extend_mem_region(next_down, addr);
 			print("mem region: ext down")
 		else:
-			add_memory_region(addr, 1, "unk");
+			var new_reg = add_memory_region(addr, 1, "unk");
 			print("mem region: new")
+			next_up = get_mem_region(new_reg.pos+new_reg.size);
+			next_down = get_mem_region(new_reg.pos-1);
+			if next_up and next_down:
+				merge_mem_region(next_up, next_down);
+				remove_mem_region(new_reg);
+				print("mem region: merged2")
+			elif next_up:
+				extend_mem_region(next_up, addr);
+				remove_mem_region(new_reg);
+				print("mem region: ext up2")
+			elif next_down:
+				extend_mem_region(next_down, addr);
+				remove_mem_region(new_reg);
+				print("mem region: ext down2")
 
 func get_mem_region(addr):
 	for handle in mem_handles:
@@ -256,15 +276,21 @@ func extend_mem_region(handle, addr):
 		handle.size = align_size(handle.size+diff);
 	elif handle.pos + handle.size < addr:
 		handle.size = align_size(addr - handle.pos + 1);
-
+	update_memory_handle_text(handle.item_no);
+	
 func merge_mem_region(handle1, handle2):
 	var min_start = min(handle1.pos, handle2.pos);
 	var max_end = max(handle1.pos+handle1.size, handle2.pos+handle2.size);
 	remove_mem_region(handle2);
 	handle1.pos = align_addr(min_start);
 	handle1.size = align_size(max_end - min_start + 1);
+	update_memory_handle_text(handle1.item_no);
 
 func remove_mem_region(handle):
-	map.remove_item(handle.idx);
+	for handle2 in mem_handles:
+		if handle2.item_no > handle.item_no:
+			handle2.item_no -= 1;
+	map.remove_item(handle.item_no);
 	mem_handles.erase(handle);
-	handle_map.erase(handle.idx);
+	handle_map.erase(handle.item_no);
+	

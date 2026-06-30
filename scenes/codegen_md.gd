@@ -6,9 +6,10 @@ const uYaml = preload("res://scenes/uYaml.gd")
 const ISA = preload("res://lang_zvm.gd")
 
 # constants
-const ADD_DEBUG_TRACE = true; # in emitted assembly, specify where it came from.
+const ADD_DEBUG_TRACE = false; # in emitted assembly, specify where it came from.
 const ADD_IR_TRACE = true; # print the IR commands that are being generated
-const WRITE_SHADOW = true; # mark bytes in shadow
+const WRITE_SHADOW = false; # mark bytes in shadow
+const EMIT_COMMENTS = false; # debug tracing for emit()
 const SHADOW_CODE_ADR = 30000;
 const SHADOW_STACK_ADR = 50000;
 const regs = ["EAX", "EBX", "ECX", "EDX"];
@@ -23,7 +24,8 @@ const op_map = {
 	"MOD":"mod %a, %b;\n",
 	"GREATER":"cmp %a, %b; mov %a, CTRL; band %a, CMP_G; bnot %a; bnot %a;\n",
 	"LESS":"cmp %a, %b; mov %a, CTRL; band %a, CMP_L; bnot %a; bnot %a;\n",
-	"INDEX":"mul %b, 4; add %a, %b;\n", #deref separately? #MAGIC NUMBER WARNING
+	#"INDEX":"mul %b, 4; add %a, %b;\n", #deref separately? #MAGIC NUMBER WARNING
+	"INDEX":"add %a, %b;\n", #deref separately? #MAGIC NUMBER WARNING
 	"DEC":"dec %a;\n",
 	"INC":"inc %a;\n",
 	"EQUAL":"cmp %a, %b; mov %a, CTRL; band %a, CMP_Z; bnot %a; bnot %a;\n",
@@ -489,12 +491,14 @@ func generate_cmd_call_indirect(cmd:IR_Cmd)->void:
 	emit("mov ^%s, eax;\n" % res, cmd_size, "generate_cmd_call_indirect.result");
 	
 func emit(text:String, wp_diff:int, dbg_trace:String)->void:
+	emit_comment("\n# EMIT BEGIN\n");
 	var imm_flag = false;
 	var allocs = [];
 	while true:
 		var ref_load = find_reference(text, "$");
 		if not ref_load: break;
 		var res = load_value(ref_load.val);
+		emit_comment("# load_value(%s)->%s\n" % [ref_load.val, res]);
 		var handle = all_syms[ref_load.val];
 		if ("needs_deref" in handle) and handle.needs_deref:
 			var reg = alloc_register();
@@ -505,14 +509,21 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 			res = reg;
 			#note: imm_flag = false or imm_flag;
 		else:
-			if imm_flag: res = promote(res, allocs);
+			if imm_flag: 
+				var res_old = res;
+				res = promote(res, allocs);
+				emit_comment("# promote(%s)->%s\n" % [res_old, res]);
 			imm_flag = true;
 		text = text.substr(0, ref_load.from) + res + text.substr(ref_load.to);
 	while true:
 		var ref_addr = find_reference(text, "@");
 		if not ref_addr: break;
 		var res = address_value(ref_addr.val);
-		if imm_flag: res = promote(res, allocs);
+		emit_comment("# address_value(%s)->%s\n" % [ref_addr.val, res]);
+		if imm_flag: 
+			var res_old = res;
+			res = promote(res, allocs);
+			emit_comment("# promote(%s)->%s\n" % [res_old, res]);
 		imm_flag = true;
 		text = text.substr(0, ref_addr.from) + res + text.substr(ref_addr.to);
 	var vars_to_store = [];
@@ -521,7 +532,9 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 		if not ref_store: break;
 		var handle = all_syms[ref_store.val];
 		var res_load = load_value(ref_store.val);
+		emit_comment("# load_value(%s)->%s\n" % [ref_store.val, res_load]);
 		var res_store = store_val(ref_store.val);#alloc_temporary();
+		emit_comment("# store_val(%s)->%s\n" % [ref_store.val, res_load]);
 		var res = res_store;
 		if imm_flag or (("needs_deref" in handle) and handle.needs_deref): 
 			var reg = alloc_register();
@@ -547,6 +560,7 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 		free_val(reg);
 	for val in allocs:
 		free_val(val);
+	emit_comment("# EMIT END\n\n");
 
 func promote(res:String, allocs:Array)->String:
 	var reg = alloc_register();
@@ -626,6 +640,9 @@ func emit_raw(text:String, wp_diff:int, dbg_trace:String)->void:
 	cur_assy_block.code += text;
 	cur_assy_block.write_pos += wp_diff;
 
+func emit_comment(text:String)->void:
+	if EMIT_COMMENTS: cur_assy_block.code += text;
+	
 ## returns a CPU-addressable string that can be used to write into the value.
 func store_val(val:String)->String:
 	assert(val in all_syms);
@@ -689,7 +706,10 @@ func allocate_value(handle:Dictionary, scope:Dictionary)->void:
 	if handle.storage == "NULL":
 		var storage_type;
 		var pos;
-		if(scope.user_name == "global"): 
+		if (handle.val_type == "immediate"):
+			storage_type = "none";
+			pos = 0;
+		elif(scope.user_name == "global"): 
 			storage_type = "global";
 			pos = 0;
 		else:
@@ -759,29 +779,37 @@ func generate_cmd_mov_arr(cmd:IR_Cmd)->void:
 	#assert(int(dest_handle.is_array)==1)
 	assert(cmd.words[2] == "[");
 	assert(cmd.words[-1] == "]");
-	var tmp = alloc_temporary();
+	#var tmp = alloc_temporary();
 	#var imm_0 = new_imm(0);
 	#var imm_4_handle = new_imm(4);
 	#allocate_value(imm_4_handle, cur_scope);
 	#var imm_4 = imm_4_handle.ir_name;
-	emit("mov %s, $%s;\n" % [tmp, dest], cmd_size, "generate_cmd_mov_arr.init");
 	#emit("sub %s, %s;\n" % [tmp, src.size()*4], cmd_size, "generate_cmd_mov_arr.offset");
-	for val in src:
-		emit("mov *%s, $%s;\n" % [tmp, val], cmd_size, "generate_cmd_mov_arr.mov");
-		emit("add %s, 4;\n" % tmp, cmd_size, "generate_cmd_mov_arr.inc");
-	free_val(tmp);
+	emit("sub ESP, 3;\n" , cmd_size, "generate_cmd_mov_arr.init");
+	src.reverse();
+	for i in range(src.size()):
+		var val = src[i];
+		var last = false;
+		if i+1 == src.size(): last = true;
+		emit("mov *ESP, $%s;\n" % val, cmd_size, "generate_cmd_mov_arr.mov");
+		if not last: emit("sub ESP, 4;\n" , cmd_size, "generate_cmd_mov_arr.inc");
+	emit("mov $%s, ESP;\n" % dest, cmd_size, "generate_cmd_mov_arr.init");
+	emit("sub ESP, 4;\n" , cmd_size, "generate_cmd_mov_arr.inc2");
+	#free_val(tmp);
 
 func calc_shadow_markers(scope):
 	var markers = {};
 	markers["markers"] = {};
 	markers["ir_names"] = {};
 	#3. mark EBP and IP
-	markers[0] = ISA.SHADOW_FRAME_PREV_EBP;
-	markers[4] = ISA.SHADOW_FRAME_PREV_ESP;
+	markers.markers[1] = ISA.SHADOW_FRAME_PREV_EBP;
+	markers.ir_names[1] = "PREV_EBP";
+	markers.markers[5] = ISA.SHADOW_FRAME_PREV_IP;
+	markers.ir_names[5] = "PREV_IP";
 	#4. mark arguments (ecx = number of arguments at time of call)
 	#5. mark locals and temporaries according to their storage location within current scope
 	for handle in scope.vars:
-		if handle.val_type == "func": continue;
+		if handle.val_type in "func": continue;
 		if handle.storage.type == "stack":
 			var marker = ISA.SHADOW_FRAME_VAR;
 			if handle.val_type == "temporary":
@@ -886,6 +914,7 @@ func fixup_symtable_val(val:Dictionary)->void:
 		"global": val.pos = {"type":"global", "lbl":val.ir_name};
 		"stack": val.pos = {"type":"stack", "pos":sym.storage.pos};
 		"immediate": val.pos = {"type":"immediate", "val":sym.value};
+		"none": val.pos = {"type":"immediate", "val":sym.value};
 		_: assert(false, "unexpected sym storage type [%s]" % str(sym.storage.type));
 	if val.user_name == null:
 		val.pos["val"] = sym.value;
