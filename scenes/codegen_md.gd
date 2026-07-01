@@ -1,6 +1,6 @@
 extends Node
 
-signal locations_ready(loc_map:Dictionary);
+signal locations_ready(loc_map:LocationMap);
 
 const uYaml = preload("res://scenes/uYaml.gd")
 const ISA = preload("res://lang_zvm.gd")
@@ -17,20 +17,47 @@ const cmd_size = 8; # size in bytes of an assembly instruction
 const enter_leave_size = cmd_size; 
 const shadow_update_size = cmd_size*50;
 const op_map = {
-	"ADD":"add %a, %b;\n",
-	"SUB":"sub %a, %b;\n",
-	"MUL":"mul %a, %b;\n",
-	"DIV":"div %a, %b;\n",
-	"MOD":"mod %a, %b;\n",
-	"GREATER":"cmp %a, %b; mov %a, CTRL; band %a, CMP_G; bnot %a; bnot %a;\n",
-	"LESS":"cmp %a, %b; mov %a, CTRL; band %a, CMP_L; bnot %a; bnot %a;\n",
-	#"INDEX":"mul %b, 4; add %a, %b;\n", #deref separately? #MAGIC NUMBER WARNING
-	"INDEX":"add %a, %b;\n", #deref separately? #MAGIC NUMBER WARNING
-	"DEC":"dec %a;\n",
-	"INC":"inc %a;\n",
-	"EQUAL":"cmp %a, %b; mov %a, CTRL; band %a, CMP_Z; bnot %a; bnot %a;\n",
-	"NOT_EQUAL":"cmp %a, %b; mov %a, CTRL; band %a, CMP_NZ; bnot %a; bnot %a\n",
+	"ADD":["add %a, %b;\n"],
+	"SUB":["sub %a, %b;\n"],
+	"MUL":["mul %a, %b;\n"],
+	"DIV":["div %a, %b;\n"],
+	"MOD":["mod %a, %b;\n"],
+	"GREATER":[
+		"cmp %a, %b;\n", 
+		"mov %a, CTRL;\n", 
+		"band %a, CMP_G;\n", 
+		"bnot %a;\n", 
+		"bnot %a;\n"],
+	"LESS":[
+		"cmp %a, %b;\n",
+		"mov %a, CTRL;\n",
+		"band %a, CMP_L;\n",
+		"bnot %a;\n",
+		"bnot %a;\n"],
+	"INDEX":["add %a, %b;\n"], #deref separately?
+	"DEC":["dec %a;\n"],
+	"INC":["inc %a;\n"],
+	"EQUAL":[
+		"cmp %a, %b;\n",
+		"mov %a, CTRL;\n",
+		"band %a, CMP_Z;\n",
+		"bnot %a;\n",
+		"bnot %a;\n",
+	],
+	"NOT_EQUAL":[
+		"cmp %a, %b;\n",
+		"mov %a, CTRL;\n",
+		"band %a, CMP_NZ;\n",
+		"bnot %a;\n",
+		"bnot %a;\n",
+	],
 };
+const imm_map = {
+	"CMP_G":"CMP_G",
+	"CMP_L":"CMP_L",
+	"CMP_Z":"CMP_Z",
+};
+const word_size_bytes = 4; ## how many bytes does a plain "mov" grab?
 # state
 var IR = {};
 var all_syms = {};
@@ -43,6 +70,8 @@ var cur_block:CodeBlock;
 var cb_stack:Array[CodeBlock] = [];
 var entered_scopes = [];
 var cur_scope = null;
+var n_locations = 0;
+var val_idx = 0;
 #var location_map = {};
 
 func reset():
@@ -57,6 +86,7 @@ func reset():
 	cb_stack = [];
 	entered_scopes = [];
 	cur_scope = null;
+	n_locations = 0;
 
 #---------- IR ingestion -------------------
 
@@ -74,19 +104,22 @@ func deserialize(text:String)->void:
 	assert(not IR.is_empty());
 	##inflate scopes
 	for key in IR.scopes:
+		bump_val_idx(key);
 		var scope = IR.scopes[key];
 		if not "vars" in scope: scope["vars"] = [];
 		if not "funcs" in scope: scope["funcs"] = [];
 		inflate_vals(scope.vars);
 		inflate_vals(scope.funcs);
+		
 	##inflate code blocks
 	for key in IR.code_blocks:
+		bump_val_idx(key);
 		var in_cb = IR.code_blocks[key];
 		var out_cb = CodeBlock.new({"ir_name":key, "lbl_from":in_cb.lbl_from, "lbl_to":in_cb.lbl_to});
 		if "code" in in_cb:
 			for cmd in in_cb.code:
 				var loc_str = cmd.pop_back();
-				loc_str = unescape_string(loc_str);
+				loc_str = G.unescape_string(loc_str);
 				var loc = LocationRange.from_string(loc_str);
 				assert(len(cmd));
 				var out_cmd = IR_Cmd.new({"loc":loc});
@@ -95,56 +128,38 @@ func deserialize(text:String)->void:
 				out_cb.code.push_back(out_cmd);
 		IR.code_blocks[key] = out_cb;
 	#make a total list of vals
-	for key in IR.code_blocks: all_syms[key] = IR.code_blocks[key];
+	for key in IR.code_blocks: all_syms[key] = IR.code_blocks[key]; bump_val_idx(key);
 	for key in IR.scopes:
+		bump_val_idx(key);
 		var scope = IR.scopes[key];
-		for val in scope.vars: all_syms[val.ir_name] = val;
-		for val in scope.funcs: all_syms[val.ir_name] = val;
-	#print(all_syms.keys());
-	#inflate locations
-	#for key in IR.code_blocks: 
-		#var cb = IR.code_blocks[key];
-		#if "code" not in cb: continue;
-		#for cmd in cb.code:
-			#var loc_str = cmd.pop_back();
-			#loc_str = unescape_string(loc_str);
-			#var loc = LocationRange.from_string(loc_str);
-			#cmd.push_back(loc);
+		for val in scope.vars: all_syms[val.ir_name] = val; bump_val_idx(key);
+		for val in scope.funcs: all_syms[val.ir_name] = val; bump_val_idx(key);
+
+## makes sure that val_idx > name_<idx> 
+func bump_val_idx(ir_name):
+	var regex = RegEx.new();
+	regex.compile("[0-9]+");
+	var res = regex.search(ir_name);
+	assert(res != null);
+	res = res.get_string(0);
+	assert(res != "");
+	assert(res.is_valid_int());
+	var old_idx = res.to_int();
+	val_idx = max(val_idx, old_idx+1)
 
 func inflate_vals(arr:Array)->void:
-	const props = ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code", "argc", "is_array", "array_size"];
+	const props = ["ir_name", "val_type", "user_name", "data_type", "data_size", "storage", "value", "scope", "code", "argc", "is_array", "array_size"];
 	for i in range(len(arr)):
 		var val = arr[i];
 		assert(len(val) == len(props));
 		var new_val = {};
 		for j in range(len(props)):
-			var S = unescape_string(val[j]);
+			var S = G.unescape_string(val[j]);
 			new_val[props[j]] = S;
+		new_val.data_size = (new_val.data_size as String).to_int();
+		bump_val_idx(new_val.ir_name);
 		arr[i] = new_val;
-
-func unescape_string(text:String)->String:
-	var new_str:String = "";
-	var esc_step:int = 0;
-	var num_str:String = "";
-	for ch in text:
-		match esc_step:
-			0:
-				if(ch == "%"):
-					esc_step = 1;
-				else:
-					new_str += ch;
-			1:	num_str += ch; esc_step += 1;
-			2:	num_str += ch; esc_step += 1;
-			3:	
-				num_str += ch;
-				assert(num_str.is_valid_int());
-				var num = num_str.to_int();
-				num_str = "";
-				var new_ch = PackedByteArray([num]).get_string_from_ascii();
-				new_str += new_ch;
-				esc_step = 0;
-	#print("unescape str: in [%s], out [%s]" % [text, new_str]);
-	return new_str;
+	
 
 #-------------- Code generation -----------------
 
@@ -174,13 +189,20 @@ func generate()->String:
 	#assy_full += generate_globals();
 	#return assy_full;
 	cur_assy_block = AssyBlock.new(); #{"code":"", "write_pos":0, "location_map":{"begin":{}, "end":{}}};
+	var global_ab = cur_assy_block;
+	var lc = LoopCounter.new();
 	while not referenced_cbs.is_empty():
+		lc.step();
 		var cb = referenced_cbs.pop_front();
 		if cb in emitted_cbs: continue;
 		else: emitted_cbs.append(cb);
 		emit_cb(cb.ir_name, "generate.referenced_cbs");
 	fixup_enter_leave(cur_assy_block);
 	cur_assy_block.code += generate_globals();
+	assert(cur_assy_block == global_ab);
+	#var n_locations_in = n_locations;
+	#var n_locations_out = len(cur_assy_block.loc_map.begin);
+	#assert(n_locations_out == n_locations_in);
 	locations_ready.emit(cur_assy_block.loc_map);
 	return cur_assy_block.code;
 	
@@ -211,20 +233,29 @@ func generate_globals()->String:
 	var text = "";
 	for key in all_syms:
 		var sym = all_syms[key];
-		if sym.val_type == "variable":
-			if sym.storage.type == "global":
-				if ("is_array" in sym) and (int(sym.is_array) == 1):
-					text += ":%s: alloc %s;\n" % [sym.ir_name, str(4*int(sym.array_size))];
-				else:
+
+		match sym.val_type:
+			"code":
+				pass;
+			"func":
+				pass;
+			"label":
+				pass;
+			"variable":
+				if sym.storage.type == "global":
+					if ("is_array" in sym) and (int(sym.is_array) == 1):
+						text += ":%s: alloc %s;\n" % [sym.ir_name, str(4*int(sym.array_size))];
+					else:
+						text += ":%s: db 0;\n" % sym.ir_name;
+			"temporary":
+				if sym.storage.type == "global":
 					text += ":%s: db 0;\n" % sym.ir_name;
-		if sym.val_type == "temporary":
-			if sym.storage.type == "global":
-				text += ":%s: db 0;\n" % sym.ir_name;
-		if sym.val_type == "immediate":
-			if sym.data_type == "string":
-				var S = sym.value;
-				S = format_db_string(S);
-				text += ":%s: db %s;\n" % [sym.ir_name, S];
+			"immediate":
+				if sym.data_type == "String":
+					var S = sym.value;
+					S = format_db_string(S);
+					text += ":%s: db %s;\n" % [sym.ir_name, S];
+			_: assert(false, "codegen.generate_globals: unspecified value storage type");
 	return text;
 
 func format_db_string(S)->String:
@@ -305,9 +336,24 @@ func generate_cmd_op(cmd:IR_Cmd)->void:
 	var arg1 = cmd.words[2];
 	var arg2 = cmd.words[3];
 	var res = cmd.words[4];
+	var loc:LocationRange = cmd.loc;
 	if op not in op_map: push_error("codegen: can't generate op ["+op+"]"); return;
-	var op_str:String = op_map[op];
-	
+	mark_loc_begin(loc);
+	var op_arr:Array = op_map[op];
+	for op_str in op_arr:
+		generate_cmd_op_helper(op,arg1,arg2,res,op_str);
+	mark_loc_end(loc);
+
+func generate_cmd_op_helper(op:String, arg1:String, arg2:String, res:String, op_str:String):
+	for imm in imm_map: ## for CMP_Z and other assembly constants
+		var imm_val = imm_map[imm];
+		if op_str.find(imm) != -1:
+			var imm_handle = new_imm(0);
+			allocate_value(imm_handle, cur_scope);
+			imm_handle.value = imm_val;
+			imm_handle["is_assy_constant"] = true;
+			op_str = op_str.replace(imm, "$"+imm_handle.ir_name);
+			
 	var tmpA = null;
 	var tmpB = null;
 	var arg1_is_array = false;
@@ -321,7 +367,7 @@ func generate_cmd_op(cmd:IR_Cmd)->void:
 	#var arg1_by_addr = false;
 	const mono_ops = ["INC", "DEC"];
 	if op in mono_ops:
-		tmpA = "^%s" % arg1;
+		tmpA = "%s" % arg1;
 		emit("mov ^%s, $%s;\n" % [res, arg1], cmd_size, "generate_cmd_op.result2");
 	elif arg1_is_array:
 		tmpA = alloc_temporary();
@@ -329,33 +375,52 @@ func generate_cmd_op(cmd:IR_Cmd)->void:
 	else:
 		tmpA = alloc_temporary();
 		emit("mov %s, $%s;\n" % [tmpA, arg1], cmd_size, "generate_cmd_op.arg1_normal");
-	
-	op_str = op_str.replace("%a", tmpA);
+		#emit("mov ^%s, $%s;\n" % [tmpA, arg1], cmd_size, "generate_cmd_op.arg1");
+
+	op_str = op_str.replace("%a", "!"+tmpA);
 	if op_str.find("%b") != -1:
 		tmpB = alloc_temporary();
-		emit("mov %s, $%s;\n" % [tmpB, arg2], cmd_size, "generate_cmd_op.find_b");
-		op_str = op_str.replace("%b", tmpB);
+		emit("mov ^%s, $%s;\n" % [tmpB, arg2], cmd_size, "generate_cmd_op.find_b");
+		op_str = op_str.replace("%b", "$"+tmpB);
+		
+	if op == "INDEX":
+		var arg1_handle = all_syms[arg1];
+		assert(arg1_handle != null);
+		var arg1_type = arg1_handle.data_type;
+		var pointer_step = 1;
+		if arg1_type != "NULL":
+			var arg1T = Type.from_string(arg1_type);
+			assert(arg1T != null);
+			var arg1dT = arg1T.get_deref_type();
+			assert(arg1dT != null);
+			pointer_step = arg1dT.size;
+		var ptr_step = new_imm(pointer_step);
+		allocate_value(ptr_step, cur_scope);
+		emit("mul ^%s, $%s;\n" % [tmpB, ptr_step.ir_name], cmd_size, "generate_cmd_op.index_step");
+		
 	var op_cmd_size = cmd_size * op_str.count(";");
 	emit(op_str, op_cmd_size, "generate_cmd_op.op_str");
-	if op not in mono_ops: emit("mov ^%s, %s;\n" % [res, tmpA], cmd_size, "generate_cmd_op.result1");
+	if op not in mono_ops: emit("mov ^%s, $%s;\n" % [res, tmpA], cmd_size, "generate_cmd_op.result1");
 	var res_handle = all_syms[res];
 	if op == "INDEX": res_handle.needs_deref = true;
 	free_val(tmpA);
 	if(tmpB): free_val(tmpB);
-	
+
 func new_lbl(lbl_name:String)->Dictionary:
-	var ir_name = "lbl_"+str(len(all_syms)+1)+"__"+lbl_name;
+	var ir_name = "lbl_"+str(val_idx)+"__"+lbl_name; val_idx += 1;
+	assert(ir_name not in all_syms, "ir sym uid count broken");
 	var handle = {"ir_name":ir_name, "val_type":"label"};
 	all_syms[ir_name] = handle;
 	return handle;
 
 func new_imm(val)->Dictionary:
-	var ir_name = "imm_"+str(len(all_syms)+1)+"__"+str(val);
-	var handle = {"ir_name":ir_name, "val_type":"immediate", "value":str(val), "data_type":"error", "storage":"NULL"};
+	var ir_name = "imm_"+str(val_idx)+"__"+str(val); val_idx += 1;
+	assert(ir_name not in all_syms, "ir sym uid count broken");
+	var handle = {"ir_name":ir_name, "val_type":"immediate", "value":str(val), "data_type":"error", "data_size":4, "storage":"NULL"};
 	if val is int:
 		handle["data_type"] = "int";
 	elif val is String:
-		handle["data_type"] = "string";
+		handle["data_type"] = "String";
 	all_syms[ir_name] = handle;
 	return handle;
 
@@ -374,6 +439,9 @@ func generate_cmd_if(cmd:IR_Cmd)->void:
 	var imm_0_handle = new_imm(0);
 	allocate_value(imm_0_handle, cur_scope);
 	var imm_0 = imm_0_handle.ir_name;
+	
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	emit_cb(cb_cond, "generate_cmd_if.cb_cond");
 	#emit("$%s\n" % cb_cond, get_cb_cmd_size(cb_cond), "generate_cmd_if.cb_cond");
 	emit("cmp $%s, $%s;\n" % [res, imm_0], cmd_size, "generate_cmd_if.cmp");
@@ -383,10 +451,11 @@ func generate_cmd_if(cmd:IR_Cmd)->void:
 	emit("jmp %s;\n" % lbl_end, cmd_size, "generate_cmd_if.end_then");
 	emit(":%s:\n" % lbl_else, 0, "generate_cmd_if.lbl_else");
 	if cur_block.if_block_continued:
-		cur_block["if_block_lbl_end"] = lbl_end;
+		cur_block.if_block_lbl_end = lbl_end;
 	else:
 		emit(":%s:\n" % lbl_end, 0, "generate_cmd_if.end_if");
 		cur_block.if_block_lbl_end = "";
+	mark_loc_end(loc);
 
 func generate_cmd_else_if(cmd:IR_Cmd)->void:
 	var cb_cond = cmd.words[1];
@@ -397,6 +466,8 @@ func generate_cmd_else_if(cmd:IR_Cmd)->void:
 	var imm_0_handle = new_imm(0);
 	allocate_value(imm_0_handle, cur_scope);
 	var imm_0 = imm_0_handle.ir_name;
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	emit_cb(cb_cond, "generate_cmd_else_if.cb_cond");
 	#emit("$%s\n" % cb_cond, get_cb_cmd_size(cb_cond), "generate_cmd_else_if.cb_cond");
 	emit("cmp $%s, $%s;\n" % [res, imm_0], cmd_size, "generate_cmd_else_if.cmp");
@@ -408,14 +479,18 @@ func generate_cmd_else_if(cmd:IR_Cmd)->void:
 	if not cur_block.if_block_continued:
 		emit(":%s:\n" % lbl_end, 0, "generate_cmd_else_if.end_if");
 		cur_block.if_block_lbl_end = "";
+	mark_loc_end(loc);
 
 func generate_cmd_else(cmd:IR_Cmd)->void:
 	var cb_block = cmd.words[1];
 	var lbl_end = cur_block.if_block_lbl_end;
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	emit_cb(cb_block,"generate_cmd_else.cb_block");
 	#emit("$%s\n" % [cb_block], get_cb_cmd_size(cb_block), "generate_cmd_else.cb_block");
 	emit(":%s:\n" % [lbl_end], 0, "generate_cmd_else.lbl_end");
 	cur_block.if_block_lbl_end = "";
+	mark_loc_end(loc);
 
 func generate_cmd_while(cmd:IR_Cmd)->void:
 	#WHILE cb_cond res cb_block lbl_next lbl_end
@@ -425,6 +500,8 @@ func generate_cmd_while(cmd:IR_Cmd)->void:
 	var lbl_next = cmd.words[4];
 	var lbl_end = cmd.words[5];
 	var immediate_0 = new_imm(0);
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	allocate_value(immediate_0, cur_scope);
 	emit(":%s:\n" % lbl_next, 0, "generate_cmd_while.lbl_next");		# loop:
 	emit_cb(cb_cond, "generate_cmd_while.cb_cond");
@@ -436,6 +513,7 @@ func generate_cmd_while(cmd:IR_Cmd)->void:
 	#emit("$%s\n" % cb_block, "generate_cmd_while.cb_block");		#  (code block)
 	emit("jmp %s;\n" % lbl_next, cmd_size, "generate_cmd_while.jmp_next");	#  GOTO "loop"
 	emit(":%s:\n" % lbl_end, 0, "generate_cmd_while.lbl_end");		# end:
+	mark_loc_end(loc);
 
 func generate_cmd_call(cmd:IR_Cmd)->void:
 	#CALL fun arg(s) res
@@ -445,7 +523,9 @@ func generate_cmd_call(cmd:IR_Cmd)->void:
 	var args = [];
 	if cmd.words[2] == "[":
 		var i = 3;
+		var lc = LoopCounter.new();
 		while true:
+			lc.step();
 			if cmd.words[i] == "]": break;
 			args.append(cmd.words[i]);
 			i += 1;
@@ -455,11 +535,14 @@ func generate_cmd_call(cmd:IR_Cmd)->void:
 	args.reverse();
 	var n_args = len(args);
 	var pushed_stack_size = 4*n_args;
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	for arg in args:
 		emit("push $%s;\n" % arg, cmd_size, "generate_cmd_call.args");
 	emit("call @%s;\n" % fun, cmd_size, "generate_cmd_call.call");
 	emit("add ESP, %s;\n" % pushed_stack_size, cmd_size, "generate_cmd_call.stack");
 	emit("mov ^%s, eax;\n" % res, cmd_size, "generate_cmd_call.result");
+	mark_loc_end(loc);
 	
 	if fun_handle.storage.type != "extern":
 		var cb_name = fun_handle.code;
@@ -494,19 +577,36 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 	emit_comment("\n# EMIT BEGIN\n");
 	var imm_flag = false;
 	var allocs = [];
+	## ---- process $load commands: provide the value that can be read
+	var lc = LoopCounter.new();
 	while true:
+		lc.step();
 		var ref_load = find_reference(text, "$");
 		if not ref_load: break;
 		var res = load_value(ref_load.val);
 		emit_comment("# load_value(%s)->%s\n" % [ref_load.val, res]);
 		var handle = all_syms[ref_load.val];
 		if ("needs_deref" in handle) and handle.needs_deref:
-			var reg = alloc_register();
-			allocs.push_back(reg);
-			assert(reg != null);
-			emit_raw("mov %s, %s;\n" % [reg, res], cmd_size, "emit.needs_deref_1(%s)" % ref_load.val);
-			emit_raw("mov %s, *%s;\n" % [reg, reg], cmd_size, "emit.needs_deref_2(%s)" % ref_load.val);
-			res = reg;
+			#var reg = alloc_register();
+			var tmp;
+			if res not in regs:
+				tmp = promote(res, allocs);
+				allocs.append(tmp);
+				emit("mov %s, *%s;\n" % [tmp, tmp], cmd_size, "emit.needs_deref_3(%s)" % ref_load.val);
+			else:
+				tmp = alloc_temporary();
+				emit("mov ^%s, *%s;\n" % [tmp, res], cmd_size, "emit.needs_deref_4(%s)" % ref_load.val);
+			#allocs.push_back(reg);
+			#assert(reg != null);
+			#emit("mov ^%s, %s;\n" % [tmp, res], cmd_size, "emit.needs_deref_1(%s)" % ref_load.val);
+			#emit("mov ^%s, *$%s;\n" % [tmp, tmp], cmd_size, "emit.needs_deref_2(%s)" % ref_load.val);
+			
+			if (tmp in regs) and not imm_flag:
+				tmp = demote(tmp, allocs);
+				res = load_value(tmp);
+				imm_flag = true;
+			else:
+				res = tmp;
 			#note: imm_flag = false or imm_flag;
 		else:
 			if imm_flag: 
@@ -514,8 +614,26 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 				res = promote(res, allocs);
 				emit_comment("# promote(%s)->%s\n" % [res_old, res]);
 			imm_flag = true;
+		## ---------- truncate loaded value if it's small ----
+		#var handle = all_syms[val];
+		var size_bytes = 4;
+		if "data_size" in handle: size_bytes = handle.data_size;
+		
+		if size_bytes < word_size_bytes:
+			var reg = alloc_register("load_val.truncate");
+			var mask = (2**(8*size_bytes)-1); #"0x"+"FF".repeat(size_bytes);
+			emit_raw("mov %s, %s;\n" % [reg, res], cmd_size, "load_value.truncate1");
+			emit_raw("band %s, %d;\n" % [reg, mask], cmd_size, "load_value.truncate2");
+			var tmp = alloc_temporary();
+			emit("mov ^%s, %s;\n" % [tmp, reg], cmd_size, "load_value.truncate3");
+			free_val(reg);
+			res = load_value(tmp);	
+		
 		text = text.substr(0, ref_load.from) + res + text.substr(ref_load.to);
+	## ----- process @address commands: provide the memory address of a value
+	lc = LoopCounter.new();
 	while true:
+		lc.step();
 		var ref_addr = find_reference(text, "@");
 		if not ref_addr: break;
 		var res = address_value(ref_addr.val);
@@ -527,17 +645,68 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 		imm_flag = true;
 		text = text.substr(0, ref_addr.from) + res + text.substr(ref_addr.to);
 	var vars_to_store = [];
+	## --------- process !loadstore commands: first provide a value that can be read, and then store it.
+	lc = LoopCounter.new();
 	while true:
+		lc.step();
+		var ref_loadstore = find_reference(text, "!");
+		if not ref_loadstore: break;
+		var res = load_value(ref_loadstore.val);
+		var handle = all_syms[ref_loadstore.val];
+		if ("needs_deref" in handle) and handle.needs_deref:
+			if res not in regs:
+				var res_load = res;
+				var reg = promote(res, allocs);
+				allocs.append(reg);
+				emit("mov %s, *%s;\n" % [reg, res], cmd_size, "emit.needs_deref_5(%s)" % ref_loadstore.val);
+				res = reg; # can't demote because we need a register to store with deref
+				vars_to_store.append([reg, handle.needs_deref, res_load, null]);
+			else:
+				var tmp1 = alloc_temporary();
+				emit("mov ^%s, %s;\n" % [tmp1, res], cmd_size, "emit.needs_deref_61_to_store(%s)" % ref_loadstore.val)
+				var tmp = alloc_temporary();	
+				emit("mov ^%s, *%s;\n" % [tmp, res], cmd_size, "emit.needs_deref_6(%s)" % ref_loadstore.val);
+				var res_load = tmp1;
+				vars_to_store.append([tmp, handle.needs_deref, res_load, null]);
+				res = tmp;
+		else:
+			if imm_flag: 
+				var reg = promote(res, allocs);
+				var res_store = res;
+				vars_to_store.append([reg, handle.needs_deref, null, res_store]);
+				res = reg;
+			imm_flag = true;
+		
+		## ---------- truncate loaded value if it's small ----
+		#var handle = all_syms[val];
+		var size_bytes = 4;
+		if "data_size" in handle: size_bytes = handle.data_size;
+		
+		if size_bytes < word_size_bytes:
+			var reg = alloc_register("load_val.truncate");
+			var mask = (2**(8*size_bytes)-1); #"0x"+"FF".repeat(size_bytes);
+			emit_raw("mov %s, %s;\n" % [reg, res], cmd_size, "load_value.truncate1");
+			emit_raw("band %s, %d;\n" % [reg, mask], cmd_size, "load_value.truncate2");
+			var tmp = alloc_temporary();
+			emit("mov ^%s, %s;\n" % [tmp, reg], cmd_size, "load_value.truncate3");
+			free_val(reg);
+			res = load_value(tmp);	
+		
+		text = text.substr(0, ref_loadstore.from) + res + text.substr(ref_loadstore.to);
+	## --------- process ^store commands: provide a value that can be written to
+	lc = LoopCounter.new();
+	while true:
+		lc.step();
 		var ref_store = find_reference(text, "^");
 		if not ref_store: break;
 		var handle = all_syms[ref_store.val];
-		var res_load = load_value(ref_store.val);
+		var res_load = load_value(ref_store.val); allocs.append(res_load);
 		emit_comment("# load_value(%s)->%s\n" % [ref_store.val, res_load]);
 		var res_store = store_val(ref_store.val);#alloc_temporary();
 		emit_comment("# store_val(%s)->%s\n" % [ref_store.val, res_load]);
 		var res = res_store;
 		if imm_flag or (("needs_deref" in handle) and handle.needs_deref): 
-			var reg = alloc_register();
+			var reg = alloc_register("emit.store1_needs_deref");
 			vars_to_store.append([reg, handle.needs_deref, res_load, res_store]);			
 			res = reg;
 		imm_flag = false;
@@ -551,7 +720,7 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 		var res_load = touple[2];
 		var res_store = touple[3];
 		if needs_deref:
-			var reg2 = alloc_register();
+			var reg2 = alloc_register("emit.store2_needs_deref");
 			emit_raw("mov %s, %s;\n" % [reg2, res_load], cmd_size, dbg_trace+":emit(%s).store_deref_3" % text);
 			emit_raw("mov *%s, %s;\n" % [reg2, reg], cmd_size, dbg_trace+":emit(%s).store_deref_4" % text);
 			free_val(reg2);
@@ -562,13 +731,21 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 		free_val(val);
 	emit_comment("# EMIT END\n\n");
 
+## move a value into a register
 func promote(res:String, allocs:Array)->String:
-	var reg = alloc_register();
+	var reg = alloc_register("promote %s" % res);
 	allocs.append(reg);
 	emit("mov %s, %s;\n" % [reg, res], cmd_size, "promote");
 	res = reg;
 	return res;
 
+## move a value from a register into a temporary
+func demote(reg:String, allocs:Array)->String:
+	var tmp = alloc_temporary();
+	allocs.erase(reg);
+	emit("mov ^%s, %s;\n" % [tmp, reg], cmd_size, "demote");
+	free_val(reg);
+	return tmp;
 
 func find_reference(text:String, marker:String):
 	var marker_pos = text.find(marker);
@@ -582,17 +759,24 @@ func find_reference(text:String, marker:String):
 func load_value(val:String)->String:
 	assert(val in all_syms);
 	var handle = all_syms[val];
+	var size_bytes = 4;
 	var res = "";
 	if handle.val_type == "code":
 		assert(false, "Deprecated, need to generate before emitting");
 		res = generate_code_block(handle).code;
 	elif handle.val_type == "immediate":
-		if handle.data_type == "string":
+		#size_bytes = handle.data_size;
+		if handle.data_type == "String":
 			res = handle.ir_name;
 		else:
-			assert(handle.value.is_valid_int());
-			res = handle.value;
+			if ("is_assy_constant" in handle) and handle.is_assy_constant:
+				res = handle.value;
+			else:
+				assert(handle.value.is_valid_int());
+				res = handle.value;
+				res = str(truncate_number((res as String).to_int(), size_bytes));
 	else:
+		#size_bytes = handle.data_size;
 		match handle.storage.type:
 			"global": 
 				if int(handle.is_array) == 1:
@@ -609,6 +793,22 @@ func load_value(val:String)->String:
 				res = "*%s" % handle.ir_name;
 			_: push_error("codegen: load_value: unknown storage type ["+handle.storage.type+"]");
 		#print("load val [%s] is %s: res [%s]" % [val, handle.storage.type, res]);
+	#if size_bytes < word_size_bytes:
+		#var reg = alloc_register("load_val.truncate");
+		#var mask = (2**(8*size_bytes)-1); #"0x"+"FF".repeat(size_bytes);
+		#emit_raw("mov %s, %s;\n" % [reg, res], cmd_size, "load_value.truncate1");
+		#emit_raw("band %s, %d;\n" % [reg, mask], cmd_size, "load_value.truncate2");
+		#var tmp = alloc_temporary();
+		#emit("mov ^%s, %s;\n" % [tmp, reg], cmd_size, "load_value.truncate3");
+		#free_val(reg);
+		#res = load_value(tmp);
+	return res;
+
+## makes the number smaller so that it fits in size_bytes
+func truncate_number(num:int, size_bytes:int):
+	var max_b = 2**(8*size_bytes)-1;
+	var res = sign(num)*min(abs(num), max_b);
+	print("truncate_number(%d, %d) = %d (max_b = %d)\n" % [num, size_bytes, res, max_b]);
 	return res;
 
 ## returns the CPU-addressable string that yields the address of the value.
@@ -630,15 +830,19 @@ func address_value(val:String)->String:
 	return res;
 
 func alloc_temporary()->String:
-	var res = alloc_register();
+	var res = null; #alloc_register();
 	if not res:
 		#res = "EBP[%d]" % cur_stack_size;
 		#cur_stack_size += 1;
-		var ir_name = "tmp_%d" % (len(all_syms)+1);
-		var handle = {"ir_name":ir_name, "val_type":"temporary", "storage":"NULL"};
+		var ir_name = "tmp_%d" % val_idx; val_idx += 1;
+		assert(ir_name not in all_syms, "ir sym uid count broken");
+		var handle = {"ir_name":ir_name, "val_type":"temporary", "data_type":"error", "data_size":4,"storage":"NULL"};
 		allocate_value(handle, cur_scope);
 		cur_scope.vars.append(handle);
+		#var N = len(all_syms);
 		all_syms[ir_name] = handle;
+		#var M = len(all_syms);
+		#assert(M > N, "watafak");
 		res = ir_name;
 	return res;
 
@@ -673,12 +877,13 @@ func free_val(val:String):
 	else:
 		pass;
 
-func alloc_register():
+func alloc_register(where:String):
 	for reg in regs:
 		if not reg in regs_in_use: regs_in_use[reg] = false;
 		if not regs_in_use[reg]:
-			regs_in_use[reg] = true;
+			regs_in_use[reg] = where;
 			return reg;
+	assert(false, "Codegen: out of registers!");
 	return null;
 
 func allocate_vars():
@@ -710,38 +915,42 @@ func allocate_value(handle:Dictionary, scope:Dictionary)->void:
 	var data_size = 4;
 	if "is_array" in handle and int(handle.is_array):
 		data_size *= int(handle.array_size);
-	if handle.storage == "NULL":
-		var storage_type;
-		var pos;
-		if (handle.val_type == "immediate"):
-			storage_type = "none";
-			pos = 0;
-		elif(scope.user_name == "global"): 
-			storage_type = "global";
-			pos = 0;
+	
+	if handle.storage is String:
+		if handle.storage == "NULL":
+			var storage_type;
+			var pos;
+			if (handle.val_type == "immediate"):
+				storage_type = "none";
+				pos = 0;
+			elif(scope.user_name == "global"): 
+				storage_type = "global";
+				pos = 0;
+			else:
+				storage_type = "stack";
+				var wp = scope.local_vars_write_pos;
+				#pos = to_local_pos(wp);
+				pos = wp;
+				if "is_array" in handle and int(handle.is_array):
+					pos = pos-data_size;
+				scope.local_vars_write_pos -= data_size;
+				scope.local_vars_count += 1;
+				assert(pos != 0);
+			handle.storage = {"type":storage_type, "pos":pos};
+		elif handle.storage == "extern":
+			handle.storage = {"type":"extern", "pos":0};
+		elif handle.storage == "arg":
+			var wp = scope.args_write_pos;
+			var pos = wp;
+			handle.storage = {"type":"stack", "pos":pos};
+			assert(handle.storage.pos != 0);
+			scope.args_write_pos += data_size;
+			scope.args_count += 1;
 		else:
-			storage_type = "stack";
-			var wp = scope.local_vars_write_pos;
-			#pos = to_local_pos(wp);
-			pos = wp;
-			if "is_array" in handle and int(handle.is_array):
-				pos = pos-data_size;
-			scope.local_vars_write_pos -= data_size;
-			scope.local_vars_count += 1;
-			assert(pos != 0);
-		handle.storage = {"type":storage_type, "pos":pos};
-	elif handle.storage == "extern":
-		handle.storage = {"type":"extern", "pos":0};
-	elif handle.storage == "arg":
-		var wp = scope.args_write_pos;
-		var pos = wp;
-		handle.storage = {"type":"stack", "pos":pos};
-		assert(handle.storage.pos != 0);
-		scope.args_write_pos += data_size;
-		scope.args_count += 1;
-	else:
-		push_error("codegen: allocate_vars: unknown storage type");
-	handle["needs_deref"] = false;
+			push_error("codegen: allocate_vars: unknown storage type");
+		handle["needs_deref"] = false;
+	if handle not in scope.vars:
+		scope.vars.append(handle);
 	#print("alloc %s to %s: result %s" % [handle.ir_name, scope.ir_name, handle.storage]);
 
 ## defines a mapping between the input pos and stack pos for local vars of a function
@@ -753,6 +962,8 @@ func to_arg_pos(pos:int)->int:
 	return 9+pos;
 
 func generate_cmd_return(cmd:IR_Cmd)->void:
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	if len(cmd.words) >= 2:
 		var res = cmd.words[1];
 		emit("mov EAX, $%s;\n" % res, cmd_size, "generate_cmd_return.arg");
@@ -760,18 +971,25 @@ func generate_cmd_return(cmd:IR_Cmd)->void:
 	emit_raw("__LEAVE_%s;\n" % scp_name, enter_leave_size, "generate_cmd_return.leave");
 	if(WRITE_SHADOW): emit_raw("__SHADOW_LEAVE_%s\n" % scp_name, shadow_update_size, "generate_cmd_return.shadow");
 	emit("ret;\n", cmd_size, "generate_cmd_return.ret");
+	mark_loc_end(loc);
 
 func generate_cmd_enter(cmd:IR_Cmd)->void:
 	var scp_name = cmd.words[1];
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	enter_scope(IR.scopes[scp_name]);
 	emit_raw("__ENTER_%s;\n" % scp_name, enter_leave_size, "generate_cmd_enter");
 	if(WRITE_SHADOW): emit_raw("__SHADOW_ENTER_%s\n" % scp_name, shadow_update_size, "generate_cmd_enter.shadow");
+	mark_loc_end(loc);
 	
 func generate_cmd_leave(_cmd:IR_Cmd)->void:
 	var scp_name = cur_scope.ir_name;
+	var loc:LocationRange = cmd.loc;
+	mark_loc_begin(loc);
 	emit_raw("__LEAVE_%s;\n" % scp_name, enter_leave_size, "generate_cmd_leave");
 	if(WRITE_SHADOW): emit_raw("__SHADOW_LEAVE_%s\n" % scp_name, shadow_update_size, "generate_cmd_leave.shadow");
 	leave_scope();
+	mark_loc_end(loc);
 
 func generate_cmd_alloc(cmd:IR_Cmd)->void:
 	var size = cmd.words[1];
@@ -936,6 +1154,7 @@ func mark_loc(loc:LocationRange, lmap:Dictionary, wp:int)->void:
 func mark_loc_begin(loc:LocationRange)->void:
 	var wp = cur_assy_block.write_pos;
 	var lmap = cur_assy_block.loc_map;
+	n_locations += 1;
 	mark_loc(loc, lmap.begin, wp);
 
 func mark_loc_end(loc:LocationRange)->void:
@@ -956,23 +1175,44 @@ func emit_cb(cb_name:String, msg:String)->void:
 	assert(handle.val_type == "code");
 	var assy_block = generate_code_block(handle);
 	translate_ab_locations(assy_block.loc_map, cur_assy_block.write_pos);
+	add_ab_locations(assy_block.loc_map);
 	emit_raw("%s" % assy_block.code, assy_block.write_pos, msg);
+	
 	
 ## generate a location map offset by the current write pointer
 func translate_ab_locations(loc_map:LocationMap, wp:int)->void:
+	var dbg_len_in = len(loc_map.begin.keys());
 	var loc_map_trans = LocationMap.new(); #{"begin":{}, "end":{}};
 	var offs = wp; #cur_assy_block.write_pointer;
+	#print("translate %d ips by offs %d: " % [dbg_len_in, offs]);
 	for ip in loc_map.begin:
 		translate_ab_loc(loc_map.begin, ip, loc_map_trans.begin, ip+offs);
 	for ip in loc_map.end:
 		translate_ab_loc(loc_map.end, ip, loc_map_trans.end, ip+offs);
 	loc_map.begin.assign(loc_map_trans.begin);
 	loc_map.end.assign(loc_map_trans.end);
-	
+	var dbg_len_out = len(loc_map.begin.keys());
+	assert(dbg_len_out >= dbg_len_in);
 ## translate a single location and insert it into the destination map
 func translate_ab_loc(src_lmap:Dictionary, src_ip:int, dest_lmap:Dictionary, dest_ip:int)->void:
-	if not src_ip in src_lmap: src_lmap[src_ip] = [];
+	if not src_ip in src_lmap: 
+		var new_arr:Array[LocationRange] = [];
+		src_lmap[src_ip] = new_arr;
 	var src_arr = src_lmap[src_ip];
-	if not dest_ip in dest_lmap: dest_lmap[dest_ip] = [];
+	var len_src = len(src_arr);
+	if not dest_ip in dest_lmap: 
+		var new_arr:Array[LocationRange] = [];
+		dest_lmap[dest_ip] = new_arr;
 	var dest_arr = dest_lmap[dest_ip];
+	var len_dst = len(dest_arr);
 	dest_arr.append_array(src_arr);
+	var len_out = len(dest_arr);
+	assert(len_out == (len_src + len_dst));
+	#print("   (ip %d->%d): src %d + dest %d = out %d" % [src_ip, dest_ip, len_src, len_dst, len_out]);
+
+func add_ab_locations(loc_map_in:LocationMap):
+	for ip in loc_map_in.begin:
+		translate_ab_loc(loc_map_in.begin, ip, cur_assy_block.loc_map.begin, ip);
+	for ip in loc_map_in.end:
+		translate_ab_loc(loc_map_in.end, ip, cur_assy_block.loc_map.end, ip);
+	

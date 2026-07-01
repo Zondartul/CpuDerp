@@ -50,7 +50,7 @@ func new_val_temp():
 	val.ir_name = make_unique_IR_name("tmp");
 	return val;
 
-func new_val_var(val_name):
+func new_val_var(val_name:String):
 	var val = new_val();
 	val.val_type = "variable";
 	val.ir_name = make_unique_IR_name("var", val_name);
@@ -59,7 +59,7 @@ func new_val_var(val_name):
 	val.array_size = 0;
 	return val;
 
-func new_val_immediate(value, type):
+func new_val_immediate(value:String, type:Type):
 	var val = new_val();
 	val.val_type = "immediate";
 	val.value = value;
@@ -118,7 +118,7 @@ func serialize_ir_arg(arg):
 		res.append("]");
 		return res;
 	elif arg is LocationRange:
-		return [escape_string(str(arg))];
+		return [G.escape_string(arg.to_string_full())];
 	else:
 		push_error("can't serialize IR argument ["+str(arg)+"]");
 		return [];
@@ -174,7 +174,9 @@ func new_scope(scp_name, scp_parent:String=""):
 
 func get_var(var_name:String):
 	var seek_scope = cur_scope;
+	var lc = LoopCounter.new();
 	while true:
+		lc.step();
 		for variable in seek_scope.vars:
 			if variable.user_name == var_name:
 				return variable;
@@ -186,7 +188,9 @@ func get_var(var_name:String):
 
 func get_func(fun_name:String):
 	var seek_scope = cur_scope;
+	var lc = LoopCounter.new();
 	while true:
+		lc.step();
 		for fun in seek_scope.funcs:
 			if fun.user_name == fun_name:
 				return fun;
@@ -214,7 +218,12 @@ func serialize_vals(arr):
 	for i in range(len(arr)):
 			var old_var = arr[i];
 			var new_var = [];
-			for key2 in ["ir_name", "val_type", "user_name", "data_type", "storage", "value", "scope", "code", "argc", "is_array", "array_size"]:
+			if old_var.data_type:
+				old_var.data_size = str(old_var.data_type.get_size());
+				old_var.data_type = old_var.data_type.full_name;
+			else:
+				old_var.data_size = str(1);
+			for key2 in ["ir_name", "val_type", "user_name", "data_type", "data_size", "storage", "value", "scope", "code", "argc", "is_array", "array_size"]:
 				if (key2 in old_var) and (old_var[key2] != null):
 					var val = old_var[key2];
 					if not (val is String): val = str(val)
@@ -224,41 +233,41 @@ func serialize_vals(arr):
 					new_var.append("NULL");
 			arr[i] = new_var;
 
-func escape_string(text):
-	var new_str = "";
-	for ch:String in text:
-		if ch in "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890.+-_":
-			new_str += ch;
-		else:
-			var buff = ch.to_ascii_buffer();
-			assert(len(buff) == 1);
-			ch = "%" + "%03d" % buff[0];
-			new_str += ch;
-	return new_str;
+#func escape_string(text):
+	#var new_str = "";
+	#for ch:String in text:
+		#if ch in "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890.+-_":
+			#new_str += ch;
+		#else:
+			#var buff = ch.to_ascii_buffer();
+			#assert(len(buff) == 1);
+			#ch = "%" + "%03d" % buff[0];
+			#new_str += ch;
+	#return new_str;
 
-func unescape_string(text):
-	var new_str:String = "";
-	var esc_step:int = 0;
-	var num_str:String = "";
-	for ch in text:
-		match esc_step:
-			0:
-				if(ch == "%"):
-					esc_step = 1;
-				else:
-					new_str += ch;
-			1:	num_str += ch; esc_step += 1;
-			2:	num_str += ch; esc_step += 1;
-			3:	
-				num_str += ch;
-				assert(num_str.is_valid_int());
-				var num = num_str.to_int();
-				num_str = "";
-				var new_ch = PackedByteArray([num]).get_string_from_ascii();
-				new_str += new_ch;
-				esc_step = 0;
-	print("unescape str: in [%s], out [%s]" % [text, new_str]);
-	return new_str;
+#func unescape_string(text):
+	#var new_str:String = "";
+	#var esc_step:int = 0;
+	#var num_str:String = "";
+	#for ch in text:
+		#match esc_step:
+			#0:
+				#if(ch == "%"):
+					#esc_step = 1;
+				#else:
+					#new_str += ch;
+			#1:	num_str += ch; esc_step += 1;
+			#2:	num_str += ch; esc_step += 1;
+			#3:	
+				#num_str += ch;
+				#assert(num_str.is_valid_int());
+				#var num = num_str.to_int();
+				#num_str = "";
+				#var new_ch = PackedByteArray([num]).get_string_from_ascii();
+				#new_str += new_ch;
+				#esc_step = 0;
+	#print("unescape str: in [%s], out [%s]" % [text, new_str]);
+	#return new_str;
 
 func to_file(filename):
 	var fp = FileAccess.open(filename, FileAccess.ModeFlags.WRITE);

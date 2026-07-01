@@ -135,7 +135,7 @@ func include_file(filepath:String):
 ## preprocess the line: remove comments, trim whitespace, etc
 func preproc(line:String)->String:
 	line = remove_comments(line);
-	line = G.trim_spaces(line);
+	#line = G.trim_spaces(line); ##[2025.10.29] need to keep the line intact until we have locations
 	return line;
 
 ## removes comments from the line. Comments start with the # character and last until end of string.
@@ -164,7 +164,9 @@ func recombine_tokens(tokens:Array[Token]):
 	var i = 0;
 	var prev_toks:Array[Token] = [];
 	var prev_count = 2;
+	var lc = LoopCounter.new(len(tokens)+1);
 	while(i < len(tokens)):
+		lc.step();
 		var tok:Token = tokens[i];
 		prev_toks.append(tok);
 		if(len(prev_toks) > prev_count):
@@ -196,6 +198,7 @@ func recombine_n(toks:Array[Token], idx:int, length:int):
 	var from = idx-length+1;
 	for i in range(length-1):
 		toks[from].text += toks[from+1].text;
+		toks[from].loc.end = toks[from+1].loc.end;
 		toks.remove_at(from+1);
 
 

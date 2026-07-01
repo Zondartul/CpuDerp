@@ -655,7 +655,9 @@ var tick_debt = 0.0;
 func _process(delta):
 	if not (regs[ISA.REG_CTRL] & ISA.BIT_PWR): return;
 	tick_debt += freq*delta;
+	var lc = LoopCounter.new(freq+1);
 	while tick_debt >= 1.0:
+		lc.step();
 		if(regs[ISA.REG_CTRL] & ISA.BIT_PWR):
 			step();
 		tick_debt -= 1.0;

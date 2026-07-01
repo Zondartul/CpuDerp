@@ -10,7 +10,7 @@ signal tokens_ready;
 # constants
 const ISA = preload("res://lang_zvm.gd");
 const USE_32BIT_BY_DEFAULT = true;
-const USE_WIDE_STRINGS = true;
+const USE_WIDE_STRINGS = false;
 const cmd_size = 8;
 const ch_punct = ".,:[]+;";
 const ch_alphabet = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_";
@@ -74,13 +74,15 @@ func clear()->void:
 	#cur_line_idx = 0;
 	#error_code = "";
 
-func assemble(source:String)->Chunk:
+func assemble(input:Dictionary)->Chunk:
 	erep.proxy = self;
 	clear();
+	var source:String = input.text;
+	cur_filename = input.filename;
 	output_tokens.clear();
 	lines = source.split("\n",true);
 	#print(lines);
-	var cur_loc = Location.new({"filename":cur_filename, "line":"", "line_idx":0, "col":0});
+	var cur_loc = Location.new({"filename":cur_filename, "line":"<assemble.default>", "line_idx":0, "col":0});
 	for line in lines:
 		if line == "": cur_line_idx += 1; continue;
 		cur_line = line;
@@ -389,7 +391,9 @@ func process(tokens:Array[Token])->bool:
 	var iter = Iter.new(tokens, 0);
 	#var erep:ErrorReporter = ErrorReporter.new(self, iter);
 	erep.context = iter;
+	var lc = LoopCounter.new(10000);
 	while iter.pos != len(iter.tokens):
+		lc.step();
 		if parse_label(iter) \
 		or parse_db(iter) \
 		or parse_alloc(iter) \
@@ -421,7 +425,9 @@ func parse_db(iter:Iter)->bool:
 	var old_iter = iter.duplicate();
 	if match_tokens(iter, ["\\db"]):
 		var items:Array[Token] = [];
+		var lc = LoopCounter.new();
 		while iter.pos != len(iter.tokens):
+			lc.step();
 			var toks = []
 			if match_tokens(iter, ["STRING"],toks) \
 			or match_tokens(iter, ["NUMBER"],toks) \
@@ -477,7 +483,7 @@ func record_op_position(old_iter:Iter, iter:Iter)->void:
 	var tok_last = iter.tokens[iter.pos-1];
 	var begin_col = tok_first.loc.begin.col;
 	var end_col = tok_last.loc.end.col;#tok_last.loc.from.col+len(tok_last.text);
-	var op = {"ip":write_pos,"filename":cur_filename, "line":cur_line_idx, "begin":begin_col, "end":end_col};
+	var op = {"ip":write_pos,"filename":cur_filename, "line":cur_line, "line_idx":cur_line_idx, "begin":begin_col, "end":end_col};
 	op_locations.append(op);
 
 func parse_command(iter:Iter)->bool:
@@ -624,6 +630,7 @@ func parse_arg(iter)->Cmd_arg:
 		if has_neg_offs: num = - str(neg_offs[1]["text"]).to_int();
 		if arg.is_imm: 
 			erep.error(E.ERR_08);
+			return arg;
 		arg.is_imm = true;
 		arg.offset = num;
 		arg.is_deref = false;
@@ -639,8 +646,12 @@ func parse_arg(iter)->Cmd_arg:
 		if has_neg_arr: num = - str(neg_arr[2]["text"]).to_int();
 		if arg.is_imm: 
 			erep.error(E.ERR_09);
+			return arg;
 		arg.is_imm = true;
 		arg.offset = num;
+		if(arg.is_deref):
+			erep.error(E.ERR_14);
+			return arg;
 		arg.is_deref = true;
 	return arg;
 
@@ -720,6 +731,9 @@ func emit_db_items(items:Array[Token])->void: #maybe we could use the .32 specif
 				return;
 	#if (write_pos % cmd_size): # if not aligned
 	#	write_pos += (cmd_size - (write_pos % cmd_size)); # pad until alignement is reached
+	
+	var lc = LoopCounter.new();
 	while(write_pos % cmd_size):
+		lc.step();
 		emit8(0, ISA.SHADOW_PADDING);
 	assert(write_pos % cmd_size == 0);

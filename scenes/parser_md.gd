@@ -51,7 +51,9 @@ func parse(input:Dictionary):
 	#tok is the look-ahead token
 	for tok:AST in tokens:
 		var stabilized = false;
+		var lc = LoopCounter.new();
 		while not stabilized:
+			lc.step();
 			stabilized = true;
 			for ut_rule:Array in lang.rules:
 				var rule:Array[String]; rule.assign(ut_rule); #type conv
@@ -60,11 +62,12 @@ func parse(input:Dictionary):
 					apply_rule(stack, rule);
 					stabilized = false;
 					break;
-		dbg_print("PARSE","SHIFT "+str(tok)+"\n");
+		#dbg_print("PARSE","SHIFT "+str(tok)+"\n");
 		if tok.tok_class != "EOF": stack.push_back(tok);
 	
 	for i in range(len(stack)):
 		linearize_ast(stack[i]);
+		stack[i].precompute_location();
 	sig_parse_ready.emit(stack);
 	# parsed all tokens
 	if len(stack) == 1:
@@ -96,16 +99,16 @@ func rule_matches(stack:Array[AST], tok_lookahead:AST, rule:Array[String])->bool
 	var rule_input = rule.slice(0,-2);
 	if len(stack) < len(rule_input): return false;
 	var stack_input = stack.slice(-len(rule_input));
-	dbg_print("PARSE","Rule matches? "+"(test "+str(run_i)+")"+"\n"+stack_to_str(stack_input,"\t\t") + "\n\tvs\n"+stack_to_str(rule_input,"\t\t")+"\n\t. "+str(tok_lookahead)+" vs "+str(rule_lookahead));
+	#dbg_print("PARSE","Rule matches? "+"(test "+str(run_i)+")"+"\n"+stack_to_str(stack_input,"\t\t") + "\n\tvs\n"+stack_to_str(rule_input,"\t\t")+"\n\t. "+str(tok_lookahead)+" vs "+str(rule_lookahead));
 	run_i += 1;
 	if not token_match(tok_lookahead, rule_lookahead): 
-		dbg_print("PARSE","\tNo\n");
+		#dbg_print("PARSE","\tNo\n");
 		return false;
 	for i in range(len(rule_input)):
 		if not token_match(stack_input[i], rule_input[i]): 
-			dbg_print("PARSE","\tNo\n")
+			#dbg_print("PARSE","\tNo\n")
 			return false;
-	dbg_print("PARSE","\tYES\n");
+	#dbg_print("PARSE","\tYES\n");
 	return true;
 
 func token_match(tok:AST, ref:String)->bool:

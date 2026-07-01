@@ -85,7 +85,7 @@ func _on_text_edit_text_set():
 func highlight_line(loc:LocationRange):#(line_idx, col=-1, length=-1):
 	var line_idx = loc.begin.line_idx;
 	#print("highlighting line %d, col %d, length %d" % [line_idx, col, length])
-	print("highlighting %s" % str(loc));
+	#print("highlighting %s" % str(loc));
 	var line_idx_to = loc.end.line_idx;
 	var col = loc.begin.col;
 	var col_to = loc.end.col;

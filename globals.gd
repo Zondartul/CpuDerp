@@ -14,7 +14,7 @@ const class_IR_Value = preload("res://class_IR_value.gd");
 const class_IR_Cmd = preload("res://class_IR_cmd.gd");
 const class_CodeBlock = preload("res://class_CodeBlock.gd");
 const class_AssyBlock = preload("res://class_AssyBlock.gd");
-
+const class_LoopCounter = preload("res://class_LoopCounter.gd");
 
 ## Creates an independent copy of the value
 func duplicate_val(obj)->Variant:
@@ -75,6 +75,10 @@ func has(obj):
 		return not obj.is_empty();
 	if obj and (obj is Object) and ("to_bool" in obj):
 		return obj.to_bool();
+	if obj is LocationRange:
+		return (has(obj.begin) and has(obj.end));
+	if obj is Location:
+		return obj.line_idx != -1;
 	return not not obj;
 
 # --------- util ------------
@@ -125,7 +129,9 @@ func find_first_of(text:String, needles:String, from:int=0)->int:
 func str_find_all_instances(needle:String, haystack:String)->Array:
 	var res = [];
 	var pos = 0;
+	var lc = LoopCounter.new(10000);
 	while true:
+		lc.step();
 		var iter = haystack.find(needle, pos);
 		if(iter != -1):
 			res.append(iter);
@@ -168,3 +174,46 @@ func first_in_dict(dict:Dictionary)->Variant:
 	if len(dict.keys()):
 		return dict[dict.keys()[0]];
 	return null;
+	
+#-------
+
+func unescape_string(text:String)->String:
+	var new_str:String = "";
+	var esc_step:int = 0;
+	var num_str:String = "";
+	for ch in text:
+		match esc_step:
+			0:
+				if(ch == "%"):
+					esc_step = 1;
+				else:
+					new_str += ch;
+			1:	num_str += ch; esc_step += 1;
+			2:	num_str += ch; esc_step += 1;
+			3:	
+				num_str += ch;
+				assert(num_str.is_valid_int());
+				var num = num_str.to_int();
+				num_str = "";
+				var new_ch = PackedByteArray([num]).get_string_from_ascii();
+				new_str += new_ch;
+				esc_step = 0;
+	#print("unescape str: in [%s], out [%s]" % [text, new_str]);
+	return new_str;
+
+func escape_string(text):
+	var new_str = "";
+	for ch:String in text:
+		if ch in "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890.+-_":
+			new_str += ch;
+		else:
+			var buff = ch.to_ascii_buffer();
+			assert(len(buff) == 1);
+			ch = "%" + "%03d" % buff[0];
+			new_str += ch;
+	return new_str;
+
+## performs a "newline" function for ItemList widgets
+func complete_line(item_list:ItemList):
+	var n = item_list.max_columns-1 - ((item_list.item_count-1) % item_list.max_columns);
+	for i in range(n): item_list.add_item(" ");
