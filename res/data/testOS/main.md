@@ -6,6 +6,17 @@ func get_char();
 //func malloc(size);
 func process_command(buff);
 func str_eq(str_A, str_B); // returns 1 if strings are equal 
+func str_len(str); // returns string length
+func str_rev(str); // reverse string
+func dbg_num_print(num);
+func log10(num); // returns floor(log10( positive number )) i.e. num of digits
+func printnum(num); //better num print
+func dbg_print_sns(str,num,str2);
+func printnum_dbg(num);
+func pass_test();
+func pass_test2(buff);
+func itoa(buff, num);
+func test_up(buff);
 var adr_kb = 81648;
 //var alloc_head = 10000;
 //var char_newline = 5;
@@ -62,6 +73,28 @@ func process_command(buff){
 	}elif(str_eq(buff,"restart")){
 		var f = 0;
 		f();
+	}elif(str_eq(buff,"reverse")){
+		str_rev(buff);
+		println(buff);
+		newline();
+		print("str_len(buff) = ");
+		dbg_num_print(str_len(buff));
+		println(";");
+	}elif(str_eq(buff,"number")){
+		dbg_num_print(1234);
+		newline();
+		print("log10(1234) = ");
+		dbg_num_print(log10(1234));
+		println(";");
+		printnum(1234);
+		newline();
+	}elif(str_eq(buff,"number2")){
+		printnum_dbg(1234);
+	}elif(str_eq(buff,"up")){
+		test_up(buff);
+		println(buff);
+	}elif(str_eq(buff,"pass")){
+		pass_test();
 	}else{
 		set_col(255,255,0);
 		print("unkown command [");
@@ -77,6 +110,19 @@ func process_command(buff){
 //	return p;
 //}
 
+func pass_test(){
+	var buff[100];
+	dbg_num_print(buff);
+	buff[0] = 'h';
+	buff[4] = 'i';
+	buff[8] = 0;
+	pass_test2(buff);
+}
+
+func pass_test2(buff){
+	dbg_num_print(buff);
+	println(buff);
+}
 func str_eq(str_A, str_B){
 	var I = 0;
 	while(str_A[I]){
@@ -94,3 +140,111 @@ func str_eq(str_A, str_B){
 	return 1;
 }
 
+func dbg_num_print(num){
+	if (num < 0){
+		putch("-");
+		num = 0 - num;
+	}
+	while(num > 0){
+		var digit = num % 10;
+		num = num / 10;
+		putch('0'+digit);
+	}
+}
+
+func log10(num){
+	var I = 0;
+	while(num > 0){
+		num = num/10;
+		I += 1;	
+	}
+	return I;
+}
+
+func dbg_print_sns(str1, num, str2){
+	print(str1);
+	dbg_num_print(num);
+	println(str2);
+}
+
+func printnum_dbg(num){
+	var buff[40];
+	dbg_print_sns("buff = ", buff, ";");
+	var I = 0;
+	if(num < 0){num = 0 - num; buff[I*4] = '-'; I += 1;}
+	var n = log10(num);
+	dbg_print_sns("n = ",n,";");
+	I += n-1;
+	buff[(I+1)*4] = 0;
+	while(num > 0){
+		var digit = num % 10;
+		num = num/10;
+		dbg_print_sns("I = ",I,";");
+		dbg_print_sns("digit = ",digit,";");
+		dbg_print_sns("num = ",num,";");
+		buff[I*4] = '0' + digit;
+		I -= 1;	
+	}
+	println("-- printing buff --");
+	print(buff);
+}
+
+func itoa(buff, num){
+	var I = 0;
+	if(num < 0){num = 0 - num; buff[I*4] = '-'; I += 1;}
+	var n = log10(num);
+	I += n-1;
+	buff[(I+1)*4] = 0;
+	while(num > 0){
+		var digit = num % 10;
+		num = num/10;
+		buff[I*4] = '0' + digit;
+		I -= 1;	
+	}
+}
+
+func printnum(num){
+	var buff[40];
+	dbg_print_sns("buff = ", buff, ";");
+	var I = 0;
+	if(num < 0){num = 0 - num; buff[I*4] = '-'; I += 1;}
+	var n = log10(num);
+	dbg_print_sns("n = ",n,";");
+	I += n-1;
+	buff[(I+1)*4] = 0;
+	while(num > 0){
+		var digit = num % 10;
+		num = num/10;
+		dbg_print_sns("I = ",I,";");
+		dbg_print_sns("digit = ",digit,";");
+		dbg_print_sns("num = ",num,";");
+		buff[I*4] = '0' + digit;
+		I -= 1;	
+	}
+	println("-- printing buff --");
+	print(buff);
+}
+
+func str_len(str){
+	var I = 0;
+	while(str[I*4]){I += 1;}
+	return I;
+}
+
+func str_rev(str){
+	var len = str_len(str);
+	if (len < 2){return;}
+	var I = len/2;
+	var J = I+1;
+	while(I > (0-1)){
+		var C = str[I*4];
+		str[I*4] = str[J*4];
+		str[J*4] = C;
+		I -= 1;
+		J += 1;
+	}
+}
+
+func test_up(buff){
+	buff[0] = 'z';
+}

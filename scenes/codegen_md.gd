@@ -6,7 +6,7 @@ const uYaml = preload("res://scenes/uYaml.gd")
 const ISA = preload("res://lang_zvm.gd")
 
 # constants
-const ADD_DEBUG_TRACE = false; # in emitted assembly, specify where it came from.
+const ADD_DEBUG_TRACE = true; # in emitted assembly, specify where it came from.
 const ADD_IR_TRACE = true; # print the IR commands that are being generated
 const WRITE_SHADOW = false; # mark bytes in shadow
 const EMIT_COMMENTS = false; # debug tracing for emit()
@@ -595,9 +595,16 @@ func load_value(val:String)->String:
 	else:
 		match handle.storage.type:
 			"global": 
-				res = "*%s" % handle.ir_name; #handle.storage.pos; #emit("mov %s, *%d;\n" % [res, handle.storage.pos]);
+				if int(handle.is_array) == 1:
+					res = "%s" % handle.ir_name;
+				else:
+					res = "*%s" % handle.ir_name; #handle.storage.pos; #emit("mov %s, *%d;\n" % [res, handle.storage.pos]);
 			"stack":
-				res = "EBP[%d]" % handle.storage.pos; #emit("mov %s, EBP[%d];\n" % [res, handle.storage.pos]);
+				if int(handle.is_array) == 1:
+					res = "EBP+%d" % handle.storage.pos;
+					res = res.replace("+-","-");
+				else:
+					res = "EBP[%d]" % handle.storage.pos; #emit("mov %s, EBP[%d];\n" % [res, handle.storage.pos]);
 			"extern":
 				res = "*%s" % handle.ir_name;
 			_: push_error("codegen: load_value: unknown storage type ["+handle.storage.type+"]");
@@ -717,6 +724,8 @@ func allocate_value(handle:Dictionary, scope:Dictionary)->void:
 			var wp = scope.local_vars_write_pos;
 			#pos = to_local_pos(wp);
 			pos = wp;
+			if "is_array" in handle and int(handle.is_array):
+				pos = pos-data_size;
 			scope.local_vars_write_pos -= data_size;
 			scope.local_vars_count += 1;
 			assert(pos != 0);
@@ -890,10 +899,11 @@ func fixup_enter_leave(assy_block:AssyBlock)->void:
 		var S:String = assy_block.code;
 		S = S.replace("__ENTER_%s" % scp_name, "sub ESP, %d" % -stack_bytes);
 		S = S.replace("__LEAVE_%s" % scp_name, "sub ESP, %d" % stack_bytes);
-		var shadow_enter_update = generate_shadow_enter_update(scope);
-		var shadow_leave_update = generate_shadow_leave_update(scope);
-		S = S.replace("__SHADOW_ENTER_%s" % scp_name, shadow_enter_update);
-		S = S.replace("__SHADOW_LEAVE_%s" % scp_name, shadow_leave_update);
+		if(WRITE_SHADOW):
+			var shadow_enter_update = generate_shadow_enter_update(scope);
+			var shadow_leave_update = generate_shadow_leave_update(scope);
+			S = S.replace("__SHADOW_ENTER_%s" % scp_name, shadow_enter_update);
+			S = S.replace("__SHADOW_LEAVE_%s" % scp_name, shadow_leave_update);
 		assy_block.code = S;
 
 func fixup_symtable(sym_table:Dictionary)->void:
