@@ -227,7 +227,7 @@ func serialize_vals(arr):
 				if (key2 in old_var) and (old_var[key2] != null):
 					var val = old_var[key2];
 					if not (val is String): val = str(val)
-					val = escape_string(val);
+					val = G.escape_string(val);
 					new_var.append(val);
 				else:
 					new_var.append("NULL");

@@ -6,7 +6,6 @@ var if_block_continued:bool = false;
 var if_block_lbl_end:String = "";
 var lbl_from:String = "";
 var lbl_to:String = "";
-var if_block_lbl_end: String = "";
 
 func _init(dict=null):
 	val_type = "code";

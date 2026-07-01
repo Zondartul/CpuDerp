@@ -42,4 +42,3 @@ const ERR_56 = "Error 36: Operator %s is not an infix op";
 const ERR_57 = "Error 37: Operator %s is not a postfix op";
 const ERR_58 = "Error 38: Array index must be one of integer types";
 const ERR_59 = "Error 39: Type %s cannot be dereferenced";
-

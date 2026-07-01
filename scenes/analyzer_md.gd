@@ -321,7 +321,7 @@ func analyze_expr_call(ast):
 			internal_error(E.ERR_26); return;
 	
 	if (fun.val_type == "func") and (fun.argc >= 0) and (args.size() != fun.argc):
-		user_error(E.ERR_36 % [fun.user_name, fun.argc, args.size()]);
+		user_error(E.ERR_46 % [fun.user_name, fun.argc, args.size()]);
 	var res = IR.new_val_temp();
 	res.data_type = Type.new({"name":"void"});
 	IR.save_variable(res);
@@ -397,7 +397,8 @@ func analyze_func_decl_stmt(ast):
 	var tok_ident = expr_ident.children[0];
 	assert(tok_ident.tok_class == "IDENT");
 	
-	var arg_names = analyze_arg_names(expr_call);
+	var args = analyze_arg_names(expr_call);
+	var arg_names = args[0];
 	var fun_name = tok_ident.text;
 	var fun_scp = IR.new_val_none();
 	var fun_cb = IR.new_val_none();
@@ -798,18 +799,19 @@ func analyze_func_def_stmt(ast):
 		IR.save_function(fun_handle);
 
 func analyze_arg_names(expr_call):
-	var arg_names = [];
+	var arg_names:Array[String] = [];
+	var arg_types:Array[Type] = [];
 	if expr_call.children[2].text != ")":
 		var expr = expr_call.children[2];
 		if expr.tok_class == "expr":
-			analyze_func_def_arg_expr(expr, arg_names);
+			analyze_func_def_arg_expr(expr, arg_names, arg_types);
 		elif expr.tok_class == "expr_list":
 			for expr2 in expr.children:
 				assert(expr2.tok_class == "expr");
-				analyze_func_def_arg_expr(expr2, arg_names);
+				analyze_func_def_arg_expr(expr2, arg_names, arg_types);
 		else:
 			internal_error(E.ERR_28); return;
-	return arg_names;
+	return [arg_names, arg_types];
 
 func analyze_func_def_arg_expr(expr:AST, arg_names:Array[String], arg_types:Array[Type]):
 	assert(expr.tok_class == "expr");

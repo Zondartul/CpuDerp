@@ -374,7 +374,7 @@ func generate_cmd_op_helper(op:String, arg1:String, arg2:String, res:String, op_
 		emit("mov %s, @%s;\n" % [tmpA, arg1], cmd_size, "generate_cmd_op.arg1_idx");
 	else:
 		tmpA = alloc_temporary();
-		emit("mov %s, $%s;\n" % [tmpA, arg1], cmd_size, "generate_cmd_op.arg1_normal");
+		emit("mov ^%s, $%s;\n" % [tmpA, arg1], cmd_size, "generate_cmd_op.arg1_normal");
 		#emit("mov ^%s, $%s;\n" % [tmpA, arg1], cmd_size, "generate_cmd_op.arg1");
 
 	op_str = op_str.replace("%a", "!"+tmpA);
@@ -836,7 +836,7 @@ func alloc_temporary()->String:
 		#cur_stack_size += 1;
 		var ir_name = "tmp_%d" % val_idx; val_idx += 1;
 		assert(ir_name not in all_syms, "ir sym uid count broken");
-		var handle = {"ir_name":ir_name, "val_type":"temporary", "data_type":"error", "data_size":4,"storage":"NULL"};
+		var handle = {"ir_name":ir_name, "val_type":"temporary", "data_type":"error", "data_size":4,"storage":"NULL", "is_array":0, "array_size":0};
 		allocate_value(handle, cur_scope);
 		cur_scope.vars.append(handle);
 		#var N = len(all_syms);
@@ -982,7 +982,7 @@ func generate_cmd_enter(cmd:IR_Cmd)->void:
 	if(WRITE_SHADOW): emit_raw("__SHADOW_ENTER_%s\n" % scp_name, shadow_update_size, "generate_cmd_enter.shadow");
 	mark_loc_end(loc);
 	
-func generate_cmd_leave(_cmd:IR_Cmd)->void:
+func generate_cmd_leave(cmd:IR_Cmd)->void:
 	var scp_name = cur_scope.ir_name;
 	var loc:LocationRange = cmd.loc;
 	mark_loc_begin(loc);
