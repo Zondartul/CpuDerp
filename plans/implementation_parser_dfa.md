@@ -8,17 +8,17 @@ The parser in [`scenes/parser_md.gd`](scenes/parser_md.gd) implements a naive LR
 
 ```gdscript
 for tok:AST in tokens:
-    var stabilized = false;
-    while not stabilized:
-        stabilized = true;
-        for ut_rule:Array in lang.rules:
-            var rule:Array[String]; rule.assign(ut_rule);
-            if rule_matches(stack, tok, rule):
-                if rule[-1] == "SHIFT": break;
-                apply_rule(stack, rule);
-                stabilized = false;
-                break;
-    if tok.tok_class != "EOF": stack.push_back(tok);
+	var stabilized = false;
+	while not stabilized:
+		stabilized = true;
+		for ut_rule:Array in lang.rules:
+			var rule:Array[String]; rule.assign(ut_rule);
+			if rule_matches(stack, tok, rule):
+				if rule[-1] == "SHIFT": break;
+				apply_rule(stack, rule);
+				stabilized = false;
+				break;
+	if tok.tok_class != "EOF": stack.push_back(tok);
 ```
 
 ### 1.2 Performance Analysis: O(N × R × S)
@@ -181,13 +181,13 @@ At parse time, the token type lookup works as follows:
 
 ```gdscript
 func get_token_type_id(tok: AST) -> int:
-    # Check if token text matches any /-prefixed rule element
-    if tok.text in slash_token_map:
-        return slash_token_map[tok.text]
-    # Otherwise use tok_class
-    if tok.tok_class in token_type_map:
-        return token_type_map[tok.tok_class]
-    return TOKEN_WILDCARD
+	# Check if token text matches any /-prefixed rule element
+	if tok.text in slash_token_map:
+		return slash_token_map[tok.text]
+	# Otherwise use tok_class
+	if tok.tok_class in token_type_map:
+		return token_type_map[tok.tok_class]
+	return TOKEN_WILDCARD
 ```
 
 `slash_token_map` is a `Dictionary` mapping token text (e.g., `"if"`, `";"`, `"{"`) to virtual token type IDs. This is generated at DFA-build time.
@@ -199,23 +199,23 @@ func get_token_type_id(tok: AST) -> int:
 
 # Structure for serialization
 class DFA:
-    var states: Array[DFAState]           # Array of state objects
-    var token_type_count: int             # Total distinct token type IDs
-    var start_state: int = 0              # Always 0
-    var errors: Array[String]             # Any DFA generation errors/warnings
+	var states: Array[DFAState]           # Array of state objects
+	var token_type_count: int             # Total distinct token type IDs
+	var start_state: int = 0              # Always 0
+	var errors: Array[String]             # Any DFA generation errors/warnings
 
 class DFAState:
-    var id: int
-    var goto: Dictionary                   # {token_type_id: next_state_id}
-    var action: Dictionary                 # {token_type_id: Action}
-    var default_action: Action = null      # Action for * wildcard (fallback)
+	var id: int
+	var goto: Dictionary                   # {token_type_id: next_state_id}
+	var action: Dictionary                 # {token_type_id: Action}
+	var default_action: Action = null      # Action for * wildcard (fallback)
 
 class Action:
-    var type: String                       # "shift", "reduce", "accept", "error"
-    var next_state: int = -1               # For "shift"
-    var rule_idx: int = -1                 # For "reduce"
-    var rule_len: int = 0                  # Number of tokens to pop for reduce
-    var rule_result: String = ""           # Non-terminal name for reduce result
+	var type: String                       # "shift", "reduce", "accept", "error"
+	var next_state: int = -1               # For "shift"
+	var rule_idx: int = -1                 # For "reduce"
+	var rule_len: int = 0                  # Number of tokens to pop for reduce
+	var rule_result: String = ""           # Non-terminal name for reduce result
 ```
 
 ### 2.6 Serialization Format
@@ -277,16 +277,16 @@ This gives us a single point where `accept` is the action (when we see `EOF` aft
 
 ```
 function closure(items: Set[Item]) -> Set[Item]:
-    repeat until stable:
-        for each Item = [rule_idx, dot, lookahead] in items:
-            if dot < len(rules[rule_idx]) - 2:  # dot not at end
-                symbol_after_dot = rules[rule_idx][dot]
-                if symbol_after_dot is a non-terminal:
-                    for each production_rule with lhs == symbol_after_dot:
-                        first_set_of_following = FIRST(rule_suffix + lookahead)
-                        for each token in first_set_of_following:
-                            new_item = [production_idx, 0, token]
-                            add new_item to items
+	repeat until stable:
+		for each Item = [rule_idx, dot, lookahead] in items:
+			if dot < len(rules[rule_idx]) - 2:  # dot not at end
+				symbol_after_dot = rules[rule_idx][dot]
+				if symbol_after_dot is a non-terminal:
+					for each production_rule with lhs == symbol_after_dot:
+						first_set_of_following = FIRST(rule_suffix + lookahead)
+						for each token in first_set_of_following:
+							new_item = [production_idx, 0, token]
+							add new_item to items
 ```
 
 **Simplified for our GDScript context**: Since we have a concrete grammar (not a general parser generator), we can hardcode the FIRST set computation. The FIRST set of each non-terminal is the set of terminal tokens that can begin a string derived from it.
@@ -301,85 +301,85 @@ FIRST sets for key non-terminals (approximate):
 
 ```
 function goto(items: Set[Item], symbol: int) -> Set[Item]:
-    new_items = empty set
-    for each Item = [rule_idx, dot, lookahead] in items:
-        if dot < len(rules[rule_idx]) - 2:
-            if token_type_id(rules[rule_idx][dot]) == symbol:
-                new_item = [rule_idx, dot + 1, lookahead]
-                add new_item to new_items
-    return closure(new_items)
+	new_items = empty set
+	for each Item = [rule_idx, dot, lookahead] in items:
+		if dot < len(rules[rule_idx]) - 2:
+			if token_type_id(rules[rule_idx][dot]) == symbol:
+				new_item = [rule_idx, dot + 1, lookahead]
+				add new_item to new_items
+	return closure(new_items)
 ```
 
 ### 3.5 State Construction (Canonical Collection)
 
 ```
 function build_states():
-    start_item = [augmented_rule_idx, 0, TOKEN_EOF]
-    start_state = closure({start_item})
-    states = [start_state]
-    worklist = [0]  # indices of states to process
-    
-    while worklist not empty:
-        state_id = worklist.pop()
-        current_state = states[state_id]
-        
-        # Collect all symbols (token types) that appear after a dot in this state
-        symbols = {}
-        for item in current_state:
-            if item.dot < len(rules[item.rule_idx]) - 2:
-                symbol = token_type_id(rules[item.rule_idx][item.dot])
-                symbols.add(symbol)
-        
-        for symbol in symbols:
-            new_state = goto(current_state, symbol)
-            if new_state not in states:
-                states.append(new_state)
-                worklist.append(len(states) - 1)
-            goto[state_id][symbol] = index_of(new_state in states)
-    
-    return states, goto
+	start_item = [augmented_rule_idx, 0, TOKEN_EOF]
+	start_state = closure({start_item})
+	states = [start_state]
+	worklist = [0]  # indices of states to process
+	
+	while worklist not empty:
+		state_id = worklist.pop()
+		current_state = states[state_id]
+		
+		# Collect all symbols (token types) that appear after a dot in this state
+		symbols = {}
+		for item in current_state:
+			if item.dot < len(rules[item.rule_idx]) - 2:
+				symbol = token_type_id(rules[item.rule_idx][item.dot])
+				symbols.add(symbol)
+		
+		for symbol in symbols:
+			new_state = goto(current_state, symbol)
+			if new_state not in states:
+				states.append(new_state)
+				worklist.append(len(states) - 1)
+			goto[state_id][symbol] = index_of(new_state in states)
+	
+	return states, goto
 ```
 
 ### 3.6 Action Table Construction
 
 ```
 function build_action_table(states, goto):
-    for each state_id, state in enumerate(states):
-        for item in state:
-            if item.dot == len(rules[item.rule_idx]) - 2:
-                # Rule is complete — reduce or accept
-                if rules[item.rule_idx][-1] == "ACCEPT":
-                    action[state_id][item.lookahead] = {type: "accept"}
-                else:
-                    # Check for SHIFT pseudo-reduction
-                    action[state_id][item.lookahead] = {
-                        type: "reduce",
-                        rule_idx: item.rule_idx,
-                        rule_len: len(rules[item.rule_idx]) - 2,
-                        rule_result: rules[item.rule_idx][-1]
-                    }
-        
-        for symbol, next_state in goto[state_id].items():
-            existing = action[state_id].get(symbol)
-            if existing and existing.type == "reduce":
-                # Shift/reduce conflict — prefer shift
-                # (This matches current parser behavior)
-                action[state_id][symbol] = {type: "shift", next_state: next_state}
-            elif not existing:
-                action[state_id][symbol] = {type: "shift", next_state: next_state}
-            # else: both shift — no conflict
-        
-        # Handle SHIFT pseudo-rules
-        for item in state:
-            if item.dot < len(rules[item.rule_idx]) - 2:
-                symbol_after = token_type_id(rules[item.rule_idx][item.dot])
-                rule_result = rules[item.rule_idx][-1]
-                if rule_result == "SHIFT":
-                    # Force shift — override any reduce action for this symbol
-                    if symbol_after in action[state_id]:
-                        if action[state_id][symbol_after].type == "reduce":
-                            # Ensure shift is taken
-                            pass  # goto is already set, which implies shift
+	for each state_id, state in enumerate(states):
+		for item in state:
+			if item.dot == len(rules[item.rule_idx]) - 2:
+				# Rule is complete — reduce or accept
+				if rules[item.rule_idx][-1] == "ACCEPT":
+					action[state_id][item.lookahead] = {type: "accept"}
+				else:
+					# Check for SHIFT pseudo-reduction
+					action[state_id][item.lookahead] = {
+						type: "reduce",
+						rule_idx: item.rule_idx,
+						rule_len: len(rules[item.rule_idx]) - 2,
+						rule_result: rules[item.rule_idx][-1]
+					}
+		
+		for symbol, next_state in goto[state_id].items():
+			existing = action[state_id].get(symbol)
+			if existing and existing.type == "reduce":
+				# Shift/reduce conflict — prefer shift
+				# (This matches current parser behavior)
+				action[state_id][symbol] = {type: "shift", next_state: next_state}
+			elif not existing:
+				action[state_id][symbol] = {type: "shift", next_state: next_state}
+			# else: both shift — no conflict
+		
+		# Handle SHIFT pseudo-rules
+		for item in state:
+			if item.dot < len(rules[item.rule_idx]) - 2:
+				symbol_after = token_type_id(rules[item.rule_idx][item.dot])
+				rule_result = rules[item.rule_idx][-1]
+				if rule_result == "SHIFT":
+					# Force shift — override any reduce action for this symbol
+					if symbol_after in action[state_id]:
+						if action[state_id][symbol_after].type == "reduce":
+							# Ensure shift is taken
+							pass  # goto is already set, which implies shift
 ```
 
 ### 3.7 Conflict Detection and Resolution
@@ -502,47 +502,47 @@ GDScript's built-in `hash()` function returns a 64-bit int — sufficient for ca
 
 ```
 function ensure_dfa() -> DFAData:
-    var cache_path = "user://cache/parser_md.dfa.tres"
-    var current_hash = compute_rules_hash(lang.rules)
-    
-    if FileAccess.file_exists(cache_path):
-        var cached = load(cache_path) as DFAData
-        if cached and cached.rules_hash == current_hash:
-            return cached  # Cache hit! DFA is up-to-date
-    
-    # Cache miss or invalid — regenerate
-    var generator = DFAGenerator.new()
-    var dfa = generator.generate(lang.rules)
-    dfa.rules_hash = current_hash
-    
-    # Save to cache
-    var dir = DirAccess.open("user://")
-    if not dir.dir_exists("cache"):
-        dir.make_dir("cache")
-    ResourceSaver.save(dfa, cache_path)
-    
-    return dfa
+	var cache_path = "user://cache/parser_md.dfa.tres"
+	var current_hash = compute_rules_hash(lang.rules)
+	
+	if FileAccess.file_exists(cache_path):
+		var cached = load(cache_path) as DFAData
+		if cached and cached.rules_hash == current_hash:
+			return cached  # Cache hit! DFA is up-to-date
+	
+	# Cache miss or invalid — regenerate
+	var generator = DFAGenerator.new()
+	var dfa = generator.generate(lang.rules)
+	dfa.rules_hash = current_hash
+	
+	# Save to cache
+	var dir = DirAccess.open("user://")
+	if not dir.dir_exists("cache"):
+		dir.make_dir("cache")
+	ResourceSaver.save(dfa, cache_path)
+	
+	return dfa
 ```
 
 ### 4.4 Startup Flow
 
 ```
 App Launch / First Compilation
-         │
-         ▼
+		 │
+		 ▼
   Compute rules_hash from lang.rules
-         │
-         ▼
+		 │
+		 ▼
   Does cache file exist? ──No──▶ Regenerate DFA
-         │                              │
-        Yes                              │
-         │                              │
+		 │                              │
+		Yes                              │
+		 │                              │
   Load cached DFAData                    │
-         │                              │
+		 │                              │
   Compare rules_hash ──Mismatch──▶ Regenerate DFA
-         │                              │
-        Match                            │
-         │                              ▼
+		 │                              │
+		Match                            │
+		 │                              ▼
   ┌──────────────┐             Save to cache
   │  Use cached   │                    │
   │  DFA for all  │◀────────────────────┘
@@ -562,109 +562,109 @@ App Launch / First Compilation
 
 ```gdscript
 func parse_with_dfa(input: Dictionary, dfa: DFAData) -> AST:
-    reset()
-    var in_tokens: Array[Token] = input.tokens
-    erep.proxy = self
-    
-    # Convert tokens to AST nodes
-    var tokens: Array[AST] = []
-    for tok in in_tokens:
-        tokens.push_back(AST.new(tok))
-    tokens.append(AST.new({"tok_class": "EOF", "text": ""}))
-    
-    # State stack parallel to AST stack
-    var stack: Array[AST] = []
-    var state_stack: Array[int] = [dfa.start_state]  # Start in state 0
-    
-    var tok_idx = 0
-    while tok_idx < len(tokens):
-        var tok = tokens[tok_idx]
-        var current_state = state_stack[-1]
-        var token_id = get_token_id(tok, dfa)
-        
-        # Look up action
-        var action = get_action(dfa, current_state, token_id)
-        
-        match action.type:
-            "shift":
-                stack.push_back(tok)
-                state_stack.push_back(action.next_state)
-                tok_idx += 1
-                
-            "reduce":
-                var rule_len = action.rule_len
-                var children: Array[AST] = []
-                for i in range(rule_len):
-                    children.append(stack.pop_back())
-                    state_stack.pop_back()
-                children.reverse()
-                
-                var new_node = AST.new({"tok_class": action.rule_result, "text": ""})
-                new_node.children = children
-                stack.push_back(new_node)
-                
-                # Goto after reduce
-                var prev_state = state_stack[-1]
-                var goto_state = get_goto(dfa, prev_state, action.rule_result)
-                state_stack.push_back(goto_state)
-                
-            "accept":
-                # Successful parse
-                var result = stack[0] if len(stack) > 0 else null
-                if result and result.tok_class == "start":
-                    linearize_ast_batch(stack)
-                    sig_parse_ready.emit(stack)
-                    return result
-                else:
-                    # Fall through to error
-                    break
-                    
-            "error":
-                push_error("syntax error")
-                erep.context = tok as Token
-                erep.error("syntax error")
-                return false
-    
-    # Error handling (same as current)
-    if len(stack) == 1 and stack[0].tok_class == "start":
-        return stack[0]
-    else:
-        handle_parse_error(stack)
-        return false
+	reset()
+	var in_tokens: Array[Token] = input.tokens
+	erep.proxy = self
+	
+	# Convert tokens to AST nodes
+	var tokens: Array[AST] = []
+	for tok in in_tokens:
+		tokens.push_back(AST.new(tok))
+	tokens.append(AST.new({"tok_class": "EOF", "text": ""}))
+	
+	# State stack parallel to AST stack
+	var stack: Array[AST] = []
+	var state_stack: Array[int] = [dfa.start_state]  # Start in state 0
+	
+	var tok_idx = 0
+	while tok_idx < len(tokens):
+		var tok = tokens[tok_idx]
+		var current_state = state_stack[-1]
+		var token_id = get_token_id(tok, dfa)
+		
+		# Look up action
+		var action = get_action(dfa, current_state, token_id)
+		
+		match action.type:
+			"shift":
+				stack.push_back(tok)
+				state_stack.push_back(action.next_state)
+				tok_idx += 1
+				
+			"reduce":
+				var rule_len = action.rule_len
+				var children: Array[AST] = []
+				for i in range(rule_len):
+					children.append(stack.pop_back())
+					state_stack.pop_back()
+				children.reverse()
+				
+				var new_node = AST.new({"tok_class": action.rule_result, "text": ""})
+				new_node.children = children
+				stack.push_back(new_node)
+				
+				# Goto after reduce
+				var prev_state = state_stack[-1]
+				var goto_state = get_goto(dfa, prev_state, action.rule_result)
+				state_stack.push_back(goto_state)
+				
+			"accept":
+				# Successful parse
+				var result = stack[0] if len(stack) > 0 else null
+				if result and result.tok_class == "start":
+					linearize_ast_batch(stack)
+					sig_parse_ready.emit(stack)
+					return result
+				else:
+					# Fall through to error
+					break
+					
+			"error":
+				push_error("syntax error")
+				erep.context = tok as Token
+				erep.error("syntax error")
+				return false
+	
+	# Error handling (same as current)
+	if len(stack) == 1 and stack[0].tok_class == "start":
+		return stack[0]
+	else:
+		handle_parse_error(stack)
+		return false
 ```
 
 ### 5.2 Token ID Lookup
 
 ```gdscript
 func get_token_id(tok: AST, dfa: DFAData) -> int:
-    # Check /-prefixed tokens first (matched by text)
-    if tok.text in dfa.slash_token_ids:
-        return dfa.slash_token_ids[tok.text]
-    # Otherwise use tok_class
-    if tok.tok_class in dfa.token_ids:
-        return dfa.token_ids[tok.tok_class]
-    # Unknown token type
-    return -1  # Will trigger "error" action
+	# Check /-prefixed tokens first (matched by text)
+	if tok.text in dfa.slash_token_ids:
+		return dfa.slash_token_ids[tok.text]
+	# Otherwise use tok_class
+	if tok.tok_class in dfa.token_ids:
+		return dfa.token_ids[tok.tok_class]
+	# Unknown token type
+	return -1  # Will trigger "error" action
 ```
 
 ### 5.3 Action and Goto Lookup
 
 ```gdscript
 func get_action(dfa: DFAData, state: int, token_id: int) -> Dictionary:
-    if state < len(dfa.action_table):
-        var state_actions = dfa.action_table[state]
-        if token_id in state_actions:
-            return state_actions[token_id]
-        # Fall back to default action (handles * wildcard)
-        if -1 in state_actions:  # -1 = wildcard
-            return state_actions[-1]
-    return {"type": "error"}
+	if state < len(dfa.action_table):
+		var state_actions = dfa.action_table[state]
+		if token_id in state_actions:
+			return state_actions[token_id]
+		# Fall back to default action (handles * wildcard)
+		if -1 in state_actions:  # -1 = wildcard
+			return state_actions[-1]
+	return {"type": "error"}
 
 func get_goto(dfa: DFAData, state: int, non_terminal: String) -> int:
-    var nterm_id = dfa.token_ids.get(non_terminal, -1)
-    if state < len(dfa.goto_table) and nterm_id in dfa.goto_table[state]:
-        return dfa.goto_table[state][nterm_id]
-    return 0  # Default to start state on error
+	var nterm_id = dfa.token_ids.get(non_terminal, -1)
+	if state < len(dfa.goto_table) and nterm_id in dfa.goto_table[state]:
+		return dfa.goto_table[state][nterm_id]
+	return 0  # Default to start state on error
 ```
 
 ### 5.4 State Stack Management
@@ -729,19 +729,19 @@ The DFA generation/loading happens lazily on first parse, not at app startup. Th
 var dfa: DFAData = null
 
 func ensure_dfa():
-    if dfa != null:
-        return  # Already loaded
-    dfa = DFAGenerator.get_or_generate()
-    if dfa == null:
-        cprint("WARNING: DFA generation failed, falling back to original parser")
-        # dfa stays null, original parse() is used
+	if dfa != null:
+		return  # Already loaded
+	dfa = DFAGenerator.get_or_generate()
+	if dfa == null:
+		cprint("WARNING: DFA generation failed, falling back to original parser")
+		# dfa stays null, original parse() is used
 
 func parse(input: Dictionary):
-    ensure_dfa()
-    if dfa != null:
-        return parse_with_dfa(input, dfa)
-    else:
-        return parse_original(input)  # Current implementation
+	ensure_dfa()
+	if dfa != null:
+		return parse_with_dfa(input, dfa)
+	else:
+		return parse_original(input)  # Current implementation
 ```
 
 The original `parse()` function is renamed to `parse_original()` or kept as the fallback. The new `parse()` dispatches to DFA or original based on availability.
@@ -830,11 +830,11 @@ Methods:
 3. Modify `parse()`:
    ```gdscript
    func parse(input: Dictionary) -> AST:
-       ensure_dfa()
-       if dfa != null:
-           return parse_with_dfa(input, dfa)
-       else:
-           return parse_original(input)
+	   ensure_dfa()
+	   if dfa != null:
+		   return parse_with_dfa(input, dfa)
+	   else:
+		   return parse_original(input)
    ```
 
 4. Rename old `parse()` to `parse_original()` — keep it as-is for fallback
@@ -842,12 +842,12 @@ Methods:
 5. Add hash computation:
    ```gdscript
    static func compute_rules_hash() -> int:
-       var s = ""
-       for rule in lang.rules:
-           for elem in rule:
-               s += str(elem) + "|"
-           s += "\n"
-       return hash(s)
+	   var s = ""
+	   for rule in lang.rules:
+		   for elem in rule:
+			   s += str(elem) + "|"
+		   s += "\n"
+	   return hash(s)
    ```
 
 **No changes needed to**: `apply_rule()`, `linearize_ast()`, `gather_instances()`, `rule_matches()`, `token_match()`, error handling functions, signals.
@@ -857,12 +857,12 @@ Methods:
 Add helper methods:
 ```gdscript
 static func get_rules_hash() -> int:
-    var s = ""
-    for rule in rules:
-        for elem in rule:
-            s += str(elem) + "|"
-        s += "\n"
-    return hash(s)
+	var s = ""
+	for rule in rules:
+		for elem in rule:
+			s += str(elem) + "|"
+		s += "\n"
+	return hash(s)
 ```
 
 ### 7.6 MODIFIED: [`scenes/comp_compile_md.gd`](scenes/comp_compile_md.gd)

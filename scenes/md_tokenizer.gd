@@ -52,7 +52,9 @@ func user_error(msg): sig_user_error.emit(msg);
 func _ready():
 	reset();
 
-func tokenize(input:Dictionary)->Array[Token]:
+func tokenize(input:Dictionary, task:Task)->Array[Token]:
+	task.work_units_total = 7;
+	task.work_units_complete = 0;
 	#reset();
 	erep.proxy = self
 	var text:String = input.text;
@@ -61,18 +63,28 @@ func tokenize(input:Dictionary)->Array[Token]:
 	#cur_line = "";
 	#cur_line_idx = 0;
 	text = process_includes(text);
+	task.work_units_complete += 1;
 	var tokens:Array[Token] = basic_tokenize(text);
+	task.work_units_complete += 1;
 	#tokens_ready.emit(tokens);
 	recombine_tokens(tokens);
+	task.work_units_complete += 1;
 	reclassify_tokens(tokens);
+	task.work_units_complete += 1;
 	resolve_char_tokens(tokens);
+	task.work_units_complete += 1;
 	colorize_tokens(tokens);
+	task.work_units_complete += 1;
 	tokens = filter_tokens(tokens);
+	task.work_units_complete += 1;
 	
 	if error_code != "": return [];
 	output_tokens = tokens;
-	tokens_ready.emit(output_tokens);	
+	call_deferred("defer_tokens_ready");	
 	return output_tokens;
+
+func defer_tokens_ready():
+	tokens_ready.emit(output_tokens);
 
 func basic_tokenize(text:String)->Array[Token]:
 	var cur_loc:Location = Location.new({"filename":cur_filename})
@@ -234,7 +246,7 @@ func resolve_char_tokens(tokens:Array[Token]):
 				break;
 			var old_text = tok.text;
 			tok.text = str(num);
-			print("md_tokenizer: char token resolved [%s]->[%s]" % [old_text, tok.text]);
+			#print("md_tokenizer: char token resolved [%s]->[%s]" % [old_text, tok.text]);
 
 ## removes unneded tokens
 func filter_tokens(tokens:Array[Token])->Array[Token]:

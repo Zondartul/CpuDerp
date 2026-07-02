@@ -74,8 +74,9 @@ func clear()->void:
 	#cur_line_idx = 0;
 	#error_code = "";
 
-func assemble(input:Dictionary)->Chunk:
+func assemble(input:Dictionary, task:Task)->Chunk:
 	erep.proxy = self;
+	erep.task = task;
 	clear();
 	var source:String = input.text;
 	cur_filename = input.filename;
@@ -83,6 +84,7 @@ func assemble(input:Dictionary)->Chunk:
 	lines = source.split("\n",true);
 	#print(lines);
 	var cur_loc = Location.new({"filename":cur_filename, "line":"<assemble.default>", "line_idx":0, "col":0});
+	task.work_units_total = lines.size();
 	for line in lines:
 		if line == "": cur_line_idx += 1; continue;
 		cur_line = line;
@@ -97,8 +99,10 @@ func assemble(input:Dictionary)->Chunk:
 			output_tokens.back().set_meta("token_viewer_newline",true);
 		assign_line_pos(tokens);
 		process(tokens);
-		if error_code != "": return Chunk.null_val();
+		#if error_code != "": return Chunk.null_val();
+		if not task.happy_path: return Chunk.null_val();
 		cur_line_idx += 1;
+		task.work_units_complete += 1;
 	tokens_ready.emit(output_tokens);
 	var chunk:Chunk = output_chunk();
 	chunk = link_internally(chunk);

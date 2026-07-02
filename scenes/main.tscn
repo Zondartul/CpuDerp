@@ -31,6 +31,7 @@
 [ext_resource type="Script" uid="uid://bupipg6ylmfsi" path="res://scenes/codegen_md.gd" id="15_2f3dj"]
 [ext_resource type="PackedScene" uid="uid://bystectvtbdhc" path="res://scenes/win_parse.tscn" id="15_y6deb"]
 [ext_resource type="PackedScene" uid="uid://bgb5s3xu12cb0" path="res://scenes/win_ir.tscn" id="16_og1vs"]
+[ext_resource type="Script" uid="uid://bea060j0glm2m" path="res://thread_controller.gd" id="18_kmb1v"]
 [ext_resource type="Script" uid="uid://b74jfmkseejoc" path="res://scenes/todo.gd" id="19_a20q3"]
 [ext_resource type="PackedScene" uid="uid://bo8535irp46bf" path="res://scenes/win_ed_dbg.tscn" id="21_fv21b"]
 [ext_resource type="Script" uid="uid://vqh76ivpomru" path="res://scenes/comp_search.gd" id="21_pibwh"]
@@ -64,9 +65,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-current_tab = 0
+current_tab = 2
 
 [node name="Screen" type="Control" parent="Panel/TabContainer" unique_id=1199677423]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
@@ -172,7 +174,6 @@ theme_override_colors/default_color = Color(0.497474, 0.497474, 0.497474, 1)
 bbcode_enabled = true
 
 [node name="Editor" type="Control" parent="Panel/TabContainer" unique_id=794743330]
-visible = false
 layout_mode = 2
 script = ExtResource("3_6wt7m")
 metadata/_tab_index = 2
@@ -230,9 +231,11 @@ item_2/id = 2
 [node name="Language" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar/Settings" unique_id=1808459888]
 
 [node name="Build" type="PopupMenu" parent="Panel/TabContainer/Editor/V/MenuBar" unique_id=1079744035]
-item_count = 1
+item_count = 2
 item_0/text = "compile"
 item_0/id = 0
+item_1/text = "test"
+item_1/id = 1
 
 [node name="EFiles" type="TabContainer" parent="Panel/TabContainer/Editor/V" unique_id=505156484]
 layout_mode = 2
@@ -324,6 +327,9 @@ script = ExtResource("14_vxglm")
 
 [node name="codegen_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md" unique_id=1243224611]
 script = ExtResource("15_2f3dj")
+
+[node name="comp_threads" type="Node" parent="Panel/TabContainer/Editor/comp_build" unique_id=2095149611]
+script = ExtResource("18_kmb1v")
 
 [node name="comp_file" type="Node" parent="Panel/TabContainer/Editor" unique_id=1733834376]
 script = ExtResource("4_3f0fj")

@@ -4,6 +4,7 @@ class_name ErrorReporter;
 @export var Editor:Node;
 var proxy;
 var context;
+var task;
 signal sig_highlight_line(line_idx);
 #func _init(new_proxy, new_context=null):
 #	proxy = new_proxy;
@@ -19,16 +20,20 @@ func assert_valid_proxy():
 
 func error(msg):
 	push_error(msg);
-	if proxy.error_code != "": return; ## suppress cascading errors
-	proxy.user_error(msg);
-	proxy.error_code = msg;
+	if task:
+		task.fail();
+		task.errors.append(msg);
+	else:
+		if proxy.error_code != "": return; ## suppress cascading errors
+		proxy.user_error(msg);
+		proxy.error_code = msg;
 	if context != null:
 		if context is Token:
-			point_out_error_tok("", context);
+			call_deferred("point_out_error_tok", "", context);
 		elif context is Iter:
-			point_out_error_iter("", context);
+			call_deferred("point_out_error_iter", "", context);
 		elif context is LocationRange:
-			point_out_error_loc("", context.begin);
+			call_deferred("point_out_error_loc", "", context.begin);
 		else:
 			push_error(E.ERR_01); assert(false);
 
@@ -37,7 +42,9 @@ func point_out_error(msg:String, line_text:String, line_idx:int, char_idx:int)->
 	Editor._on_cprint(line_text);
 	Editor._on_cprint(" ".repeat(char_idx)+"^");
 	Editor._on_cprint(msg);
-	sig_highlight_line.emit(line_idx);
+	var loc = Location.new({"line_idx":line_idx, "col":char_idx});
+	var locr = LocationRange.new({"begin":loc, "end":loc});
+	sig_highlight_line.emit(locr);
 	
 
 func point_out_error_iter(msg:String, iter:Iter)->void:

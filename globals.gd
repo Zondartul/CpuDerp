@@ -15,6 +15,7 @@ const class_IR_Cmd = preload("res://class_IR_cmd.gd");
 const class_CodeBlock = preload("res://class_CodeBlock.gd");
 const class_AssyBlock = preload("res://class_AssyBlock.gd");
 const class_LoopCounter = preload("res://class_LoopCounter.gd");
+const class_Task = preload("res://class_Task.gd");
 
 ## Creates an independent copy of the value
 func duplicate_val(obj)->Variant:

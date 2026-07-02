@@ -22,21 +22,41 @@ func reset():
 	has_error = false;
 	tokenizer.reset();
 
-func compile(input):
+func compile(input, task:Task):
+	var t_tok = task.add_subtask("tokenize");
+	var t_parse = task.add_subtask("parse");
+	var t_anz = task.add_subtask("analyze");
+	var t_cg = task.add_subtask("codegen");
+	var t_lnk = task.add_subtask("link");
 	tokenizer.cur_path = cur_path;
-	input["tokens"] = tokenizer.tokenize(input);		if has_error: return false;
-	if not input.tokens: return;
-	input["ast"] = parser.parse(input);				if has_error: return false;
-	if not input.ast: return;
-	input["IR"] = analyzer.analyze(input);			if has_error: return false;
+	input["tokens"] = tokenizer.tokenize(input, t_tok);	#if has_error: return false;
+	if not input.tokens or not task.happy_path: task.fail(); return;
+	
+	input["ast"] = parser.parse(input, t_parse);	#if has_error: return false;
+	if not input.ast or not task.happy_path: return;
+	
+	input["IR"] = analyzer.analyze(input, t_anz); #if has_error: return false;
+	if not task.happy_path: return;
+	
 	input.filename = "IR.txt";
-	input["assy"] = codegen.parse_file(input);	if has_error: return false;
-	codegen.fixup_symtable(analyzer.sym_table); if has_error: return false;
-	sym_table_ready.emit(analyzer.sym_table);
+	input["assy"] = codegen.parse_file(input, t_cg); #if has_error: return false;
+	if not task.happy_path: return;
+	codegen.fixup_symtable(analyzer.sym_table, t_lnk); #if has_error: return false;
+	if not task.happy_path: return;
+	
+	call_deferred("defer_sym_table_ready", analyzer.sym_table); #sym_table_ready.emit(analyzer.sym_table);
 	#print(_assy);
 	save_file(input.assy, "a.zd");
-	open_file_request.emit("a.zd");
+	call_deferred("defer_open_file_request", "a.zd");#open_file_request.emit("a.zd");
+	t_lnk.mark_done();
 	return true;
+
+func defer_open_file_request(arg):
+	open_file_request.emit(arg);
+
+func defer_sym_table_ready(arg):
+	sym_table_ready.emit(arg);
+
 func save_file(text:String, filename:String):
 	var fp = FileAccess.open(filename, FileAccess.WRITE);
 	if not fp: push_error("Can't save file ["+filename+"]"); has_error = true; return;

@@ -67,20 +67,28 @@ func reset():
 	expr_stack = [];
 	control_flow_stack = [];
 
-func analyze(input):
+func analyze(input, task:Task):
 	reset();
+	task.work_units_total = 4;
+	task.work_units_complete = 0;
 	var ast = input.ast;
 	erep.proxy = self;
 	error_code = "";
 	IR.clear_IR();
 	analyze_one(ast); if error_code != "": return;
+	task.work_units_complete += 1;
 	fixup_cb_lbls();
-	IR_ready.emit(IR.IR);
+	task.work_units_complete += 1;
+	call_deferred("defer_IR_ready"); #IR_ready.emit(IR.IR);
 	#print(IR);
 	IR.to_file("IR.txt");
+	task.work_units_complete += 1;
 	prepare_sym_table();
+	task.work_units_complete += 1;
 	return IR;
 
+func defer_IR_ready():
+	IR_ready.emit(IR.IR);
 
 func user_error(msg):
 	error_code = msg;

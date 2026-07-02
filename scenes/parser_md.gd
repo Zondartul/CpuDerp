@@ -37,9 +37,11 @@ func reset():
 	dbg_fp = FileAccess.open(dbg_filename, FileAccess.WRITE);
 
 # LR(1) shift-reduce parser, always applies the first valid rule
-func parse(input:Dictionary):
+func parse(input:Dictionary, task:Task):
 	reset();
 	var in_tokens:Array[Token] = input.tokens;
+	task.work_units_total = in_tokens.size();
+	task.work_units_complete = 0;
 	erep.proxy = self;
 	#tokens = tokens.duplicate();
 	var tokens:Array[AST] = [];
@@ -50,6 +52,7 @@ func parse(input:Dictionary):
 	var stack:Array[AST] = [];
 	#tok is the look-ahead token
 	for tok:AST in tokens:
+		task.work_units_complete += 1;
 		var stabilized = false;
 		var lc = LoopCounter.new();
 		while not stabilized:
@@ -68,7 +71,7 @@ func parse(input:Dictionary):
 	for i in range(len(stack)):
 		linearize_ast(stack[i]);
 		stack[i].precompute_location();
-	sig_parse_ready.emit(stack);
+	call_deferred("defer_parse_ready", stack); #sig_parse_ready.emit(stack);
 	# parsed all tokens
 	if len(stack) == 1:
 		if stack[0].tok_class != "start":
@@ -91,7 +94,9 @@ func parse(input:Dictionary):
 		#if ast.children.is_empty():
 			#return ast;
 	#return stack[1];
-
+func defer_parse_ready(stack):
+	sig_parse_ready.emit(stack);
+	
 
 func rule_matches(stack:Array[AST], tok_lookahead:AST, rule:Array[String])->bool:
 	#var rule_result = rule[-1];

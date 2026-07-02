@@ -90,14 +90,14 @@ func reset():
 
 #---------- IR ingestion -------------------
 
-func parse_file(input:Dictionary)->String:
+func parse_file(input:Dictionary, task:Task)->String:
 	reset();
 	var filename = input.filename;
 	var fp = FileAccess.open(filename, FileAccess.READ);
 	var text = fp.get_as_text();
 	fp.close();
 	deserialize(text);
-	return generate();
+	return generate(task);
 
 func deserialize(text:String)->void:
 	IR = uYaml.deserialize(text);
@@ -163,7 +163,7 @@ func inflate_vals(arr:Array)->void:
 
 #-------------- Code generation -----------------
 
-func generate()->String:
+func generate(task:Task)->String:
 	allocate_vars();
 	#for key in IR.code_blocks:
 	#	var cb = IR.code_blocks[key];
@@ -192,19 +192,26 @@ func generate()->String:
 	var global_ab = cur_assy_block;
 	var lc = LoopCounter.new();
 	while not referenced_cbs.is_empty():
+		task.work_units_total +=1; # we dunno how many there will be
 		lc.step();
 		var cb = referenced_cbs.pop_front();
 		if cb in emitted_cbs: continue;
 		else: emitted_cbs.append(cb);
 		emit_cb(cb.ir_name, "generate.referenced_cbs");
+	task.work_units_complete = task.work_units_total;
 	fixup_enter_leave(cur_assy_block);
 	cur_assy_block.code += generate_globals();
 	assert(cur_assy_block == global_ab);
 	#var n_locations_in = n_locations;
 	#var n_locations_out = len(cur_assy_block.loc_map.begin);
 	#assert(n_locations_out == n_locations_in);
-	locations_ready.emit(cur_assy_block.loc_map);
+	call_deferred("defer_locations_ready", cur_assy_block.loc_map); #locations_ready.emit(cur_assy_block.loc_map);
 	return cur_assy_block.code;
+	
+func defer_locations_ready(arg):
+	#locations_ready.emit(arg);
+	push_warning("can't emit locations_ready");
+	pass;
 	
 func generate_code_block(cb:CodeBlock)->AssyBlock:
 	if cur_block:
@@ -255,6 +262,8 @@ func generate_globals()->String:
 					var S = sym.value;
 					S = format_db_string(S);
 					text += ":%s: db %s;\n" % [sym.ir_name, S];
+			"array":
+				text += ":%s: alloc %s;\n" % [sym.ir_name, str(4*int(sym.array_size))];	
 			_: assert(false, "codegen.generate_globals: unspecified value storage type");
 	return text;
 
@@ -359,11 +368,11 @@ func generate_cmd_op_helper(op:String, arg1:String, arg2:String, res:String, op_
 	var arg1_is_array = false;
 	if arg1 in all_syms:
 		var arg1_handle = all_syms[arg1];
-		print("arg1 (%s): %s" % [arg1, arg1_handle]);
+		#print("arg1 (%s): %s" % [arg1, arg1_handle]);
 		if int(arg1_handle.is_array) == 1:
 			arg1_is_array = true;
-	else:
-		print("arg1 (%s) NOT IN ALL_SYMS" % arg1);
+	#else:
+		#print("arg1 (%s) NOT IN ALL_SYMS" % arg1);
 	#var arg1_by_addr = false;
 	const mono_ops = ["INC", "DEC"];
 	if op in mono_ops:
@@ -808,7 +817,7 @@ func load_value(val:String)->String:
 func truncate_number(num:int, size_bytes:int):
 	var max_b = 2**(8*size_bytes)-1;
 	var res = sign(num)*min(abs(num), max_b);
-	print("truncate_number(%d, %d) = %d (max_b = %d)\n" % [num, size_bytes, res, max_b]);
+	#print("truncate_number(%d, %d) = %d (max_b = %d)\n" % [num, size_bytes, res, max_b]);
 	return res;
 
 ## returns the CPU-addressable string that yields the address of the value.
@@ -1124,11 +1133,13 @@ func fixup_enter_leave(assy_block:AssyBlock)->void:
 			S = S.replace("__SHADOW_LEAVE_%s" % scp_name, shadow_leave_update);
 		assy_block.code = S;
 
-func fixup_symtable(sym_table:Dictionary)->void:
+func fixup_symtable(sym_table:Dictionary, task:Task)->void:
 	fixup_symtable_scope(sym_table.global);
+	task.work_units_total = sym_table.funcs.size()
 	for key in sym_table.funcs:
 		var fun = sym_table.funcs[key];
 		fixup_symtable_scope(fun);
+		task.work_units_complete += 1;
 	#print(sym_table);
 	pass;
 

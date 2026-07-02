@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://dg8o8urks7l22"]
+[gd_scene format=3 uid="uid://dg8o8urks7l22"]
 
 [ext_resource type="Script" uid="uid://oodpp66xpni2" path="res://debug_panel.gd" id="1_16avt"]
 [ext_resource type="Script" uid="uid://bsy2f38lmupwk" path="res://scenes/indicator.gd" id="2_x1thd"]
@@ -14,7 +14,7 @@
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_8jajc"]
 
-[node name="debug_panel" type="Control"]
+[node name="debug_panel" type="Control" unique_id=281132828]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -23,7 +23,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_16avt")
 
-[node name="V" type="VBoxContainer" parent="."]
+[node name="V" type="VBoxContainer" parent="." unique_id=610846036]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -31,29 +31,29 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TabContainer" type="TabContainer" parent="V"]
+[node name="TabContainer" type="TabContainer" parent="V" unique_id=1279410487]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
 current_tab = 5
 
-[node name="stack_view" type="ItemList" parent="V/TabContainer"]
+[node name="stack_view" type="ItemList" parent="V/TabContainer" unique_id=923762128]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 same_column_width = true
 metadata/_tab_index = 0
 
-[node name="pointers" type="VBoxContainer" parent="V/TabContainer"]
+[node name="pointers" type="VBoxContainer" parent="V/TabContainer" unique_id=1637126081]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
-[node name="slider_top" type="Control" parent="V/TabContainer/pointers"]
+[node name="slider_top" type="Control" parent="V/TabContainer/pointers" unique_id=1230798815]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="slider_mid" type="ItemList" parent="V/TabContainer/pointers"]
+[node name="slider_mid" type="ItemList" parent="V/TabContainer/pointers" unique_id=491452221]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 3.0
@@ -63,18 +63,18 @@ max_columns = 16
 same_column_width = true
 fixed_column_width = 24
 
-[node name="slider_bot" type="ItemList" parent="V/TabContainer/pointers"]
+[node name="slider_bot" type="ItemList" parent="V/TabContainer/pointers" unique_id=1042066862]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="H" type="HBoxContainer" parent="V/TabContainer/pointers"]
+[node name="H" type="HBoxContainer" parent="V/TabContainer/pointers" unique_id=1118165074]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="V/TabContainer/pointers/H"]
+[node name="Label" type="Label" parent="V/TabContainer/pointers/H" unique_id=713500426]
 layout_mode = 2
 text = "Address"
 
-[node name="sb_addr" type="SpinBox" parent="V/TabContainer/pointers/H"]
+[node name="sb_addr" type="SpinBox" parent="V/TabContainer/pointers/H" unique_id=748004181]
 layout_mode = 2
 max_value = 9999999999.0
 value = 65536.0
@@ -83,15 +83,15 @@ allow_greater = true
 allow_lesser = true
 alignment = 1
 
-[node name="Control" type="Control" parent="V/TabContainer/pointers/H"]
+[node name="Control" type="Control" parent="V/TabContainer/pointers/H" unique_id=90069929]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label3" type="Label" parent="V/TabContainer/pointers/H"]
+[node name="Label3" type="Label" parent="V/TabContainer/pointers/H" unique_id=1976323000]
 layout_mode = 2
 text = "View"
 
-[node name="ob_view" type="OptionButton" parent="V/TabContainer/pointers/H"]
+[node name="ob_view" type="OptionButton" parent="V/TabContainer/pointers/H" unique_id=1917222316]
 layout_mode = 2
 selected = 0
 item_count = 7
@@ -110,11 +110,11 @@ popup/item_5/id = 5
 popup/item_6/text = "double"
 popup/item_6/id = 6
 
-[node name="Label2" type="Label" parent="V/TabContainer/pointers/H"]
+[node name="Label2" type="Label" parent="V/TabContainer/pointers/H" unique_id=1075778865]
 layout_mode = 2
 text = "Offset"
 
-[node name="sb_offs" type="SpinBox" parent="V/TabContainer/pointers/H"]
+[node name="sb_offs" type="SpinBox" parent="V/TabContainer/pointers/H" unique_id=717415721]
 layout_mode = 2
 max_value = 8.0
 rounded = true
@@ -122,7 +122,7 @@ allow_greater = true
 allow_lesser = true
 alignment = 1
 
-[node name="reg_view" type="ItemList" parent="V/TabContainer"]
+[node name="reg_view" type="ItemList" parent="V/TabContainer" unique_id=808984410]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
@@ -130,12 +130,12 @@ max_columns = 8
 same_column_width = true
 metadata/_tab_index = 2
 
-[node name="local_view" type="Control" parent="V/TabContainer"]
+[node name="local_view" type="Control" parent="V/TabContainer" unique_id=460141716]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 3
 
-[node name="V" type="VBoxContainer" parent="V/TabContainer/local_view"]
+[node name="V" type="VBoxContainer" parent="V/TabContainer/local_view" unique_id=417167218]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -143,14 +143,14 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="H" type="HBoxContainer" parent="V/TabContainer/local_view/V"]
+[node name="H" type="HBoxContainer" parent="V/TabContainer/local_view/V" unique_id=1725895446]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="V/TabContainer/local_view/V/H"]
+[node name="Label" type="Label" parent="V/TabContainer/local_view/V/H" unique_id=928945815]
 layout_mode = 2
 text = "Group by:"
 
-[node name="ob_view" type="OptionButton" parent="V/TabContainer/local_view/V/H"]
+[node name="ob_view" type="OptionButton" parent="V/TabContainer/local_view/V/H" unique_id=1833966740]
 layout_mode = 2
 selected = 0
 item_count = 2
@@ -159,33 +159,33 @@ popup/item_0/id = 0
 popup/item_1/text = "access ip"
 popup/item_1/id = 1
 
-[node name="Control" type="Control" parent="V/TabContainer/local_view/V/H"]
+[node name="Control" type="Control" parent="V/TabContainer/local_view/V/H" unique_id=772933105]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="cb_update" type="CheckButton" parent="V/TabContainer/local_view/V/H"]
+[node name="cb_update" type="CheckButton" parent="V/TabContainer/local_view/V/H" unique_id=968167962]
 layout_mode = 2
 text = "Auto update"
 
-[node name="indicator" type="ColorRect" parent="V/TabContainer/local_view/V/H"]
+[node name="indicator" type="ColorRect" parent="V/TabContainer/local_view/V/H" unique_id=1121355899]
 custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 script = ExtResource("2_x1thd")
 
-[node name="locals" type="ItemList" parent="V/TabContainer/local_view/V"]
+[node name="locals" type="ItemList" parent="V/TabContainer/local_view/V" unique_id=1574604927]
 layout_mode = 2
 size_flags_vertical = 3
 max_columns = 3
 same_column_width = true
 
-[node name="HL_locals" type="Control" parent="V/TabContainer"]
+[node name="HL_locals" type="Control" parent="V/TabContainer" unique_id=1693129651]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 4
 
-[node name="V" type="VBoxContainer" parent="V/TabContainer/HL_locals"]
+[node name="V" type="VBoxContainer" parent="V/TabContainer/HL_locals" unique_id=1580899392]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -193,28 +193,28 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="H" type="HBoxContainer" parent="V/TabContainer/HL_locals/V"]
+[node name="H" type="HBoxContainer" parent="V/TabContainer/HL_locals/V" unique_id=73701791]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="V/TabContainer/HL_locals/V/H"]
+[node name="Label" type="Label" parent="V/TabContainer/HL_locals/V/H" unique_id=805221687]
 layout_mode = 2
 text = "High-level locals"
 
-[node name="Control" type="Control" parent="V/TabContainer/HL_locals/V/H"]
+[node name="Control" type="Control" parent="V/TabContainer/HL_locals/V/H" unique_id=618281011]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="hl_locals" type="ItemList" parent="V/TabContainer/HL_locals/V"]
+[node name="hl_locals" type="ItemList" parent="V/TabContainer/HL_locals/V" unique_id=881603624]
 layout_mode = 2
 size_flags_vertical = 3
 max_columns = 2
 same_column_width = true
 
-[node name="Settings" type="Control" parent="V/TabContainer"]
+[node name="Settings" type="Control" parent="V/TabContainer" unique_id=449269886]
 layout_mode = 2
 metadata/_tab_index = 5
 
-[node name="HF" type="HFlowContainer" parent="V/TabContainer/Settings"]
+[node name="HF" type="HFlowContainer" parent="V/TabContainer/Settings" unique_id=1307595889]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -222,105 +222,105 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="PC" type="PanelContainer" parent="V/TabContainer/Settings/HF"]
+[node name="PC" type="PanelContainer" parent="V/TabContainer/Settings/HF" unique_id=1932798664]
 layout_mode = 2
 
-[node name="V" type="VBoxContainer" parent="V/TabContainer/Settings/HF/PC"]
+[node name="V" type="VBoxContainer" parent="V/TabContainer/Settings/HF/PC" unique_id=707725661]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="V/TabContainer/Settings/HF/PC/V"]
+[node name="Label" type="Label" parent="V/TabContainer/Settings/HF/PC/V" unique_id=1603124126]
 layout_mode = 2
 text = "Current instruction 
 highlight mode"
 horizontal_alignment = 1
 
-[node name="btn_highlight_hl" type="Button" parent="V/TabContainer/Settings/HF/PC/V"]
+[node name="btn_highlight_hl" type="Button" parent="V/TabContainer/Settings/HF/PC/V" unique_id=1360425757]
 layout_mode = 2
 toggle_mode = true
 button_pressed = true
 button_group = SubResource("ButtonGroup_8jajc")
 text = "High-level"
 
-[node name="btn_highlight_asm" type="Button" parent="V/TabContainer/Settings/HF/PC/V"]
+[node name="btn_highlight_asm" type="Button" parent="V/TabContainer/Settings/HF/PC/V" unique_id=472515119]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_8jajc")
 text = "Assembly"
 
-[node name="btn_highlight_none" type="Button" parent="V/TabContainer/Settings/HF/PC/V"]
+[node name="btn_highlight_none" type="Button" parent="V/TabContainer/Settings/HF/PC/V" unique_id=799854054]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_8jajc")
 text = "None"
 
-[node name="H2" type="HBoxContainer" parent="V"]
+[node name="H2" type="HBoxContainer" parent="V" unique_id=426199993]
 layout_mode = 2
 
-[node name="lbl_line" type="Label" parent="V/H2"]
+[node name="lbl_line" type="Label" parent="V/H2" unique_id=1317988525]
 layout_mode = 2
 text = "cur line: 0"
 
-[node name="Control" type="Control" parent="V/H2"]
+[node name="Control" type="Control" parent="V/H2" unique_id=910858037]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="lbl_history" type="Label" parent="V/H2"]
+[node name="lbl_history" type="Label" parent="V/H2" unique_id=1202181003]
 layout_mode = 2
 text = "steps recorded: 0"
 
-[node name="lbl_2" type="Label" parent="V"]
+[node name="lbl_2" type="Label" parent="V" unique_id=795628957]
 layout_mode = 2
 text = "controls"
 
-[node name="H" type="HBoxContainer" parent="V"]
+[node name="H" type="HBoxContainer" parent="V" unique_id=2000360403]
 layout_mode = 2
 
-[node name="btn_run" type="Button" parent="V/H"]
+[node name="btn_run" type="Button" parent="V/H" unique_id=875751608]
 layout_mode = 2
 tooltip_text = "Run"
 icon = ExtResource("2_xr3ei")
 
-[node name="btn_pause" type="Button" parent="V/H"]
+[node name="btn_pause" type="Button" parent="V/H" unique_id=1998669949]
 layout_mode = 2
 tooltip_text = "Pause"
 icon = ExtResource("3_0m0rc")
 
-[node name="btn_stop" type="Button" parent="V/H"]
+[node name="btn_stop" type="Button" parent="V/H" unique_id=94415065]
 layout_mode = 2
 tooltip_text = "Stop"
 icon = ExtResource("4_hxmj2")
 
-[node name="btn_unstep" type="Button" parent="V/H"]
+[node name="btn_unstep" type="Button" parent="V/H" unique_id=1050737499]
 layout_mode = 2
 tooltip_text = "Step"
 icon = ExtResource("7_8jajc")
 
-[node name="btn_step" type="Button" parent="V/H"]
+[node name="btn_step" type="Button" parent="V/H" unique_id=1502773945]
 layout_mode = 2
 tooltip_text = "Step"
 icon = ExtResource("5_702yq")
 
-[node name="btn_next_line" type="Button" parent="V/H"]
+[node name="btn_next_line" type="Button" parent="V/H" unique_id=904298220]
 layout_mode = 2
 tooltip_text = "Next Line"
 icon = ExtResource("6_gvcux")
 
-[node name="btn_step_in" type="Button" parent="V/H"]
+[node name="btn_step_in" type="Button" parent="V/H" unique_id=584282522]
 layout_mode = 2
 tooltip_text = "Step In"
 icon = ExtResource("7_4kryu")
 
-[node name="btn_step_out" type="Button" parent="V/H"]
+[node name="btn_step_out" type="Button" parent="V/H" unique_id=980496764]
 layout_mode = 2
 tooltip_text = "Step out"
 icon = ExtResource("8_nxosy")
 
-[node name="btn_run_to_line" type="Button" parent="V/H"]
+[node name="btn_run_to_line" type="Button" parent="V/H" unique_id=672321193]
 layout_mode = 2
 tooltip_text = "Run to"
 icon = ExtResource("9_qp3qd")
 
-[node name="cb_hex" type="CheckButton" parent="V/H"]
+[node name="cb_hex" type="CheckButton" parent="V/H" unique_id=1545794647]
 layout_mode = 2
 text = "hex"
 
