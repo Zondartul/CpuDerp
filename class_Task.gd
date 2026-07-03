@@ -22,7 +22,7 @@ func _ping(): # tell parent that something changed
 
 func _pong():
 	if parent: _ping();
-	else: tprint(get_progress_tree(0));
+	#else: tprint(get_progress_tree(0));
 
 func get_progress_tree(indent:int):
 	var text = " ".repeat(indent);
@@ -57,7 +57,8 @@ func get_progress_string():
 	var n_total = ratio[0];
 	var n_complete = ratio[1]; 
 	var percentage = 100.0*n_complete / float(n_total);
-	return "Task %s: %f%% (%d / %d)" % [user_name, percentage, n_complete, n_total];
+	if is_nan(percentage): percentage = 0.0;
+	return "Task %s: %d%% (%d / %d)" % [user_name, percentage, n_complete, n_total];
 
 func tprint(msg):
 	if print_proxy:

@@ -280,9 +280,21 @@ icon = ExtResource("6_fuf3a")
 [node name="HSeparator2" type="HSeparator" parent="Panel/TabContainer/Editor/V/VSearch" unique_id=346374810]
 layout_mode = 2
 
-[node name="RTL_console" type="RichTextLabel" parent="Panel/TabContainer/Editor/V" unique_id=1927080972]
+[node name="H2" type="HBoxContainer" parent="Panel/TabContainer/Editor/V" unique_id=370814801]
+layout_mode = 2
+
+[node name="RTL_console" type="RichTextLabel" parent="Panel/TabContainer/Editor/V/H2" unique_id=1927080972]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_following = true
+
+[node name="RTL_progress" type="RichTextLabel" parent="Panel/TabContainer/Editor/V/H2" unique_id=1402157683]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 bbcode_enabled = true
 scroll_following = true

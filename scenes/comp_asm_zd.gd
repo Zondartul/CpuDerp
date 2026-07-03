@@ -103,7 +103,7 @@ func assemble(input:Dictionary, task:Task)->Chunk:
 		if not task.happy_path: return Chunk.null_val();
 		cur_line_idx += 1;
 		task.work_units_complete += 1;
-	tokens_ready.emit(output_tokens);
+	call_deferred("defer_tokens_ready", output_tokens); #tokens_ready.emit(output_tokens);
 	var chunk:Chunk = output_chunk();
 	chunk = link_internally(chunk);
 	var unlinked = len(chunk.refs);
@@ -121,6 +121,9 @@ func assemble(input:Dictionary, task:Task)->Chunk:
 	print("    "+str(len(chunk.code))+" bytes")
 	print("    "+str(len(chunk.labels))+" labels")
 	return chunk;
+
+func defer_tokens_ready(arg):
+	tokens_ready.emit(arg);
 
 func assign_line_pos(tokens:Array[Token])->void:
 	for tok:Token in tokens:

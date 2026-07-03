@@ -34,7 +34,8 @@ func setup(dict:Dictionary):
 #	pass
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
+func _process(delta):
+	update_task_progress();
 #	pass
 
 func assemble_zderp(task:Task):
@@ -67,8 +68,8 @@ func compile(task:Task):
 
 func upload(code):
 	Memory.clear()
-	view_Memory.clear();
-	view_Memory.add_memory_region(0,len(code),"code");
+	view_Memory.call_deferred("clear");
+	view_Memory.call_deferred("add_memory_region", 0,len(code),"code");
 	var idx = 0;
 	# make sure all cells are initialized
 	for i in range(len(code)):
@@ -80,7 +81,7 @@ func upload(code):
 	print("Uploaded "+str(idx)+" bytes");
 
 func upload_shadow(bytes):
-	view_Memory.add_memory_region(len(bytes), len(bytes),"shadow");
+	view_Memory.call_deferred("add_memory_region", len(bytes), len(bytes),"shadow");
 	var idx = len(bytes);
 	for i in range(len(bytes)):
 		if not bytes[i]: bytes[i] = 0
@@ -93,12 +94,12 @@ func add_stack_region():
 	var stack_end = 65536;
 	var stack_size = 1024;
 	var stack_pos = stack_end - stack_size;
-	view_Memory.add_memory_region(stack_pos, stack_size, "stack");
+	view_Memory.call_deferred("add_memory_region", stack_pos, stack_size, "stack");
 
 func add_screen_region():
 	var screen_start = 67536;
 	var screen_size = 64*64*7;
-	view_Memory.add_memory_region(screen_start, screen_size, "screen");
+	view_Memory.call_deferred("add_memory_region", screen_start, screen_size, "screen");
 
 func _on_build_index_pressed(index):
 	if index == 0: # "compile"
@@ -132,6 +133,11 @@ func compile_async(task:Task):
 		Editor.call_deferred("print_console", "Failed to compile");
 		push_error("Code did not compile - not uploading")
 	task.done = true;
+	call_deferred("compile_end", task);
+
+func compile_end(task):
+	n_threads.end(task);
+	update_task_progress();
 
 func _on_comp_file_cur_efile_changed(efile):
 	cur_efile = efile;
@@ -176,3 +182,19 @@ func _on_language_index_pressed(index: int) -> void:
 
 func on_tokens_ready(tokens):
 	win_tokens.set_tokens(tokens);
+
+var progress_timeout = 0;
+func update_task_progress():
+	var task = n_threads.get_first_task();
+	if task:
+		var text = task.get_progress_tree(0);
+		Editor.set_progress(text, true);
+		progress_timeout = 100;
+	else:
+		if progress_timeout:
+			progress_timeout -= 1;
+		else:
+			Editor.set_progress("",false);
+
+
+		

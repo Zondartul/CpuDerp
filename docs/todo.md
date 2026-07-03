@@ -10,3 +10,4 @@ Todo
 - function arity not checked
 - calling a variable as function doesn't compile: f() syntax
 
+- fix callout line numbers in assembler erep, and search jump

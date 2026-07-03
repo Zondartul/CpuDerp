@@ -20,7 +20,6 @@ func setup(dict:Dictionary):
 	is_setup = true;
 	dict2["efiles"] = $V/EFiles;
 	dict2["ddm_language"] = $V/MenuBar/Settings/Language;
-	
 	#$comp_file.setup({"efiles":$V/EFiles});
 	#$comp_highlight.setup({"ddm_language":$V/MenuBar/Language});
 	#$comp_build.setup({"memory":memory, "console":console});
@@ -40,6 +39,10 @@ func print_console(text, col=Color.GRAY):
 
 func clear_console():
 	console.text = "";
+
+func set_progress(text:String, shown:bool):
+	$V/H2/RTL_progress.text = text;
+	$V/H2/RTL_progress.visible = shown;
 
 func _process(_delta):
 	if Input.is_action_just_pressed("action_save"):

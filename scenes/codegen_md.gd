@@ -9,7 +9,7 @@ const ISA = preload("res://lang_zvm.gd")
 const ADD_DEBUG_TRACE = true; # in emitted assembly, specify where it came from.
 const ADD_IR_TRACE = true; # print the IR commands that are being generated
 const WRITE_SHADOW = false; # mark bytes in shadow
-const EMIT_COMMENTS = false; # debug tracing for emit()
+const EMIT_COMMENTS = true; # debug tracing for emit()
 const SHADOW_CODE_ADR = 30000;
 const SHADOW_STACK_ADR = 50000;
 const regs = ["EAX", "EBX", "ECX", "EDX"];
@@ -380,7 +380,7 @@ func generate_cmd_op_helper(op:String, arg1:String, arg2:String, res:String, op_
 		emit("mov ^%s, $%s;\n" % [res, arg1], cmd_size, "generate_cmd_op.result2");
 	elif arg1_is_array:
 		tmpA = alloc_temporary();
-		emit("mov %s, @%s;\n" % [tmpA, arg1], cmd_size, "generate_cmd_op.arg1_idx");
+		emit("mov ^%s, @%s;\n" % [tmpA, arg1], cmd_size, "generate_cmd_op.arg1_idx");
 	else:
 		tmpA = alloc_temporary();
 		emit("mov ^%s, $%s;\n" % [tmpA, arg1], cmd_size, "generate_cmd_op.arg1_normal");
@@ -406,6 +406,8 @@ func generate_cmd_op_helper(op:String, arg1:String, arg2:String, res:String, op_
 		var ptr_step = new_imm(pointer_step);
 		allocate_value(ptr_step, cur_scope);
 		emit("mul ^%s, $%s;\n" % [tmpB, ptr_step.ir_name], cmd_size, "generate_cmd_op.index_step");
+	if op == "NOT_EQUAL":
+		push_warning("need to replace constants CMP_NZ etc");
 		
 	var op_cmd_size = cmd_size * op_str.count(";");
 	emit(op_str, op_cmd_size, "generate_cmd_op.op_str");
