@@ -6,10 +6,10 @@ const uYaml = preload("res://scenes/uYaml.gd")
 const ISA = preload("res://lang_zvm.gd")
 
 # constants
-const ADD_DEBUG_TRACE = true; # in emitted assembly, specify where it came from.
-const ADD_IR_TRACE = true; # print the IR commands that are being generated
+const ADD_DEBUG_TRACE = false; # in emitted assembly, specify where it came from.
+const ADD_IR_TRACE = false; # print the IR commands that are being generated
 const WRITE_SHADOW = false; # mark bytes in shadow
-const EMIT_COMMENTS = true; # debug tracing for emit()
+const EMIT_COMMENTS = false; # debug tracing for emit()
 const SHADOW_CODE_ADR = 30000;
 const SHADOW_STACK_ADR = 50000;
 const regs = ["EAX", "EBX", "ECX", "EDX"];
@@ -56,6 +56,7 @@ const imm_map = {
 	"CMP_G":"CMP_G",
 	"CMP_L":"CMP_L",
 	"CMP_Z":"CMP_Z",
+	"CMP_NZ":"CMP_NZ",
 };
 const word_size_bytes = 4; ## how many bytes does a plain "mov" grab?
 # state
