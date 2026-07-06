@@ -6,12 +6,12 @@ var lang_name = "miniderp";
 const keywords = ["var", "func", "if", "else", "elif", "continue", 
 				"break", "while", "return", "extern"];
 const types = ["int", "char", "float", "double", "u8", "u16", "u32", "u64",
-				"s8", "s16", "s32", "s64", "Ref", "String"];
+				"s8", "s16", "s32", "s64", "Ref", "String", "Array"];
 const ops = [".", "+", "-", "*", "/", "%", 
 			"=", "+=", "-=", "*=", "/=", "%=", 
 			"&", "|", "^", ">", "<", "!=", "==",
 			"--", "++", "and", "or", "not"];
-const punct = [";", "//", "(", "[", "{", ")", "]", "}", "#"];
+const punct = [";", "//", "(", "[", "{", ")", "]", "}", "#", "->"];
 const punct_range_begin = ["(", "[", "{"];
 const punct_range_end = [")", "]", "}"];
 
@@ -42,6 +42,7 @@ const rules = [
 	#sub-statements
 	#-- var_decl_stmt
 	["/var", "IDENT",					"/;", "var_decl_stmt"],
+	["/var", "expr_typed_ident",		"/;", "var_decl_stmt"],
 	["/var", "expr_index", 				"/;", "var_decl_stmt"],
 	#-- assignment_stmt
 	#["IDENT", "/=", "expr", 			"/;", "assignment_stmt"],
@@ -59,6 +60,8 @@ const rules = [
 	["/extern", "func_decl_stmt",		"/;", "decl_extern_stmt"],
 	#-- func_decl_stmt
 	["/func", "expr_call",				"/;", "func_decl_stmt"],
+	["/func", "expr_call",	"/->", "type_expr",			"/;", "func_decl_stmt"],
+	["/func", "expr_call",				"/->", "SHIFT"],
 	#-- func_def_stmt
 	["expr_call",						"/{", "SHIFT"],
 	["/func", "expr_call", "block", 	"*", "func_def_stmt"],

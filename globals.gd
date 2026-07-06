@@ -10,7 +10,13 @@ const class_Cmd_args = preload("res://class_Cmd_arg.gd");
 const class_Cmd_flags = preload("res://class_Cmd_flags.gd");
 const class_AST = preload("res://class_AST.gd");
 const class_LocationMap = preload("res://class_LocationMap.gd");
+const class_Storage = preload("res://class_storage.gd");
 const class_IR_Value = preload("res://class_IR_value.gd");
+const class_IR_lbl = preload("res://class_val_lbl.gd");
+const class_IR_func = preload("res://class_val_func.gd");
+const class_IR_var = preload("res://class_val_variable.gd");
+const class_IR_tmp = preload("res://class_val_tmp.gd");
+const class_IR_imm = preload("res://class_val_imm.gd");
 const class_IR_Cmd = preload("res://class_IR_cmd.gd");
 const class_CodeBlock = preload("res://class_CodeBlock.gd");
 const class_AssyBlock = preload("res://class_AssyBlock.gd");
@@ -80,6 +86,8 @@ func has(obj):
 		return (has(obj.begin) and has(obj.end));
 	if obj is Location:
 		return obj.line_idx != -1;
+	if obj is Type:
+		return obj.name not in ["ERROR", "NONE"];
 	return not not obj;
 
 # --------- util ------------

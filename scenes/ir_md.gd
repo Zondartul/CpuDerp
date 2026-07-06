@@ -35,66 +35,67 @@ func make_unique_IR_name(type, text=null):
 	return val_name;
 	
 # returns a handle to a new IR value
-func new_val(): return {
-	"val_type":null, 	# what sort of object does this handle represent?
-	"ir_name":null, 	# what is a unique name of this handle?
-	"user_name":null, 	# how does the source code refer to the underlying object?
-	"data_type":null, 		# what is the data type of the underlying object?
-	"value":null,		# what is the actual value of the underlying object?
-	"storage":null		# where is the object located?
-	};
-
-func new_val_temp():
-	var val = new_val();
-	val.val_type = "temporary";
-	val.ir_name = make_unique_IR_name("tmp");
-	return val;
-
-func new_val_var(val_name:String):
-	var val = new_val();
-	val.val_type = "variable";
-	val.ir_name = make_unique_IR_name("var", val_name);
-	val.user_name = val_name;
-	val.is_array = 0;
-	val.array_size = 0;
-	return val;
-
-func new_val_immediate(value:String, type:Type):
-	var val = new_val();
-	val.val_type = "immediate";
-	val.value = value;
-	val.data_type = type;
-	val.ir_name = make_unique_IR_name("imm");
-	return val;
-
-func new_val_error():
-	var val = new_val();
-	val.val_type = "error";
-	val.ir_name = "error";
-	return val;
-
-func new_val_none():
-	var val = new_val();
-	val.val_type = "none";
-	val.ir_name = "none";
-	return val;
-
-func new_val_func(fun_name, fun_scope, fun_code):
-	var val = new_val();
-	val.val_type = "func";
-	val.ir_name = make_unique_IR_name("func", fun_name);
-	val.user_name = fun_name;
-	val["scope"] = fun_scope.ir_name;
-	val["code"] = fun_code.ir_name;
-	val["argc"] = -1;
-	return val;
-
-func new_val_lbl(lbl_name=null):
-	var val = new_val();
-	val.val_type = "label";
-	val.ir_name = make_unique_IR_name("lbl", lbl_name);
-	val.user_name = lbl_name;
-	return val;
+#
+#func new_val(): return {
+	#"val_type":null, 	# what sort of object does this handle represent?
+	#"ir_name":null, 	# what is a unique name of this handle?
+	#"user_name":null, 	# how does the source code refer to the underlying object?
+	#"data_type":null, 		# what is the data type of the underlying object?
+	#"value":null,		# what is the actual value of the underlying object?
+	#"storage":null		# where is the object located?
+	#};
+#
+#func new_val_temp():
+	#var val = new_val();
+	#val.val_type = "temporary";
+	#val.ir_name = make_unique_IR_name("tmp");
+	#return val;
+#
+#func new_val_var(val_name:String):
+	#var val = new_val();
+	#val.val_type = "variable";
+	#val.ir_name = make_unique_IR_name("var", val_name);
+	#val.user_name = val_name;
+	#val.is_array = 0;
+	#val.array_size = 0;
+	#return val;
+#
+#func new_val_immediate(value:String, type:Type):
+	#var val = new_val();
+	#val.val_type = "immediate";
+	#val.value = value;
+	#val.data_type = type;
+	#val.ir_name = make_unique_IR_name("imm");
+	#return val;
+#
+#func new_val_error():
+	#var val = new_val();
+	#val.val_type = "error";
+	#val.ir_name = "error";
+	#return val;
+#
+#func new_val_none():
+	#var val = new_val();
+	#val.val_type = "none";
+	#val.ir_name = "none";
+	#return val;
+#
+#func new_val_func(fun_name, fun_scope, fun_code):
+	#var val = new_val();
+	#val.val_type = "func";
+	#val.ir_name = make_unique_IR_name("func", fun_name);
+	#val.user_name = fun_name;
+	#val["scope"] = fun_scope.ir_name;
+	#val["code"] = fun_code.ir_name;
+	#val["argc"] = -1;
+	#return val;
+#
+#func new_val_lbl(lbl_name=null):
+	#var val = new_val();
+	#val.val_type = "label";
+	#val.ir_name = make_unique_IR_name("lbl", lbl_name);
+	#val.user_name = lbl_name;
+	#return val;
 
 func emit_IR(cmd:Array, loc:LocationRange):
 	#IR.commands.append(cmd);

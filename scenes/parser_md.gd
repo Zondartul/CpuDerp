@@ -43,6 +43,7 @@ func parse(input:Dictionary, task:Task):
 	task.work_units_total = in_tokens.size();
 	task.work_units_complete = 0;
 	erep.proxy = self;
+	erep.task = task;
 	#tokens = tokens.duplicate();
 	var tokens:Array[AST] = [];
 	for tok in in_tokens:
@@ -81,7 +82,7 @@ func parse(input:Dictionary, task:Task):
 		push_error("no input");
 		return false;
 	else:
-		sig_user_error.emit("syntax error");
+		call_deferred("defer_user_error", "syntax error");
 		var ctx = stack[1];#find_best_error_token(stack);
 		#var erep:ErrorReporter = ErrorReporter.new(self, ctx as Token);
 		erep.context = ctx as Token;
@@ -96,7 +97,9 @@ func parse(input:Dictionary, task:Task):
 	#return stack[1];
 func defer_parse_ready(stack):
 	sig_parse_ready.emit(stack);
-	
+
+func defer_user_error(arg):
+	sig_user_error.emit(arg);
 
 func rule_matches(stack:Array[AST], tok_lookahead:AST, rule:Array[String])->bool:
 	#var rule_result = rule[-1];

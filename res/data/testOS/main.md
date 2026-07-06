@@ -4,25 +4,25 @@ func infloop();
 func has_char();
 func get_char();
 //func malloc(size);
-func process_command(buff);
-func str_eq(str_A, str_B); // returns 1 if strings are equal 
-func str_len(str); // returns string length
-func str_rev(str); // reverse string
-func dbg_num_print(num);
-func log10(num); // returns floor(log10( positive number )) i.e. num of digits
-func printnum(num); //better num print
-func dbg_print_sns(str,num,str2);
-func printnum_dbg(num);
+func process_command(buff:String);
+func str_eq(str_A:String, str_B:String); // returns 1 if strings are equal 
+func str_len(str:String)->int; // returns string length
+func str_rev(str:Ref[u32])->int; // reverse string
+func dbg_num_print(num:int);
+func log10(num:int)->int; // returns floor(log10( positive number )) i.e. num of digits
+func printnum(num:int); //better num print
+func dbg_print_sns(str:String,num:int,str2:String);
+func printnum_dbg(num:int);
 func pass_test();
-func pass_test2(buff);
-func itoa(buff, num);
-func test_up(buff);
-var adr_kb = 81648;
+func pass_test2(buff:Ref[u32]);
+func itoa(buff:Ref[u32], num:int);
+func test_up(buff:Ref[u32]);
+var adr_kb:Ref[u8] = 81648;
 //var alloc_head = 10000;
 //var char_newline = 5;
-var char_backspace = 4;
-var buff[80];
-var buffI = 0;
+var char_backspace:u8 = 4;
+var buff:Array[80, u32];
+var buffI:int = 0;
 main();
 infloop();
 
@@ -34,7 +34,7 @@ func main(){
 	//var buffI = 0;
 	while(1){
 		if(has_char()){
-			var c = get_char(); // btw another c exists
+			var c:u8 = get_char(); // btw another c exists
 			if (c == '\n'){
 				newline();
 				process_command(buff);
@@ -52,17 +52,17 @@ func main(){
 
 func infloop(){while(1){}}
 
-func has_char(){
+func has_char()->int{
 	return adr_kb[0];
 }
 
-func get_char(){
+func get_char()->u8{
 	var c = adr_kb[1];
 	adr_kb[0] = 1;
 	return c;
 }
 
-func process_command(buff){
+func process_command(buff:String){
 	set_col(255,0,255);
 	if(str_eq(buff, "what")){
 		println("SAY WHAT AGAIN");
@@ -111,20 +111,20 @@ func process_command(buff){
 //}
 
 func pass_test(){
-	var buff[100];
+	var buff:Array[100, u32];
 	dbg_num_print(buff);
 	buff[0] = 'h';
-	buff[4] = 'i';
-	buff[8] = 0;
+	buff[1] = 'i';
+	buff[2] = 0;
 	pass_test2(buff);
 }
 
-func pass_test2(buff){
+func pass_test2(buff:Ref){
 	dbg_num_print(buff);
 	println(buff);
 }
-func str_eq(str_A, str_B){
-	var I = 0;
+func str_eq(str_A:String, str_B:String)->int{
+	var I:int = 0;
 	while(str_A[I]){
 		//var cA = str_A[I];
 		//var cB = str_B[I];
@@ -135,12 +135,12 @@ func str_eq(str_A, str_B){
 		//print("]",255,255,255);
 		if(str_A[I] != str_B[I]) //if(cA == cB)
 		{ return 0; }
-		I += 4;
+		I += 1;
 	}
 	return 1;
 }
 
-func dbg_num_print(num){
+func dbg_num_print(num:int){
 	if (num < 0){
 		putch("-");
 		num = 0 - num;
@@ -152,7 +152,7 @@ func dbg_num_print(num){
 	}
 }
 
-func log10(num){
+func log10(num:int)->int{
 	var I = 0;
 	while(num > 0){
 		num = num/10;
@@ -167,7 +167,7 @@ func dbg_print_sns(str1, num, str2){
 	println(str2);
 }
 
-func printnum_dbg(num){
+func printnum_dbg(num:int){
 	var buff[40];
 	dbg_print_sns("buff = ", buff, ";");
 	var I = 0;
@@ -189,7 +189,7 @@ func printnum_dbg(num){
 	print(buff);
 }
 
-func itoa(buff, num){
+func itoa(buff:Ref[u32], num:int){
 	var I = 0;
 	if(num < 0){num = 0 - num; buff[I*4] = '-'; I += 1;}
 	var n = log10(num);
@@ -203,7 +203,7 @@ func itoa(buff, num){
 	}
 }
 
-func printnum(num){
+func printnum(num:int){
 	var buff[40];
 	dbg_print_sns("buff = ", buff, ";");
 	var I = 0;
@@ -225,13 +225,13 @@ func printnum(num){
 	print(buff);
 }
 
-func str_len(str){
+func str_len(str:String)->int{
 	var I = 0;
 	while(str[I*4]){I += 1;}
 	return I;
 }
 
-func str_rev(str){
+func str_rev(str:Ref[u32]){
 	var len = str_len(str);
 	if (len < 2){return;}
 	var I = len/2;
@@ -245,6 +245,6 @@ func str_rev(str){
 	}
 }
 
-func test_up(buff){
+func test_up(buff:Ref){
 	buff[0] = 'z';
 }
