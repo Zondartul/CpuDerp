@@ -35,7 +35,7 @@ var error_code:String; #:set = set_error;
 var op_locations = []
 var output_tokens = [];
 
-func reset():
+func reset()->void:
 	cur_filename = "";
 	cur_path = "";
 	code = [];
@@ -122,7 +122,7 @@ func assemble(input:Dictionary, task:Task)->Chunk:
 	print("    "+str(len(chunk.labels))+" labels")
 	return chunk;
 
-func defer_tokens_ready(arg):
+func defer_tokens_ready(arg)->void:
 	tokens_ready.emit(arg);
 
 func assign_line_pos(tokens:Array[Token])->void:
@@ -132,10 +132,10 @@ func assign_line_pos(tokens:Array[Token])->void:
 		tok.loc.begin.line_idx = cur_line_idx;
 		tok.loc.end.line_idx = cur_line_idx;
 
-func cprint(msg):
+func cprint(msg)->void:
 	sig_cprint.emit(msg);
 	
-func user_error(msg):
+func user_error(msg)->void:
 	sig_user_error.emit(msg);
 #func iter_count_chars(iter):
 	#var tok_idx = 0;
@@ -346,7 +346,7 @@ func to_tok_loc(cur_loc:Location, cur_tok:String)->LocationRange:
 	t_loc = LocationRange.from_loc_len(t_loc, len(cur_tok));
 	return t_loc;
 
-func should_split_on_transition(new_tok_class:String, old_tok_class:String):
+func should_split_on_transition(new_tok_class:String, old_tok_class:String)->bool:
 	#if (new_tok_class != tok_class) or (tok_class == "PUNCT"):
 	if old_tok_class == "PUNCT": return true; # punctuation tokens are always one-by-one.
 	elif old_tok_class == "WORD" and new_tok_class == "NUMBER": return false; #allow numbers to be included in names
@@ -355,7 +355,7 @@ func should_split_on_transition(new_tok_class:String, old_tok_class:String):
 	else: return (old_tok_class != new_tok_class); #split on any other class change
 	
 
-func filter_tokens(tok:Token):
+func filter_tokens(tok:Token)->bool:
 	if tok.tok_class in ["SPACE", "ENDSTRING"]: return false;
 	return true;
 
@@ -670,11 +670,12 @@ func get_reg(rname:String)->Dictionary:
 		return {"idx":idx, "name":rname};
 	else: return {};
 	
-func get_flag(fname:String):
+func get_flag(fname:String)->int:
 	fname = fname.to_upper();
 	if fname in ISA.ctrl_flag_masks:
 		return ISA.ctrl_flag_masks[fname];
-	return null;
+	assert(false, "flag name not in ctrl_flag_masks");
+	return 0;
 #------------- CODE GEN -----------
 
 
@@ -688,7 +689,7 @@ func emit_opcode(cmd:int, flags:Cmd_flags, reg1:int=0, reg2:int=0, imm_u32:int=0
 	emit32(imm_u32, tail_flag);
 	emit8(0xFF, ISA.SHADOW_CMD_TAIL); # pad
 
-func emit8(val:int, shadow_val:int):
+func emit8(val:int, shadow_val:int)->void:
 	if (val < 0):
 		val = 256 - val;
 	if (val < 0) or (val > 255): 
@@ -699,7 +700,7 @@ func emit8(val:int, shadow_val:int):
 	shadow[write_pos] = shadow_val;
 	write_pos += 1;
 
-func emit32(val:int, shadow_val:int):
+func emit32(val:int, shadow_val:int)->void:
 	if(val < 0):
 		val = (2**32)+val;
 	if (val < 0) or (val > ((2**32)-1)): 

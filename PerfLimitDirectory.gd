@@ -14,11 +14,11 @@ func _init(new_perfs=null):
 				if perf_name == "all": continue;
 				perfs.all.cascades_to.append(perfs[perf_name]);
 
-func set_enabled_perfs(enable_list:Array[String]):
+func set_enabled_perfs(enable_list:Array[String])->void:
 	for perf_name in perfs:
 		perfs[perf_name].enabled = (perf_name in enable_list);
 
-func credit_all(delta:float):
+func credit_all(delta:float)->void:
 	for perf_name in perfs:
 		perfs[perf_name].add_credit(delta);
 

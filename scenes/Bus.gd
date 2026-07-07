@@ -26,15 +26,15 @@ func _ready():
 		maxmem += size;
 	total_size = maxmem;
 
-func reset():
+func reset()->void:
 	for ch in get_children():
 		if "reset" in ch:
 			ch.reset();
 
-func getSize():
+func getSize()->int:
 	return total_size;
 
-func readCell(cell:int):
+func readCell(cell:int)->int:
 	if((cell < 0) || (cell >= total_size)): 
 		if debug_bus_read: print("bus: read("+str(cell)+") <out of bounds> -> 0");
 		return 0;
@@ -47,10 +47,10 @@ func readCell(cell:int):
 	if debug_bus_read: print("bus: read("+str(cell)+") (dev "+str(dev_idx)+": "+str(local_cell)+") -> "+str(val));
 	return val;
 
-func writeCell(cell:int, val:int):
+func writeCell(cell:int, val:int)->void:
 	if((cell < 0) || (cell >= total_size)): 
 		if debug_bus_write: print("bus: write("+str(cell)+") <out of bounds>");
-		return 0;
+		return;
 	var dev_idx = ranges.bsearch(cell, false)-1;
 	assert(dev_idx >= 0);
 	assert(dev_idx <  ranges.size());

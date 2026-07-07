@@ -8,13 +8,13 @@ var cur_scope = null;
 var cur_code_block = null;
 var val_idx = 0;
 
-func reset():
+func reset()->void:
 	IR = null;
 	cur_scope = null;
 	cur_code_block = null;
 	val_idx = 0;
 
-func clear_IR():
+func clear_IR()->void:
 	reset();
 	IR = {
 		"code_blocks":{},
@@ -25,10 +25,10 @@ func clear_IR():
 	var global_code_block = new_code_block();
 	cur_code_block = global_code_block;#IR.code_blocks[0];
 
-func is_cur_scope_global():
+func is_cur_scope_global()->bool:
 	return cur_scope.user_name == "global";
 
-func make_unique_IR_name(type, text=null):
+func make_unique_IR_name(type, text=null)->String:
 	var val_name = type+"_"+str(val_idx);
 	if text: val_name += "__"+text;
 	val_idx+=1;
@@ -97,7 +97,7 @@ func make_unique_IR_name(type, text=null):
 	#val.user_name = lbl_name;
 	#return val;
 
-func emit_IR(cmd:Array, loc:LocationRange):
+func emit_IR(cmd:Array, loc:LocationRange)->void:
 	#IR.commands.append(cmd);
 	var cmd_translated = [];
 	assert(cmd[0] is String);
@@ -106,7 +106,7 @@ func emit_IR(cmd:Array, loc:LocationRange):
 	cmd_translated.append_array(serialize_ir_arg(loc));
 	cur_code_block.code.append(cmd_translated);
 
-func serialize_ir_arg(arg):
+func serialize_ir_arg(arg)->Array:
 	if arg is String: return [arg];
 	elif arg is Dictionary:
 		assert(("ir_name" in arg) and (arg.ir_name is String));
@@ -125,44 +125,48 @@ func serialize_ir_arg(arg):
 		return [];
 
 
-func save_variable(var_handle):
+func save_variable(var_handle)->void:
 	cur_scope.vars.append(var_handle);
 
-func save_function(fun_handle):
+func save_function(fun_handle)->void:
 	cur_scope.funcs.append(fun_handle);
 
-func push_code_block(new_block=null):
-	var old_cb = cur_code_block;
+func push_code_block(new_block=null)->CodeBlock:
+	var old_cb:CodeBlock = cur_code_block;
 	if not new_block: 
 		new_block = new_code_block();
 		#IR.code_blocks.append(new_block);
 	cur_code_block = new_block;
 	return old_cb;
 
-func pop_code_block(old_block):
+func pop_code_block(old_block)->CodeBlock:
 	var popped_block = cur_code_block;
 	cur_code_block = old_block;
 	return popped_block;
 
-func new_code_block():
-	var cb = {"ir_name":make_unique_IR_name("cb"), "code":[], "lbl_from":make_unique_IR_name("lbl_from"), "lbl_to":make_unique_IR_name("lbl_to")};
+func new_code_block()->CodeBlock:
+	var cb = CodeBlock.new(
+		{"ir_name":make_unique_IR_name("cb"), 
+		"code":[], 
+		"lbl_from":make_unique_IR_name("lbl_from"), 
+		"lbl_to":make_unique_IR_name("lbl_to")});
 	IR.code_blocks[cb.ir_name] = cb;
 	return cb;
 
-func push_scope(scope=null):
-	var old_sc = cur_scope;
+func push_scope(scope=null)->Scope:
+	var old_sc:Scope = cur_scope;
 	if not scope:
-		scope = new_scope(null,cur_scope.ir_name);
+		scope = new_scope("",cur_scope.ir_name);
 	cur_scope = scope;
 	return old_sc;
 
-func pop_scope(old_scope):
+func pop_scope(old_scope:Scope)->Scope:
 	var popped_scope = cur_scope;
 	cur_scope = old_scope;
 	return popped_scope;
 	
-func new_scope(scp_name, scp_parent:String=""):
-	if not scp_name: scp_name = "NULL";
+func new_scope(scp_name:String="", scp_parent:String="")->Scope:
+	if scp_name == "": scp_name = "NULL";
 	var scp = {
 				"ir_name":make_unique_IR_name("scp",scp_name),
 				"user_name":scp_name,
@@ -173,7 +177,7 @@ func new_scope(scp_name, scp_parent:String=""):
 	IR.scopes[scp.ir_name] = scp;
 	return scp;
 
-func get_var(var_name:String):
+func get_var(var_name:String)->IR_Var:
 	var seek_scope = cur_scope;
 	var lc = LoopCounter.new();
 	while true:
@@ -185,9 +189,10 @@ func get_var(var_name:String):
 			seek_scope = IR.scopes[seek_scope.parent];
 		else:
 			break;
+	assert(false, "var not found");
 	return null;
 
-func get_func(fun_name:String):
+func get_func(fun_name:String)->IR_func:
 	var seek_scope = cur_scope;
 	var lc = LoopCounter.new();
 	while true:
@@ -199,6 +204,7 @@ func get_func(fun_name:String):
 			seek_scope = IR.scopes[seek_scope.parent];
 		else:
 			break;
+	assert(false, "func not found");
 	return null;
 
 func serialize_full()->String:
@@ -215,7 +221,7 @@ func serialize_full()->String:
 		if cb.code.is_empty(): cb.erase("code");
 	return uYaml.serialize(sIR);
 
-func serialize_vals(arr):
+func serialize_vals(arr)->void:
 	for i in range(len(arr)):
 			var old_var = arr[i];
 			var new_var = [];
@@ -270,7 +276,7 @@ func serialize_vals(arr):
 	#print("unescape str: in [%s], out [%s]" % [text, new_str]);
 	#return new_str;
 
-func to_file(filename):
+func to_file(filename)->void:
 	var fp = FileAccess.open(filename, FileAccess.ModeFlags.WRITE);
 	if not fp: push_error("can't write file: "+filename); return;
 	var text = serialize_full();

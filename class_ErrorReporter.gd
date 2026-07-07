@@ -13,12 +13,12 @@ signal sig_highlight_line(line_idx);
 func _ready():
 	if Editor: proxy = Editor;
 
-func assert_valid_proxy():
+func assert_valid_proxy()->void:
 	for prop in ["error_code"]:#["user_error", "error_code", "cprint", "sig_highlight_line", "cur_line", "cur_line_idx"]:
 		if not prop in proxy:
 			push_error("ErrorReporter: proxy needs to have '%s'" % prop);
 
-func error(msg):
+func error(msg)->void:
 	push_error(msg);
 	if task:
 		task.fail();

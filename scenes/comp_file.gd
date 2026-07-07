@@ -23,7 +23,7 @@ var is_setup = false;
 @onready var dialog_discard = $cd_save_discard
 var cur_efile = null;
 var default_file_dir = "";
-var efiles = [];
+var efiles:Array[Node] = [];
 var close_file_list = [];
 var op_cancelled = false;
 signal file_selected(path);
@@ -42,7 +42,7 @@ func _ready():
 	dialog_load.current_dir = default_file_dir;
 	pass # Replace with function body.
 
-func setup(dict:Dictionary):
+func setup(dict:Dictionary)->void:
 	assert("efiles" in dict);
 	n_efiles = dict.efiles;
 	is_setup = true;
@@ -66,40 +66,40 @@ func setup(dict:Dictionary):
 
 
 
-func has_efile(ef_name):
+func has_efile(ef_name)->bool:
 	if get_efile(ef_name): return true;
 	else: return false;
 
-func get_efile(ef_name):
+func get_efile(ef_name)->Variant:
 	for ef in efiles:
 		if(ef.file_name == ef_name):
 			return ef;
 	return null
 
-func switch_to_file(filename):
+func switch_to_file(filename)->void:
 	var efile = get_efile(filename);
 	if(efile): set_cur_efile(efile);
 
-func set_cur_efile(efile):		
+func set_cur_efile(efile)->void:		
 	cur_efile = efile;
 	if cur_efile: 
 		n_efiles.current_tab = cur_efile.tab_idx;
 	cur_efile_changed.emit(efile);
 
-func update_efile_tab(efile):
+func update_efile_tab(efile)->void:
 	var title = efile.file_name;
 	if(efile.is_dirty): title += "(*)";
 	n_efiles.set_tab_title(efile.tab_idx, title);
 
-func rename_efile(efile, new_name):
+func rename_efile(efile, new_name)->void:
 	efile.name = new_name;
 	efile.file_name = new_name;
 	update_efile_tab(efile);
 
-func new_efile(ef_name):
+func new_efile(ef_name)->Node:
 	assert(is_setup);
 	print("new_efile("+ef_name+")");
-	var efile = scene_editorfile.instantiate();
+	var efile:Node = scene_editorfile.instantiate();
 	efiles.append(efile);
 	efile.tab_idx = n_efiles.get_tab_count();
 	n_efiles.add_child(efile);
@@ -107,16 +107,16 @@ func new_efile(ef_name):
 	efile.update_my_tab.connect(_on_efile_update_my_tab);
 	return efile;
 
-func remove_efile_actual(efile):
+func remove_efile_actual(efile)->void:
 	print("removing")
 	n_efiles.remove_child(efile);
 	efiles.erase(efile);
 	
-func async_close_file():
+func async_close_file()->void:
 	if cur_efile:
 		await async_remove_efile(cur_efile.file_name);
 
-func async_remove_efile(ef_name):
+func async_remove_efile(ef_name)->bool:
 	print("remove_efile("+ef_name+")");
 	var efile = get_efile(ef_name);
 	if(efile.is_dirty): 
@@ -142,7 +142,7 @@ func async_remove_efile(ef_name):
 		remove_efile_actual(efile);
 		return true;
 	
-func async_new_file(new_name):
+func async_new_file(new_name)->bool:
 	#print("new file");
 	var efile = get_efile(new_name);
 	if efile:
@@ -158,9 +158,9 @@ func async_new_file(new_name):
 	assert(cur_efile != null);
 	return true;
 
-func async_save_file():
+func async_save_file()->bool:
 	print("save file");
-	if cur_efile == null: return;
+	if cur_efile == null: return false;
 	#assert(cur_efile != null);
 	if cur_efile.path != "":
 		if cur_efile.file_save(): 
@@ -172,7 +172,7 @@ func async_save_file():
 		if not res: print("save file fail"); return false;
 		return true;
 
-func async_save_file_as():
+func async_save_file_as()->bool:
 	print("Save file as");
 	assert(cur_efile != null);
 	dialog_save.popup();
@@ -184,7 +184,7 @@ func async_save_file_as():
 	if not res: print("save file as fail"); return false;
 	return true;
 
-func async_load_file():
+func async_load_file()->void:
 	#print("Load file");
 	dialog_load.popup();
 	var path = await file_selected;
@@ -197,7 +197,7 @@ func async_load_file():
 	cur_efile.language = identify_lang(fname);
 	cur_efile_changed.emit(cur_efile);
 
-func _on_file_index_pressed(index):
+func _on_file_index_pressed(index)->void:
 	op_cancelled = false;
 	if index == 0: await async_new_file("unnamed");
 	if index == 1: await async_save_file();
@@ -213,32 +213,32 @@ func identify_lang(fname:String)->String:
 		"md": res = "miniderp";
 	return res;
 
-func path_to_filename(path):
+func path_to_filename(path)->String:
 	return path.substr(path.rfind("/")+1);
 
-func _on_fd_save_file_selected(path):
+func _on_fd_save_file_selected(path)->void:
 	file_selected.emit(path);
 
-func _on_e_files_tab_changed(tab):
+func _on_e_files_tab_changed(tab)->void:
 	if tab != -1:
 		set_cur_efile(n_efiles.get_child(tab));
 	else:
 		set_cur_efile(null);
 	#cur_efile = n_efiles.get_child(tab);
 
-func _on_fd_load_file_selected(path):
+func _on_fd_load_file_selected(path)->void:
 	#print("file_selected("+path+")");
 	file_selected.emit(path);
 
-func _on_efile_update_my_tab(efile):
+func _on_efile_update_my_tab(efile)->void:
 	update_efile_tab(efile);
 
-func highlight_line(loc:LocationRange):#(line_idx, col=-1, length=-1):
+func highlight_line(loc:LocationRange)->void:#(line_idx, col=-1, length=-1):
 	if not G.has(loc): 
 		return;
 	if cur_efile.file_name == loc.begin.filename:
 		cur_efile.highlight_line(loc);
 	#cur_efile.highlight_line(line_idx, col, length);
 
-func get_cur_line_idx():
+func get_cur_line_idx()->int:
 	return cur_efile.get_cur_line_idx();

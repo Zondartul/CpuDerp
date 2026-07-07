@@ -13,10 +13,10 @@ var cur_lang = "";
 
 
 # Called when the node enters the scene tree for the first time.
-func _ready():
+func _ready()->void:
 	pass # Replace with function body.
 
-func setup(dict:Dictionary):
+func setup(dict:Dictionary)->void:
 	assert("memory" in dict);
 	assert("editor" in dict);
 	assert("view_memory" in dict);
@@ -34,11 +34,11 @@ func setup(dict:Dictionary):
 #	pass
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
+func _process(delta)->void:
 	update_task_progress();
 #	pass
 
-func assemble_zderp(task:Task):
+func assemble_zderp(task:Task)->Variant:
 	n_assembler.cur_path = cur_efile.path;
 	var asm_input = {"text":cur_efile.get_text(), "filename":cur_efile.file_name};
 	var chunk = n_assembler.assemble(asm_input, task);
@@ -47,8 +47,9 @@ func assemble_zderp(task:Task):
 		var res = {"code":chunk.code};
 		if "shadow" in chunk: res["shadow"] = chunk.shadow;
 		return res;
-
-func compile_miniderp(task:Task):
+	else: return null;
+	
+func compile_miniderp(task:Task)->Variant:
 	n_compiler.reset();
 	n_compiler.cur_path = cur_efile.path.get_base_dir();
 	var compiler_input = {"text":cur_efile.get_text(), "filename":cur_efile.file_name};
@@ -58,7 +59,7 @@ func compile_miniderp(task:Task):
 	else:
 		return null;
 
-func compile(task:Task):
+func compile(task:Task)->Variant:
 	if cur_efile:
 		if cur_lang == "zderp":
 			return assemble_zderp(task);
@@ -66,7 +67,7 @@ func compile(task:Task):
 			return compile_miniderp(task)
 	return null;
 
-func upload(code):
+func upload(code)->void:
 	Memory.clear()
 	view_Memory.call_deferred("clear");
 	view_Memory.call_deferred("add_memory_region", 0,len(code),"code");
@@ -80,7 +81,7 @@ func upload(code):
 		idx += 1;
 	print("Uploaded "+str(idx)+" bytes");
 
-func upload_shadow(bytes):
+func upload_shadow(bytes)->void:
 	view_Memory.call_deferred("add_memory_region", len(bytes), len(bytes),"shadow");
 	var idx = len(bytes);
 	for i in range(len(bytes)):
@@ -90,24 +91,24 @@ func upload_shadow(bytes):
 		idx += 1;
 	print("shadow memory uploaded");
 
-func add_stack_region():
+func add_stack_region()->void:
 	var stack_end = 65536;
 	var stack_size = 1024;
 	var stack_pos = stack_end - stack_size;
 	view_Memory.call_deferred("add_memory_region", stack_pos, stack_size, "stack");
 
-func add_screen_region():
+func add_screen_region()->void:
 	var screen_start = 67536;
 	var screen_size = 64*64*7;
 	view_Memory.call_deferred("add_memory_region", screen_start, screen_size, "screen");
 
-func _on_build_index_pressed(index):
+func _on_build_index_pressed(index)->void:
 	if index == 0: # "compile"
 		n_threads.start(compile_async)
 	if index == 1: # "test"
 		n_threads.check();
 
-func compile_async(task:Task):
+func compile_async(task:Task)->void:
 	task.user_name = "Compile";
 	task.work_units_total = 1;
 	
@@ -135,11 +136,11 @@ func compile_async(task:Task):
 	task.done = true;
 	call_deferred("compile_end", task);
 
-func compile_end(task):
+func compile_end(task)->void:
 	n_threads.end(task);
 	update_task_progress();
 
-func _on_comp_file_cur_efile_changed(efile):
+func _on_comp_file_cur_efile_changed(efile)->void:
 	cur_efile = efile;
 	if cur_efile:
 		cur_lang = efile.language;
@@ -150,7 +151,7 @@ func _on_comp_file_cur_efile_changed(efile):
 		n_assembler.cur_filename = "";
 		n_compiler.cur_filename = "";
 
-func set_highlight(loc:LocationRange):#(from_line, from_col, to_line, to_col):
+func set_highlight(loc:LocationRange)->void:#(from_line, from_col, to_line, to_col):
 	var comp_file = (Editor as Control).get_node("comp_file");
 	comp_file.highlight_line(loc);
 	## why are we doing this when comp_highlight and editor_file
@@ -168,23 +169,23 @@ func set_highlight(loc:LocationRange):#(from_line, from_col, to_line, to_col):
 	#else:
 		#TE.deselect();
 
-func _on_comp_asm_zd_highlight_error(loc:LocationRange):#(from_line, from_col, to_line, to_col):
+func _on_comp_asm_zd_highlight_error(loc:LocationRange)->void:#(from_line, from_col, to_line, to_col):
 	#print("highlight error ("+str(from_line)+", "+str(from_col)+", "+str(to_line)+", "+str(to_col)+")");
 	print("highlight error %s" % loc);
 	set_highlight(loc);#(from_line, from_col, to_line, to_col);
 
-func _on_debug_panel_set_highlight(loc:LocationRange):#(from_line, from_col, to_line, to_col):
+func _on_debug_panel_set_highlight(loc:LocationRange)->void:#(from_line, from_col, to_line, to_col):
 	set_highlight(loc);#(from_line, from_col, to_line, to_col);
 
 
 func _on_language_index_pressed(index: int) -> void:
 	cur_lang = ["zderp", "miniderp"][index];
 
-func on_tokens_ready(tokens):
+func on_tokens_ready(tokens)->void:
 	win_tokens.set_tokens(tokens);
 
 var progress_timeout = 0;
-func update_task_progress():
+func update_task_progress()->void:
 	var task = n_threads.get_first_task();
 	if task:
 		var text = task.get_progress_tree(0);

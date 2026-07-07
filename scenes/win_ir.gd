@@ -4,13 +4,13 @@ extends Window
 @onready var view_file = $TC/File;
 var root = null;
 
-func _ready():
+func _ready()->void:
 	tree.set_column_expand_ratio(1,3);
 	root = tree.create_item();
 
 var array_vertical = false;
 
-func set_stuff(obj, node):
+func set_stuff(obj, node)->void:
 	if obj is Dictionary:
 		for key in obj:
 			var val = obj[key];
@@ -40,11 +40,11 @@ func set_stuff(obj, node):
 	
 
 
-func _on_comp_compile_md_ir_ready(IR):
+func _on_comp_compile_md_ir_ready(IR)->void:
 	set_stuff(IR, root);
 	update_file_view();
 
-func update_file_view():
+func update_file_view()->void:
 	var fp = FileAccess.open("IR.txt", FileAccess.READ);
 	var text = fp.get_as_text();
 	fp.close();

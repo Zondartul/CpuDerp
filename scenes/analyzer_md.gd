@@ -11,7 +11,7 @@ signal sig_user_error;
 signal sig_cprint(msg, col);
 @export var Editor:Node;
 
-func cprint(msg): sig_cprint.emit(msg, null);
+func cprint(msg)->void: sig_cprint.emit(msg, null);
 # constants
 const ast_bypass_list = ["start", "stmt_list", "stmt"];
 
@@ -60,14 +60,14 @@ var type_stack = [];
 
 #------------------------------------------------------------
 
-func reset():
+func reset()->void:
 	error_code = "";
 	cur_line = "";
 	cur_line_idx = 0;
 	expr_stack = [];
 	control_flow_stack = [];
 
-func analyze(input, task:Task):
+func analyze(input, task:Task)->Node:
 	reset();
 	task.work_units_total = 4;
 	task.work_units_complete = 0;
@@ -87,16 +87,16 @@ func analyze(input, task:Task):
 	task.work_units_complete += 1;
 	return IR;
 
-func defer_IR_ready():
+func defer_IR_ready()->void:
 	IR_ready.emit(IR.IR);
 
-func user_error(msg):
+func user_error(msg)->void:
 	error_code = msg;
 	push_error(msg);
 	sig_user_error.emit(msg);
 	assert(false); # while debugging
 	
-func internal_error(msg):
+func internal_error(msg)->void:
 	erep.error(msg);
 	#user_error(msg); #still gotta emit the signal so that compiler knows to stop
 #	error_code = msg;
@@ -104,7 +104,7 @@ func internal_error(msg):
 #	# no sig_user_error
 
 ## makes sure the function name and code block begin are the same label
-func fixup_cb_lbls():
+func fixup_cb_lbls()->void:
 	var scp_global_key = IR.IR.scopes.keys()[0];
 	var scp_global = IR.IR.scopes[scp_global_key];
 	for fun in scp_global.funcs:
@@ -116,7 +116,7 @@ func fixup_cb_lbls():
 		var cb = IR.IR.code_blocks[cb_key];
 		cb.lbl_from = fun.ir_name;
 
-func prepare_sym_table():
+func prepare_sym_table()->void:
 	sym_table = {"global":null, "funcs":{}};
 	var scp_global_key = IR.IR.scopes.keys()[0];
 	var scp_global = IR.IR.scopes[scp_global_key];
@@ -133,8 +133,8 @@ func prepare_sym_table():
 		var fun_handle = sym_table_append_scope(fun.user_name, fun.ir_name, scp, cb);
 		sym_table.funcs[fun.ir_name] = fun_handle;
 
-func sym_table_append_scope(user_name, ir_name, scp, cb):
-	var fun_handle = {"user_name":user_name, "ir_name":ir_name, "lbl":null, "args":[], "vars":[], "constants":[]};
+func sym_table_append_scope(user_name, ir_name, scp, cb)->IR_func:
+	var fun_handle = IR_func.new({"user_name":user_name, "ir_name":ir_name, "lbl":null, "args":[], "vars":[], "constants":[]});
 	fun_handle.lbl = {"from":cb.lbl_from, "to":cb.lbl_to};
 	for ir_var in scp.vars:
 		if not "is_array" in ir_var: ir_var["is_array"] = "0";
@@ -148,7 +148,7 @@ func sym_table_append_scope(user_name, ir_name, scp, cb):
 			_: assert(false, "unknown val type [%s]" % str(ir_var.val_type));
 	return fun_handle;
 
-func analyze_expr(ast):
+func analyze_expr(ast)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "expr");
 	var ch = ast.children[0];
@@ -163,13 +163,13 @@ func analyze_expr(ast):
 		"expr_array_literal": analyze_expr_array_literal(ch);
 		_: internal_error(E.ERR_22 % ch.tok_class); return;
 
-func analyze_expr_parenthesis(ast):
+func analyze_expr_parenthesis(ast)->void:
 	assert(ast.tok_class == "expr_parenthesis");
 	var expr = ast.children[1];
 	assert(expr.tok_class == "expr");
 	analyze_expr(expr); if error_code != "": return;
 
-func analyze_one(ast):
+func analyze_one(ast)->void:
 	if error_code != "": return;
 	if ast.tok_class in ast_bypass_list:
 		analyze_all(ast.children); if error_code != "": return;
@@ -194,11 +194,11 @@ func analyze_one(ast):
 		"PUNCT": pass;
 		_: internal_error(E.ERR_23 % ast.tok_class); return;
 
-func analyze_all(list):
+func analyze_all(list)->void:
 	if error_code != "": return;
 	for ast in list: analyze_one(ast); if error_code != "": return;
 
-func analyze_expr_infix(ast):
+func analyze_expr_infix(ast)->void:
 	if error_code != "": return;
 	assert(ast.tok_class in ["expr_infix", "expr_index"]);
 	var expr1 = ast.children[0];
@@ -217,7 +217,7 @@ func analyze_expr_infix(ast):
 	else: erep.error(E.ERR_31 % op.text); return;
 	return;
 
-func analyze_expr_postfix(ast):
+func analyze_expr_postfix(ast)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "expr_postfix");
 	var expr1 = ast.children[0];
@@ -234,7 +234,7 @@ func analyze_expr_postfix(ast):
 	#virt_ast.children.assign(asts);
 	#return virt_ast.get_location();
 
-func analyze_expr_infix_op(expr1:AST, expr2:AST, op, loc:LocationRange):
+func analyze_expr_infix_op(expr1:AST, expr2:AST, op, loc:LocationRange)->void:
 	if error_code != "": return;
 	analyze_expr(expr1); if error_code != "": return;
 	analyze_expr(expr2); if error_code != "": return;
@@ -292,7 +292,7 @@ func get_op_result_type(T1:Type, T2:Type, op:String)->Type:
 			Tres = Type._error; #null;
 	return Tres; #{"type":Tres};
 
-func analyze_expr_postfix_op(expr1:AST, op:String, loc:LocationRange):
+func analyze_expr_postfix_op(expr1:AST, op:String, loc:LocationRange)->void:
 	if error_code != "": return;
 	analyze_expr(expr1); if error_code != "": return;
 	var arg:IR_Value = expr_stack.pop_back();
@@ -306,7 +306,7 @@ func analyze_expr_postfix_op(expr1:AST, op:String, loc:LocationRange):
 	IR.emit_IR(["OP", op, arg, IR_Value.none, res], loc);#IR.new_val_none(), res], loc);
 	expr_stack.push_back(res);
 
-func analyze_expr_call(ast:AST):
+func analyze_expr_call(ast:AST)->void:
 	if error_code != "": return;
 	# expr_call -> expr ( ) or expr ( expr ) or expr ( expr_list )
 	assert(ast.tok_class == "expr_call");
@@ -339,7 +339,7 @@ func analyze_expr_call(ast:AST):
 		IR.emit_IR(["CALL_INDIRECT", fun, args, res], ast.get_location());
 	expr_stack.push_back(res);
 
-func analyze_expr_list(expr_list:AST):
+func analyze_expr_list(expr_list:AST)->void:
 	if error_code != "": return;
 	assert(expr_list.tok_class == "expr_list");
 	var res:Array[IR_Value] = [];
@@ -348,7 +348,7 @@ func analyze_expr_list(expr_list:AST):
 		res.append(expr_stack.pop_back());
 	expr_stack.push_back(res);
 
-func analyze_expr_array_literal(expr:ASt):
+func analyze_expr_array_literal(expr:AST)->void:
 	if error_code != "": return;
 	assert(expr.tok_class == "expr_array_literal");
 	var body:AST = expr.children[1];
@@ -368,12 +368,12 @@ func analyze_expr_array_literal(expr:ASt):
 	IR.emit_IR(["MOV_ARR", res, list], expr.get_location());
 	expr_stack.push_back(res);
 
-func analyze_preproc_stmt(ast:AST):
+func analyze_preproc_stmt(ast:AST)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "preproc_stmt");
 	pass;
 
-func analyze_var_decl_stmt(ast):
+func analyze_var_decl_stmt(ast)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "var_decl_stmt");
 	var tok_ident:AST = ast.children[1];
@@ -395,7 +395,7 @@ func analyze_var_decl_stmt(ast):
 		var_handle.type = Type.new({"name":"Array", "of":[arr_size]});
 	IR.save_variable(var_handle);
 
-func analyze_func_decl_stmt(ast:AST):
+func analyze_func_decl_stmt(ast:AST)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "func_decl_stmt");
 	var expr_call:AST = ast.children[1];
@@ -418,7 +418,7 @@ func analyze_func_decl_stmt(ast:AST):
 
 	IR.save_function(fun_handle);
 
-func analyze_decl_extern_stmt(ast:AST):
+func analyze_decl_extern_stmt(ast:AST)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "decl_extern_stmt");
 	var decl:AST = ast.children[1];
@@ -438,7 +438,7 @@ func analyze_decl_extern_stmt(ast:AST):
 		IR.save_function(fun_handle);
 		
 
-func analyze_decl_assignment(ast:AST):
+func analyze_decl_assignment(ast:AST)->void:
 	if error_code != "": return;
 	# decl part
 	assert(ast.tok_class == "decl_assignment_stmt");
@@ -512,7 +512,7 @@ func analyze_type_expr(ast:AST)->Type:
 		_: erep.error(E.ERR_34 % ast.tok_class);
 	return T;
 
-func analyze_while_stmt(ast:AST):
+func analyze_while_stmt(ast:AST)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "while_stmt");
 	var while_start:AST = ast.children[0];
@@ -537,7 +537,7 @@ func analyze_while_stmt(ast:AST):
 	IR.emit_IR(["WHILE", code_condition, arg, code_block, label_next, label_end], ast.get_location());
 
 
-func analyze_assignment_stmt(ast:AST):
+func analyze_assignment_stmt(ast:AST)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "assignment_stmt");
 	var LHS:IR_Value = analyze_lhs(ast.children[0]);
@@ -564,7 +564,7 @@ func analyze_assignment_stmt(ast:AST):
 	#res.data_type = LHS.data_type;
 	expr_stack.push_back(LHS);
 
-func analyze_comp_assignment_stmt(ast:AST):
+func analyze_comp_assignment_stmt(ast:AST)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "comp_assignment_stmt");
 	var LHS:IR_Value = analyze_lhs(ast.children[0]);
@@ -607,7 +607,7 @@ func analyze_lhs(ast:AST)->IR_Value:
 		assert(false);
 	return LHS;
 
-func analyze_expr_immediate(ast:AST):
+func analyze_expr_immediate(ast:AST)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "expr_immediate");
 	var tok:AST = ast.children[0];
@@ -625,12 +625,12 @@ func analyze_expr_immediate(ast:AST):
 		value = str(read_number(tok.text));
 		type = "int"
 	var t_res = Type.new({"name":type});
-	var res:IR_Imm = IR_imm.new(IR, value, t_res);#IR.new_val_immediate(value, Type.new({"name":type}));	
+	var res:IR_Imm = IR_Imm.new(IR, value, t_res);#IR.new_val_immediate(value, Type.new({"name":type}));	
 	#res.data_type = Type.new({"name":type});
 	IR.save_variable(res);
 	expr_stack.push_back(res);
 
-func read_number(text:String):
+func read_number(text:String)->Variant:
 	if error_code != "": return;
 	if text.is_valid_int():
 		return text.to_int();
@@ -638,7 +638,7 @@ func read_number(text:String):
 		return text.to_float();
 	return null;
 
-func analyze_expr_ident(ast:AST):
+func analyze_expr_ident(ast:AST)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "expr_ident");
 	var tok:AST = ast.children[0];
@@ -655,7 +655,7 @@ func analyze_expr_ident(ast:AST):
 	#var_handle.data_type = null;
 	expr_stack.push_back(var_handle);
 
-func analyze_expr_typed_ident(ast:AST):
+func analyze_expr_typed_ident(ast:AST)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "expr_typed_ident");
 	var tok:AST = ast.children[0];
@@ -672,7 +672,7 @@ func analyze_expr_typed_ident(ast:AST):
 	expr_stack.push_back(var_handle);
 
 
-func analyze_block(ast:AST):
+func analyze_block(ast:AST)->void:
 	if error_code != "": return;
 	# block -> { stmt_list } or { }
 	assert(ast.tok_class == "block");
@@ -681,7 +681,7 @@ func analyze_block(ast:AST):
 		assert(stmt_list.tok_class == "stmt_list");
 		analyze_one(stmt_list); if error_code != "": return;
 
-func analyze_if_stmt(ast:AST):
+func analyze_if_stmt(ast:AST)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "if_stmt");
 	var if_block:AST = ast.children[0];
@@ -692,7 +692,7 @@ func analyze_if_stmt(ast:AST):
 	else:
 		assert(false);
 
-func analyze_if_block(ast:AST):
+func analyze_if_block(ast:AST)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "if_block");
 	var tok_start:AST = ast.children[0];
@@ -730,7 +730,7 @@ func analyze_if_block(ast:AST):
 	
 	IR.emit_IR([cmd, code_cond, arg, code_block], ast.get_location());
 
-func analyze_if_else_block(ast:AST):
+func analyze_if_else_block(ast:AST)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "if_else_block");
 	var if_block:AST = ast.children[0];
@@ -744,7 +744,7 @@ func analyze_if_else_block(ast:AST):
 	var code_block = IR.pop_code_block(ocb);
 	IR.emit_IR(["ELSE", code_block], ast.get_location());
 
-func analyze_func_def_stmt(ast:AST):
+func analyze_func_def_stmt(ast:AST)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "func_def_stmt");
 	var tok_func:AST = ast.children[0];
@@ -826,7 +826,7 @@ func analyze_arg_names(expr_call:AST)->Array:
 			internal_error(E.ERR_28); return [];
 	return [arg_names, arg_types];
 
-func analyze_func_def_arg_expr(expr:AST, arg_names:Array[String], arg_types:Array[Type]):
+func analyze_func_def_arg_expr(expr:AST, arg_names:Array[String], arg_types:Array[Type])->void:
 	assert(expr.tok_class == "expr");
 	var sub_expr:AST = expr.children[0];
 	match sub_expr.tok_class:
@@ -841,7 +841,7 @@ func analyze_func_def_arg_expr(expr:AST, arg_names:Array[String], arg_types:Arra
 			arg_types.push_front(type);
 		_: internal_error(E.ERR_28); return;
 
-func analyze_flow_stmt(ast:AST):
+func analyze_flow_stmt(ast:AST)->void:
 	if error_code != "": return;
 	assert(ast.tok_class == "flow_stmt");
 	var cmd:AST = ast.children[0];

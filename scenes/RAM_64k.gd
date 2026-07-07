@@ -2,13 +2,13 @@ extends Node
 
 var memory:PackedByteArray;
 
-func _ready():
+func _ready()->void:
 	reset();
 
-func getSize():
+func getSize()->int:
 	return memory.size();
 
-func readCell(cell:int):
+func readCell(cell:int)->int:
 	if((cell < 0) || (cell >= memory.size())): 
 		#print("ram: read("+str(cell)+") <out of bounds> -> 0");
 		return 0;
@@ -16,15 +16,15 @@ func readCell(cell:int):
 	#print("ram: read("+str(cell)+") -> "+str(val));
 	return val;
 
-func writeCell(cell:int, val:int):
+func writeCell(cell:int, val:int)->void:
 	if((cell < 0) || (cell >= memory.size())): 
 		#print("ram: write("+str(cell)+") <out of bounds>");
 		return;
 	memory[cell] = val;
 	#print("ram: write("+str(cell)+") <- "+str(val));
 
-func clear(): reset();
+func clear()->void: reset();
 
-func reset():
+func reset()->void:
 	memory = PackedByteArray();
 	memory.resize(65536);

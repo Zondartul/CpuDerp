@@ -4,25 +4,25 @@ extends Window
 @onready var tree = $SC/Tree
 var root;
 
-func set_stack(stack):
+func set_stack(stack)->void:
 	clear();
 	root = tree.create_item();
 	for item in stack:
 		add_ast(item, root);
 
-func clear():
+func clear()->void:
 	tree.clear();
 	#for ch in container.get_children():
 	#	ch.queue_free();
 
-func add_ast(ast:AST, node:TreeItem):
+func add_ast(ast:AST, node:TreeItem)->void:
 	var leaf = tree.create_item(node);
 	leaf.set_text(0, token_to_str(ast));
 	if "children" in ast:
 		for ch in ast.children:
 			add_ast(ch, leaf);
 
-func token_to_str(tok:AST):
+func token_to_str(tok:AST)->String:
 	#var text = "";
 	#text += item.tok_class;
 	#if "text" in item and item.text != "":
@@ -33,5 +33,5 @@ func token_to_str(tok:AST):
 	return text;
 
 
-func _on_comp_compile_md_parse_ready(stack):
+func _on_comp_compile_md_parse_ready(stack)->void:
 	set_stack(stack);

@@ -15,7 +15,7 @@ extends Control
 
 var has_kb_capture = false;
 # Called when the node enters the scene tree for the first time.
-func _ready():
+func _ready()->void:
 	var dict = {
 		"screen":n_screen,
 		"VM":n_VM, 
@@ -34,12 +34,12 @@ func _ready():
 	debug_automation_script();
 	pass # Replace with function body.
 
-func debug_automation_script():
+func debug_automation_script()->void:
 	#automate_compile_asm_zd();
 	#automate_compile_miniderp();
 	pass;
 
-func automate_compile_asm_zd():
+func automate_compile_asm_zd()->void:
 		# Go to editor and open the file
 	autotab($Panel/TabContainer, "Editor");
 	automenu($Panel/TabContainer/Editor/V/MenuBar, ["File", "Load"]);
@@ -50,7 +50,7 @@ func automate_compile_asm_zd():
 	autotab($Panel/TabContainer, "Memory");
 	autolist($Panel/TabContainer/Memory/BoxContainer/mem_map, 0);
 
-func automate_compile_miniderp():
+func automate_compile_miniderp()->void:
 	# Go to editor and open the file
 	autotab($Panel/TabContainer, "Editor");
 	automenu($Panel/TabContainer/Editor/V/MenuBar, ["File", "Load"]);
@@ -63,7 +63,7 @@ func automate_compile_miniderp():
 	#autolist($Panel/TabContainer/Memory/BoxContainer/mem_map, 0);
 
 # activates the tab in a TabContainer
-func autotab(node:TabContainer, tab_name):
+func autotab(node:TabContainer, tab_name)->bool:
 	for i in range(node.get_tab_count()):
 		var title = node.get_tab_title(i)
 		if title == tab_name:
@@ -72,12 +72,12 @@ func autotab(node:TabContainer, tab_name):
 	push_error("automation: can't find tab named ["+tab_name+"]");
 	return false;
 
-func autofile(node:FileDialog, filename):
+func autofile(node:FileDialog, filename)->void:
 	node.file_selected.emit(filename);
 	node.hide();
 
 # clicks the buttons on a menu
-func automenu(node, selections:Array):
+func automenu(node, selections:Array)->bool:
 	if node is MenuBar:
 		for child in node.get_children():
 			if child.name == selections[0]:
@@ -94,7 +94,7 @@ func automenu(node, selections:Array):
 	push_error("automation: can't find menu entry ["+selections[0]+"]")
 	return false;
 
-func autolist(node:ItemList, index):
+func autolist(node:ItemList, index)->bool:
 	if index < node.item_count:
 		node.select(index);
 		node.item_selected.emit(index);
@@ -104,11 +104,11 @@ func autolist(node:ItemList, index):
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(_delta):
+func _process(_delta)->void:
 	update_cpu_status_led();
 	update_cpu_error_led();
 
-func update_cpu_status_led():
+func update_cpu_status_led()->void:
 	if (n_CPU.regs[n_CPU.ISA.REG_CTRL] & n_CPU.ISA.BIT_PWR):
 		n_led_status.color = Color.GREEN;
 	elif (n_CPU.regs[n_CPU.ISA.REG_CTRL] & n_CPU.ISA.BIT_STEP):
@@ -116,7 +116,7 @@ func update_cpu_status_led():
 	else:
 		n_led_status.color = Color.BLACK;
 		
-func update_cpu_error_led():
+func update_cpu_error_led()->void:
 	if n_CPU.errcode == 0:
 		n_led_error.color = Color.BLACK;
 	else:
@@ -127,7 +127,7 @@ func update_cpu_error_led():
 #			print("Main: key "+str(event.keycode));
 #			n_VM_KB._input(event);
 
-func _gui_input(event):
+func _gui_input(event)->void:
 	if has_kb_capture and (event is InputEventKey):
 		get_viewport().set_input_as_handled();
 	#if has_kb_capture:
@@ -140,19 +140,19 @@ func _gui_input(event):
 	#else:
 		#print("some event.");
 
-func _on_cb_on_toggled(toggled_on): 
+func _on_cb_on_toggled(toggled_on)->void: 
 	n_VM._on_sb_freq_value_changed($Panel/TabContainer/Screen/V/Control/GridContainer/sb_freq.value);
 	n_VM.set_on(toggled_on);
 
-func _on_btn_reset_pressed(): 
+func _on_btn_reset_pressed()->void: 
 	n_VM.reset();
 	n_led_error.color = Color.BLACK;
 
-func _on_cpu_vm_on_cpu_error(_errcode):
+func _on_cpu_vm_on_cpu_error(_errcode)->void:
 	update_cpu_error_led();
 
 
-func _on_btn_keyboard_toggled(toggled_on):
+func _on_btn_keyboard_toggled(toggled_on)->void:
 	has_kb_capture = toggled_on;
 	n_VM_KB.has_capture = has_kb_capture;
 	if has_kb_capture: 
@@ -168,6 +168,6 @@ func _on_comp_compile_md_open_file_request(filename) -> void:
 	
 
 
-func _on_kb_sig_keypress(character:String, byte:int):
+func _on_kb_sig_keypress(character:String, byte:int)->void:
 	var btn_kb = $Panel/TabContainer/Screen/V/Control/GridContainer/btnKeyboard
 	btn_kb.text = "Keyboard (%s, %d)" % [character.c_escape(), byte]

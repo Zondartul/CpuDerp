@@ -102,7 +102,7 @@ static func labs_reduce_list(text:String, brace_open:String, brace_close:String,
 
 ## --------- Miniderp-specific stuff --------
 
-func get_deref_type():
+func get_deref_type()->Variant:
 	if name in ["Ref", "Array"]:
 		assert(len(of) > 0);
 		return of[0];
@@ -131,7 +131,7 @@ const integer_types = [
 ];
 const pointer_types = ["Ref", "Array", "String"]
 
-func get_size():
+func get_size()->int:
 	if name in pointer_types:
 		return pointer_size;
 	if name in primitive_sizes:
@@ -139,4 +139,4 @@ func get_size():
 	return 1;
 	#assert(false, "Unknown type size for type %s" % full_name);
 
-func is_integer(): return bool(full_name in integer_types);
+func is_integer()->bool: return bool(full_name in integer_types);

@@ -21,7 +21,7 @@ func duplicate()->Location:
 	G.duplicate_deep(self, loc2);
 	return loc2;
 
-func is_valid(): 
+func is_valid()->bool: 
 	if not (line_idx != -1):
 		print("Location: line_idx unset");
 		return false;

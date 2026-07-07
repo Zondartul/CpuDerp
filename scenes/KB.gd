@@ -6,21 +6,21 @@ var last_captured = 0;
 signal sig_keypress(character, byte);
 
 # Called when the node enters the scene tree for the first time.
-func _ready():
+func _ready()->void:
 	pass # Replace with function body.
 
-func reset():
+func reset()->void:
 	buffer = [0];
 
-func _char_to_int(C:String):
+func _char_to_int(C:String)->int:
 	if(C == ""): return 0;
 	else: return C.to_ascii_buffer()[0];
 	
-func _int_to_char(N:int):
+func _int_to_char(N:int)->String:
 	if(N == 0): return "";
 	else: return PackedByteArray([N]).get_string_from_ascii();
 
-func _input(event):
+func _input(event)->void:
 	if not has_capture: return;
 	if event is InputEventKey:
 		if event.pressed:
@@ -41,7 +41,7 @@ func _input(event):
 			last_captured = number;
 			sig_keypress.emit(character, number);
 
-func get_special_ASCII(event):
+func get_special_ASCII(event)->String:
 	match event.keycode:
 		KEY_ENTER:		return "\n"  # ASCII 10
 		KEY_BACKSPACE:	return "\b"  # ASCII 8
@@ -51,14 +51,14 @@ func get_special_ASCII(event):
 		KEY_SPACE:      return " "  # ASCII 32
 		_: return char(event.get_unicode())
 
-func getSize(): return 64;
+func getSize()->int: return 64;
 
-func readCell(cell:int):
+func readCell(cell:int)->int:
 	if((cell < 0) || (cell >= buffer.size())): return 0;
 	#print("KB:readCell("+str(cell)+") == "+str(buffer[cell]));
 	return buffer[cell];
 
-func writeCell(cell:int, val:int):
+func writeCell(cell:int, val:int)->void:
 	if(cell != 0): return;
 	#print("KB:writeCell("+str(cell)+", "+str(val)+")")
 	if(cell == 0):

@@ -10,7 +10,7 @@ var registers = ["NONE", "EAX", "EBX", "ECX", "EDX", "IP", "ESP", "ESZ", "ESS",
 "EBP", "IVT", "IVS", "IRQ", "CTRL"];
 var extra_keywords = ["JE", "JL", "JG", "DB"];
 
-func get_syntax():
+func get_syntax()->CodeHighlighter:
 	var syn = CodeHighlighter.new();
 	var col_orange = Color(1.0,0.5,0.0,	1);
 	var col_red = 	 Color(1.0,0.2,0.1,	1);
@@ -37,7 +37,7 @@ func get_syntax():
 	syn.add_color_region(":",":",label_color,false);
 	return syn;
 
-func add_keywords(syn, kws, col):
+func add_keywords(syn, kws, col)->void:
 	for kw in kws:
 		syn.keyword_colors[kw.to_upper()] = col;
 		syn.keyword_colors[kw.to_lower()] = col;

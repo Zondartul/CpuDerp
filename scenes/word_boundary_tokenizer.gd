@@ -36,12 +36,12 @@ func tokenize(line:String)->Array[Token]:
 	#tokens = tokens.filter(filter_tokens);
 	return tokens;
 
-func tok_loc_next_char(tok_loc:LocationRange, col:int):
+func tok_loc_next_char(tok_loc:LocationRange, col:int)->void:
 	tok_loc.end.col = col;
-func tok_loc_advance(tok_loc:LocationRange):
+func tok_loc_advance(tok_loc:LocationRange)->void:
 	tok_loc.begin = tok_loc.end.duplicate();
 
-func should_split_on_transition(new_tok_class:String, old_tok_class:String):
+func should_split_on_transition(new_tok_class:String, old_tok_class:String)->bool:
 	#if (new_tok_class != tok_class) or (tok_class == "PUNCT"):
 	if old_tok_class == "PUNCT": return true; # punctuation tokens are always one-by-one.
 	elif old_tok_class == "WORD" and new_tok_class == "NUMBER": return false; #allow numbers to be included in names

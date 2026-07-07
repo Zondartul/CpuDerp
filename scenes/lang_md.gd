@@ -140,7 +140,7 @@ const rules = [
 	["type_expr_list", "/,", "type_expr",	"*", "type_expr_list"],
 ];
 
-func get_syntax():
+func get_syntax()->CodeHighlighter:
 	var syn = CodeHighlighter.new();
 	var col_orange = Color(1.0,0.5,0.0,	1);
 	var col_red = 	 Color(1.0,0.2,0.1,	1);
@@ -163,14 +163,14 @@ func get_syntax():
 	syn.add_color_region("\"","\"",string_color,false);
 	return syn;
 
-func add_keywords(syn, kws, col, any_case=false):
+func add_keywords(syn, kws, col, any_case=false)->void:
 	for kw in kws:
 		syn.keyword_colors[kw] = col;
 		if(any_case):
 			syn.keyword_colors[kw.to_upper()] = col;
 			syn.keyword_colors[kw.to_lower()] = col;
 
-static func get_all_punct():
+static func get_all_punct()->String:
 	var s = "";
 	for list in [punct, ops]:
 		for entry in list:

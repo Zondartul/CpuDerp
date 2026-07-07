@@ -19,18 +19,26 @@ extends Node
 #  range_buff[255];
 #  precedence: int
 
-func char_to_byte(S:String): 
+class RegexTok:
+	var type:String = "";
+	var children:Array[RegexTok] = [];
+	var char:String = "";
+	var range:Array[String] = [];
+	var precedence:int = 0;
+		
+
+func char_to_byte(S:String)->int: 
 	if S == "":
 		return 0; 
 	else: 
 		return S.to_ascii_buffer()[0];
 
-func byte_to_char(B:int): return String.chr(B);
+func byte_to_char(B:int)->String: return String.chr(B);
 
-func _new_tok(): return {"type":"", "children":[], "char":"", "range":[], "precedence":0};
+#func _new_tok()->RegexTok: return RegexTok.new();#{"type":"", "children":[], "char":"", "range":[], "precedence":0};
 
-func _tokenize_range(parse):
-	var tok = _new_tok();
+func _tokenize_range(parse)->RegexTok:
+	var tok:RegexTok = RegexTok.new(); #_new_tok();
 	parse.i += 1; assert(parse.i < parse.line.length());
 	var C = parse.line[parse.i];
 	#----
@@ -67,13 +75,13 @@ func _tokenize_range(parse):
 	parse.i += 1;
 	return tok;
 # splits a regex format string into regex format tokens
-func _tokenize(parse):
-	var tokens = [];
+func _tokenize(parse)->Array[RegexTok]:
+	var tokens:Array[RegexTok] = [];
 	var i = parse.i;
 	var lc = LoopCounter.new();
 	while(i < parse.line.length()):
 		lc.step();
-		var tok = _new_tok();
+		var tok:RegexTok = RegexTok.new()#_new_tok();
 		var C = parse.line[i];
 		if(C == "^"):	tok.type = "start"; 	tok.precedence = 1; i+=1;
 		elif(C == "$"):	tok.type = "end";		tok.precedence = 1; i+=1;
@@ -86,9 +94,10 @@ func _tokenize(parse):
 		elif(C == "("): tok.type = "capture_begin"; tok.precedence = 1; i+=1;
 		elif(C == ")"): tok.type = "capture.end"; tok.precedence = 1; i+=1;
 		else: tok.type = "char"; tok.char = C; tok.precendence = 1; i+= 1;
+		tokens.append(tok);
 	return tokens;
 
-func _restack(rx_toks):
+func _restack(rx_toks)->void:
 	var out_stack = [];
 	var in_stack = [];
 	for tok in rx_toks:
@@ -126,7 +135,7 @@ func _restack(rx_toks):
 					out_stack.push(in_stack.pop());
 
 # analyzes the regex tokens to build a regex AST
-func _analyze(aparse):
+func _analyze(aparse)->RegexTok:
 	assert(aparse.i < aparse.size);
 	var tok_head = aparse.toks[aparse.i]; aparse.i += 1;
 	# 0-arg operators
@@ -151,7 +160,7 @@ func _analyze(aparse):
 		return tok_head;
 	else:
 		#other stuff after this, make it a sequence
-		var ast_list = _new_tok();
+		var ast_list:RegexTok = RegexTok.new(); #_new_tok();
 		ast_list.type = "sequence";
 		aparse.i += 1;
 		var ast_rest = _analyze(aparse);
@@ -169,7 +178,7 @@ func _analyze(aparse):
 #     B
 
 # changes f(f(A,B),C) to f(A,B,C)
-func _linearize(ast):
+func _linearize(ast)->RegexTok:
 	if (not ast.children.empty()) and (ast.type in ["sequence", "choice"]):
 		var lin_children = [];
 		for ch in ast.children:
@@ -183,7 +192,7 @@ func _linearize(ast):
 		return ast;
 
 # compiles a regex format string into a regex operator AST
-func compile(regex:String):
+func compile(regex:String)->RegexTok:
 	var parse = {"line":regex, "i":0};
 	var toks = _tokenize(parse);
 	toks = _restack(toks);
@@ -203,9 +212,17 @@ func compile(regex:String):
 # compile(sting)->void
 # match(ast)->bool
 
-func new_parser(): return {"line":"", "i":0, "settings":{},"matches":[],"compile":urp_compile,"match":urp_match};
+class RegexParser:
+	var line:String = "";
+	var i:int = 0;
+	var settings:Dictionary = {};
+	var matches:Array = [];
+	var _compile:Callable = urp_compile;
+	var _match:Callable = urp_match;
 
-func urp_compile(this, format): return compile(format);
+#func new_parser()->RegexParser: return RegexParser.new(); #{"line":"", "i":0, "settings":{},"matches":[],"compile":urp_compile,"match":urp_match};
+
+func urp_compile(this, format)->Variant: return compile(format);
 
 # returns true if this ast matches.
 # if given a capture group number, puts it into the matches.
@@ -304,10 +321,10 @@ func _submatch(this, ast, is_capture_group=false,text_out=null):
 		"range":
 			assert(ast.children.empty());
 
-func is_space(C:String): return (C in [" ", "\t", "\n", "\r"]);
-func is_anychar(C:String): return not (C in ["\n", "\r"]);
+func is_space(C:String)->bool: return (C in [" ", "\t", "\n", "\r"]);
+func is_anychar(C:String)->bool: return not (C in ["\n", "\r"]);
 	
-func urp_match(this, ast):
+func urp_match(this, ast)->bool:
 	var parser = this;
 	parser.matches = [];
 	var res = _submatch(this, ast, true);

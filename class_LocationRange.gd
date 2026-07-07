@@ -15,7 +15,7 @@ func duplicate()->LocationRange:
 	G.duplicate_deep(self, loc2);
 	return loc2;
 
-func is_valid():
+func is_valid()->bool:
 	if not (begin != null):
 		#print("LocationRange: begin is null");
 		return false;

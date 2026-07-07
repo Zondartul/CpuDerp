@@ -24,7 +24,7 @@ func _pong():
 	if parent: _ping();
 	#else: tprint(get_progress_tree(0));
 
-func get_progress_tree(indent:int):
+func get_progress_tree(indent:int)->String:
 	var text = " ".repeat(indent);
 	if indent > 0: text += "└";
 	text += get_progress_string() + "\n";
@@ -32,17 +32,17 @@ func get_progress_tree(indent:int):
 		text += ch.get_progress_tree(indent+1);
 	return text;
 	
-func fail(): happy_path = false;
-func mark_done(): done = true;
+func fail()->void: happy_path = false;
+func mark_done()->void: done = true;
 
-func add_subtask(task_name):
+func add_subtask(task_name)->Task:
 	var task = Task.new();
 	task.parent = self;
 	if task_name: task.user_name = task_name;
 	sub_tasks.append(task);
 	return task;
 
-func get_done_ratio():
+func get_done_ratio()->Array:
 	var n_total:float = work_units_total;
 	var n_complete:float = work_units_complete;
 	for task in sub_tasks:
@@ -52,7 +52,7 @@ func get_done_ratio():
 	if n_total > 0: ratio = n_complete / n_total;
 	return [n_total, n_complete, ratio];
 
-func get_progress_string():
+func get_progress_string()->String:
 	var ratio = get_done_ratio();
 	var n_total = ratio[0];
 	var n_complete = ratio[1]; 
@@ -60,7 +60,7 @@ func get_progress_string():
 	if is_nan(percentage): percentage = 0.0;
 	return "Task %s: %d%% (%d / %d)" % [user_name, percentage, n_complete, n_total];
 
-func tprint(msg):
+func tprint(msg)->void:
 	if print_proxy:
 		if "print" in print_proxy:
 			print_proxy.call_deferred("print", msg);

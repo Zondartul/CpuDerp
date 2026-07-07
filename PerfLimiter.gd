@@ -16,21 +16,21 @@ func _init(period:float, new_max_credit=null):
 	else:
 		max_credit = float(new_max_credit);
 
-func add_credit(delta:float):
+func add_credit(delta:float)->void:
 	credit += delta;
 	if credit > max_credit: credit = max_credit;
 
-func should_run():
+func should_run()->bool:
 	return credit >= cost;
 
-func cascade():
+func cascade()->void:
 	for other_limiter:PerfLimiter in cascades_to:
 		other_limiter.prime()
 
-func prime():
+func prime()->void:
 		credit = max(credit, cost);
 
-func run(delta:float):
+func run(delta:float)->bool:
 	add_credit(delta);
 	if not enabled: return false;
 	if should_run():

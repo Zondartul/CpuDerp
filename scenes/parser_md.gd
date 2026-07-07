@@ -5,8 +5,8 @@ signal sig_user_error(msg:String);
 signal sig_cprint(msg:String);
 @export var erep:ErrorReporter;
 #--- error reporter support ---
-func user_error(msg): sig_user_error.emit(msg);
-func cprint(msg): sig_cprint.emit(msg);
+func user_error(msg)->void: sig_user_error.emit(msg);
+func cprint(msg)->void: sig_cprint.emit(msg);
 # constants
 const lang = preload("res://scenes/lang_md.gd");
 const list_types = {
@@ -28,7 +28,7 @@ var error_code = "";
 var run_i = 0;
 var dbg_fp = FileAccess.open(dbg_filename, FileAccess.WRITE);
 #-------- Parser ---------------------
-func reset():
+func reset()->void:
 	cur_line = "";
 	cur_line_idx = 0;
 	error_code = "";
@@ -37,7 +37,7 @@ func reset():
 	dbg_fp = FileAccess.open(dbg_filename, FileAccess.WRITE);
 
 # LR(1) shift-reduce parser, always applies the first valid rule
-func parse(input:Dictionary, task:Task):
+func parse(input:Dictionary, task:Task)->Variant:
 	reset();
 	var in_tokens:Array[Token] = input.tokens;
 	task.work_units_total = in_tokens.size();
@@ -95,10 +95,10 @@ func parse(input:Dictionary, task:Task):
 		#if ast.children.is_empty():
 			#return ast;
 	#return stack[1];
-func defer_parse_ready(stack):
+func defer_parse_ready(stack)->void:
 	sig_parse_ready.emit(stack);
 
-func defer_user_error(arg):
+func defer_user_error(arg)->void:
 	sig_user_error.emit(arg);
 
 func rule_matches(stack:Array[AST], tok_lookahead:AST, rule:Array[String])->bool:
@@ -182,7 +182,7 @@ func stack_to_str(stack:Array, prefix:String)->String:
 
 
 
-func dbg_print(print_class, msg):
+func dbg_print(print_class, msg)->void:
 	if print_class in dbg_prints_enabled: 
 		if dbg_to_console:	print(msg);
 		if dbg_to_file: dbg_fp.store_line(msg);

@@ -20,14 +20,14 @@ const READ_RETURNS_BUFFER = true;
 var mem:Array[int] = [];
 
 # Called when the node enters the scene tree for the first time.
-func _ready():
+func _ready()->void:
 	mem.resize(getSize());
 	pass # Replace with function body.
 
-func getSize():
+func getSize()->int:
 	return 2000 + n_tile_params*n_tiles_x*n_tiles_y;
 
-func setup(dict:Dictionary):
+func setup(dict:Dictionary)->void:
 	assert("screen" in dict);
 	screen = dict.screen;
 	is_setup = true;
@@ -36,14 +36,14 @@ func setup(dict:Dictionary):
 	#scr_print("hello from GPU");
 	#update_screen();
 
-func reset():
+func reset()->void:
 	scr_clear();
 	update_screen();
 
-func _rand_scr_pos():
+func _rand_scr_pos()->Vector2i:
 	return Vector2i(randi_range(0,55),randi_range(0,35));
 
-func _rand_scr_edge_pos():
+func _rand_scr_edge_pos()->Vector2i:
 	var edge_idx = randi_range(1,4);
 	var pos = _rand_scr_pos();
 	if(edge_idx == 1): pos.x = 0;
@@ -53,10 +53,10 @@ func _rand_scr_edge_pos():
 	#print("rsep: idx "+str(edge_idx)+", pos "+str(pos));
 	return pos;
 
-func _is_in_scr(v:Vector2i):
+func _is_in_scr(v:Vector2i)->bool:
 	return Rect2i(0,0,56,36).has_point(v);
 
-func _screensaver_matrix():
+func _screensaver_matrix()->void:
 	var ch =  String.chr(randi_range(0,255));
 	if(randf_range(0,1) < 0.9): ch = " ";
 	var pos = _rand_scr_pos();
@@ -67,7 +67,7 @@ const nyan_colors = [Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.C
 #                     0.N            1.NE          2.E           3.SE            4.S             5.SW              6.W             7.NW
 const nyan_dirs = [Vector2i(0,1), Vector2i(1,1), Vector2i(1,0), Vector2i(1,-1), Vector2i(0,-1), Vector2i(-1,-1), Vector2i(-1,0), Vector2i(-1,1)];
 
-func _screensaver_nyan():
+func _screensaver_nyan()->void:
 	if(nyan_array.size() < 3):
 		# new nyan
 		var pos = _rand_scr_edge_pos();
@@ -88,28 +88,28 @@ func _screensaver_nyan():
 			scr_print(' ', nyan.pos.x, nyan.pos.y, null, nyan_colors[nyan.phase]);
 		nyan.phase += 1;
 
-func _calc_tile_addr(adr):
+func _calc_tile_addr(adr)->Dictionary:
 	assert(adr >= 2000);
 	adr -= 2000;
 	var sub_addr = adr % n_tile_params;
 	var scr_pos = (adr - sub_addr) / n_tile_params;
 	var scr_x = scr_pos % n_tiles_x;
 	var scr_y = (scr_pos - scr_x) / n_tiles_x;
-	if(scr_y > n_tiles_y): return null;
+	if(scr_y > n_tiles_y): return {};
 	assert((scr_x >= 0) && (scr_x <= n_tiles_x));
 	assert((scr_y >= 0) && (scr_y <= n_tiles_y));
 	var vpos = Vector2i(scr_x, scr_y);
 	return {"pos":vpos, "sub_addr":sub_addr};
 
-func _char_to_int(C:String):
+func _char_to_int(C:String)->int:
 	if(C == ""): return 0;
 	else: return C.to_ascii_buffer()[0];
 	
-func _int_to_char(N:int):
+func _int_to_char(N:int)->String:
 	if(N == 0): return "";
 	else: return PackedByteArray([N]).get_string_from_ascii();
 
-func _set_tile_param(tile_data:Dictionary, sub_addr:int, val:int):
+func _set_tile_param(tile_data:Dictionary, sub_addr:int, val:int)->void:
 	if(sub_addr == 0): tile_data.c = _int_to_char(val)
 	if(sub_addr == 1): tile_data.colFG.r = int(val/255.0);
 	if(sub_addr == 2): tile_data.colFG.g = int(val/255.0);
@@ -118,7 +118,7 @@ func _set_tile_param(tile_data:Dictionary, sub_addr:int, val:int):
 	if(sub_addr == 5): tile_data.colBG.g = int(val/255.0);
 	if(sub_addr == 6): tile_data.colBG.b = int(val/255.0);
 
-func _get_tile_param(tile_data, sub_addr):
+func _get_tile_param(tile_data, sub_addr)->int:
 	if(sub_addr == 0): return _char_to_int(tile_data.c);
 	if(sub_addr == 1): return int(tile_data.colFG.r*255);
 	if(sub_addr == 2): return int(tile_data.colFG.g*255);
@@ -126,17 +126,17 @@ func _get_tile_param(tile_data, sub_addr):
 	if(sub_addr == 4): return int(tile_data.colBG.r*255);
 	if(sub_addr == 5): return int(tile_data.colBG.g*255);
 	if(sub_addr == 6): return int(tile_data.colBG.b*255);
-	return null;
+	return 0;
 
 	
-func writeCell(adr:int, val:int):
+func writeCell(adr:int, val:int)->void:
 	if(debug_gpu):print("GPU: writeCell("+str(adr)+") <- "+str(val));
 	#print("writeCell("+str(adr)+", "+str(val)+")");
 	if adr >= 2000:
 		mem[adr] = val;
 		# write framebuffer or textbuffer data
 		var ref = _calc_tile_addr(adr);
-		if ref == null: return;
+		if ref.is_empty(): return;
 		#print("ref = (pos "+str(ref.pos)+", sub "+str(ref.sub_addr)+")");
 		
 		var tile_data = scr_text.getTileData(ref.pos);
@@ -145,14 +145,14 @@ func writeCell(adr:int, val:int):
 		update_queued = true;
 
 
-func readCell(adr:int):
+func readCell(adr:int)->int:
 	if adr >= 2000:
 		if READ_RETURNS_BUFFER:
 			return mem[adr];
 		else:
 			# read framebuffer or textbuffer
 			var ref = _calc_tile_addr(adr);
-			if ref == null: return;
+			if ref == null: return 0;
 			
 			var tile_data = scr_text.getTileData(ref.pos);
 			var val = _get_tile_param(tile_data, ref.sub_addr);
@@ -160,7 +160,7 @@ func readCell(adr:int):
 			return val;
 	return 0;
 
-func _process(_delta):
+func _process(_delta)->void:
 	#for i in range(20):
 	#	_screensaver_matrix();
 	#for i in range(3):
@@ -171,18 +171,18 @@ func _process(_delta):
 		update_screen();
 	pass
 
-func init_screen():
+func init_screen()->void:
 	screen.texture = n_viewport.get_texture();
 	#also see ImageTexture.update(Img)
 
-func update_screen():
+func update_screen()->void:
 	n_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE;
 	#screen.queue_redraw();
 
-func scr_clear():
+func scr_clear()->void:
 	scr_text.clear();
 
-func scr_print(text:String, posX=null, posY=null, colFG=null, colBG=null):
+func scr_print(text:String, posX=null, posY=null, colFG=null, colBG=null)->void:
 	#scr_text.text = text;
 	scr_text.setString(text, posX, posY, colFG, colBG);
 	pass;

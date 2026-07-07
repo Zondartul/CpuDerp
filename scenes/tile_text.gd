@@ -16,29 +16,34 @@ var default_posY = 0;
 
 
 # Called when the node enters the scene tree for the first time.
-func _ready():
+func _ready()->void:
 	_init_tiles();
 	#setChar("A", 1,1,Color.WHITE, Color.BLACK);
 	#setChar("A");
 	#setString("hello from tile_text");
 	pass # Replace with function body.
 
-func clear():
+func clear()->void:
 	for ix in range(n_tiles_x):
 		for iy in range(n_tiles_y):
 			setChar("",ix,iy);
 
-func _err_bad_pos(posX, posY):
+func _err_bad_pos(posX, posY)->void:
 	print("GPU/tile_text: bad position argument ("+str(posX)+","+str(posY)+")")
 
-func _sanitize_coords(posX, posY):
+func _is_valid_pos(pos:Vector2i)->bool:
+	if((pos.x < 0) || (pos.x >= n_tiles_x)): _err_bad_pos(pos.x, pos.y); return false;
+	if((pos.y < 0) || (pos.y >= n_tiles_y)): _err_bad_pos(pos.x, pos.y); return false;
+	return true;
+	
+func _sanitize_coords(posX, posY)->Vector2i:
 	if(posX == null): posX = default_posX;
 	if(posY == null): posY = default_posY;
-	if((posX < 0) || (posX >= n_tiles_x)): _err_bad_pos(posX, posY); return null;
-	if((posY < 0) || (posY >= n_tiles_y)): _err_bad_pos(posX, posY); return null;
+	#if((posX < 0) || (posX >= n_tiles_x)): _err_bad_pos(posX, posY); return Vector2i.ZERO;
+	#if((posY < 0) || (posY >= n_tiles_y)): _err_bad_pos(posX, posY); return Vector2i.ZERO;
 	return Vector2i(posX, posY);
 
-func _advance_default_pos(v:Vector2i):
+func _advance_default_pos(v:Vector2i)->void:
 	default_posX = v.x;
 	default_posY = v.y;
 	default_posX += 1;
@@ -48,9 +53,10 @@ func _advance_default_pos(v:Vector2i):
 		if(default_posY >= n_tiles_y):
 			default_posY = 0;
 
-func setString(S:String, posX = null, posY = null, colFG = null, colBG = null):
+func setString(S:String, posX = null, posY = null, colFG = null, colBG = null)->void:
+	if not _is_valid_pos(Vector2i(posX, posY)): return;
 	var coords = _sanitize_coords(posX, posY);
-	if coords == null: return;
+	#if coords == null: return;
 	if colFG == null: colFG = default_colFG;
 	if colBG == null: colBG = default_colBG;
 	default_posX = coords.x;
@@ -58,7 +64,7 @@ func setString(S:String, posX = null, posY = null, colFG = null, colBG = null):
 	for c in S:
 		setChar(c,null,null,colFG,colBG);
 
-func setChar(C:String, posX = null, posY = null, colFG = null, colBG = null):
+func setChar(C:String, posX = null, posY = null, colFG = null, colBG = null)->void:
 	var coords = _sanitize_coords(posX, posY);
 	if coords == null: return;
 	if colFG == null: colFG = default_colFG;
@@ -69,7 +75,7 @@ func setChar(C:String, posX = null, posY = null, colFG = null, colBG = null):
 	tile_texts[coords.x][coords.y].text = C.substr(0,1);
 	_advance_default_pos(coords);
 	
-func _init_tiles():
+func _init_tiles()->void:
 	tiles = [];
 	tile_texts = [];
 	@warning_ignore("integer_division")
@@ -94,17 +100,29 @@ func _init_tiles():
 		tiles.append(row);
 		tile_texts.append(texts_row);
 
-func getTileData(pos:Vector2i):
+class CSTileData:
+	var c:String;
+	var colFG:Color;
+	var colBG:Color;
+	func _init(_c:String="",_colFG:Color=Color.WHITE,_colBG:Color = Color.BLACK):
+		c = _c;
+		colFG = _colFG;
+		colBG = _colBG;
+	static var none:CSTileData = CSTileData.new("");
+
+func getTileData(pos:Vector2i)->CSTileData:
+	if not _is_valid_pos(pos): return CSTileData.none;
 	var coords = _sanitize_coords(pos.x, pos.y);
-	if coords == null: return null;
+	#if coords == null: return null;
 	var C = tile_texts[coords.x][coords.y].text;
 	var colFG = tile_texts[coords.x][coords.y].get_theme_color("font_color");
 	var colBG = tiles[coords.x][coords.y].color;
-	return {"c":C, "colFG":colFG, "colBG":colBG};
+	return CSTileData.new(C,colFG,colBG);
 
-func setTileData(pos:Vector2i, tile_data):
+func setTileData(pos:Vector2i, tile_data)->void:
+	if not _is_valid_pos(pos): return;
 	var coords = _sanitize_coords(pos.x, pos.y);
-	if coords == null: return null;
+	#if coords == null: return;
 	#print("setTileData(coords = "+str(coords)+", data = "+str(tile_data)+")");
 	tile_texts[coords.x][coords.y].text = tile_data.c;
 	tile_texts[coords.x][coords.y].add_theme_color_override("font_color", tile_data.colFG);

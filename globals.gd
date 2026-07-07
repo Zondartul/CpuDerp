@@ -19,6 +19,7 @@ const class_IR_tmp = preload("res://class_val_tmp.gd");
 const class_IR_imm = preload("res://class_val_imm.gd");
 const class_IR_Cmd = preload("res://class_IR_cmd.gd");
 const class_CodeBlock = preload("res://class_CodeBlock.gd");
+const class_Scope = preload("res://class_Scope.gd");
 const class_AssyBlock = preload("res://class_AssyBlock.gd");
 const class_LoopCounter = preload("res://class_LoopCounter.gd");
 const class_Task = preload("res://class_Task.gd");
@@ -66,7 +67,7 @@ func duplicate_shallow(src, dest)->void:
 func is_type_compatible(type_A:int, type_B:int)->bool:
 	return type_A == type_B;
 
-func dictionary_init(obj:Object, dict:Dictionary):
+func dictionary_init(obj:Object, dict:Dictionary)->void:
 	var prop_list = obj.get_property_list();
 	for key in prop_list:
 		if key.name in dict:
@@ -75,7 +76,7 @@ func dictionary_init(obj:Object, dict:Dictionary):
 			obj.set(key.name, val);
 		
 #-------- Comparison logic ---------------
-func has(obj):
+func has(obj)->bool:
 	if obj is Array:
 		return not obj.is_empty();
 	if obj is Dictionary:
@@ -92,14 +93,20 @@ func has(obj):
 
 # --------- util ------------
 ## returns an index of "idx from the end".
-func rev_idx(arr:Array, idx:int):
+func rev_idx(arr:Array, idx:int)->int:
 	return len(arr)-1-idx;
 
 ## returns N'th array element or null if there isn't one.
-func maybe_idx(arr:Array, idx:int):
+func maybe_idx(arr:Array, idx:int)->Variant:
 	if (idx >= 0) and (idx < len(arr)): return arr[idx];
 	else: return null;
 
+func maybe_prop(obj:RefCounted, propname, default=null)->Variant:
+	if obj.has_meta(propname):
+		return obj.get_meta(propname, default);
+	elif propname in obj:
+		return obj[propname];
+	return default;
 #------ string stuff
 
 ## removes space characters from the beginning and the end of a string
@@ -210,7 +217,7 @@ func unescape_string(text:String)->String:
 	#print("unescape str: in [%s], out [%s]" % [text, new_str]);
 	return new_str;
 
-func escape_string(text):
+func escape_string(text)->String:
 	var new_str = "";
 	for ch:String in text:
 		if ch in "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890.+-_":
@@ -223,6 +230,6 @@ func escape_string(text):
 	return new_str;
 
 ## performs a "newline" function for ItemList widgets
-func complete_line(item_list:ItemList):
+func complete_line(item_list:ItemList)->void:
 	var n = item_list.max_columns-1 - ((item_list.item_count-1) % item_list.max_columns);
 	for i in range(n): item_list.add_item(" ");

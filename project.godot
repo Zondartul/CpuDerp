@@ -29,6 +29,10 @@ E="*res://error_list.gd"
 window/size/viewport_width=512
 window/size/viewport_height=700
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gdscript-linter/plugin.cfg")
+
 [input]
 
 action_save={

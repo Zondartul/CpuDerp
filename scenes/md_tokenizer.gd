@@ -37,7 +37,7 @@ var error_code = "";
 var output_tokens = [];
 
 
-func reset():
+func reset()->void:
 	tokenizer = script_tokenizer.new();
 	tokenizer.ch_punct = lang.get_all_punct();
 	cur_filename = "";
@@ -47,9 +47,9 @@ func reset():
 	error_code = "";
 	output_tokens = [];
 
-func user_error(msg): sig_user_error.emit(msg);
+func user_error(msg)->void: sig_user_error.emit(msg);
 
-func _ready():
+func _ready()->void:
 	reset();
 
 func tokenize(input:Dictionary, task:Task)->Array[Token]:
@@ -83,7 +83,7 @@ func tokenize(input:Dictionary, task:Task)->Array[Token]:
 	call_deferred("defer_tokens_ready");	
 	return output_tokens;
 
-func defer_tokens_ready():
+func defer_tokens_ready()->void:
 	tokens_ready.emit(output_tokens);
 
 func basic_tokenize(text:String)->Array[Token]:
@@ -112,7 +112,7 @@ func basic_tokenize(text:String)->Array[Token]:
 	return tokens;
 # ---------- Basic preprocess ---------------------------------
 
-func process_includes(text:String):
+func process_includes(text:String)->String:
 	var I = text.find("#include")
 	while(I != -1):
 		var next_word = get_word_at(text, I+len("#include"));
@@ -122,14 +122,14 @@ func process_includes(text:String):
 		I = text.find("#include", I);
 	return text;
 
-func get_word_at(text:String, I:int):
+func get_word_at(text:String, I:int)->String:
 	while(text[I] in " \t"): I+=1; # skip spaces
 	if text[I] == "\n": erep.error(E.ERR_34); return ""; # #include syntax error
 	var word = "";
 	while(text[I] not in " \t\n\r"): word += text[I]; I+=1;
 	return word;
 
-func include_file(filepath:String):
+func include_file(filepath:String)->String:
 	if (cur_path == null) or (cur_path == ""):
 		push_error("can't process includes, cur_path is not set");
 		assert(false);
@@ -172,7 +172,7 @@ func remove_comments(line:String)->String:
 
 
 
-func recombine_tokens(tokens:Array[Token]):
+func recombine_tokens(tokens:Array[Token])->Array[Token]:
 	var i = 0;
 	var prev_toks:Array[Token] = [];
 	var prev_count = 2;
@@ -193,7 +193,7 @@ func recombine_tokens(tokens:Array[Token]):
 	return tokens;
 
 ## returns true if the tokens match a pattern
-func recombine_pattern_match(toks:Array[Token], pattern:Array[String]):
+func recombine_pattern_match(toks:Array[Token], pattern:Array[String])->bool:
 	for i in range(len(pattern)):
 		var p = pattern[G.rev_idx(pattern, i)];
 		var t = G.maybe_idx(toks, G.rev_idx(toks,i));
@@ -206,7 +206,7 @@ func recombine_pattern_match(toks:Array[Token], pattern:Array[String]):
 	return true;
 
 ## replaces in-place tokens idx-len ... idx with a single token.
-func recombine_n(toks:Array[Token], idx:int, length:int):
+func recombine_n(toks:Array[Token], idx:int, length:int)->void:
 	var from = idx-length+1;
 	for i in range(length-1):
 		toks[from].text += toks[from+1].text;
@@ -215,7 +215,7 @@ func recombine_n(toks:Array[Token], idx:int, length:int):
 
 
 ## adjusts the token class based on a dictionary
-func reclassify_tokens(tokens:Array[Token]):
+func reclassify_tokens(tokens:Array[Token])->void:
 	for tok:Token in tokens:
 		if tok.tok_class == "WORD":
 			if tok.text in lang.keywords:
@@ -233,7 +233,7 @@ func reclassify_tokens(tokens:Array[Token]):
 				tok.tok_class = "PREPROC";
 
 ## converts 'a' to ASCII code
-func resolve_char_tokens(tokens:Array[Token]):
+func resolve_char_tokens(tokens:Array[Token])->void:
 	for tok:Token in tokens:
 		if tok.tok_class == "CHAR":
 			var unescaped = tok.text.c_unescape();
@@ -253,7 +253,7 @@ func filter_tokens(tokens:Array[Token])->Array[Token]:
 	var filtered = ["SPACE", "ENDSTRING", "ENDCHAR"];
 	return tokens.filter(func(tok:Token): return tok.tok_class not in filtered);
 
-func colorize_tokens(toks:Array):
+func colorize_tokens(toks:Array)->void:
 	for tok in toks:
 		if tok.tok_class in token_colors:
 			#tok["token_viewer_color"] = token_colors[tok.class];

@@ -75,7 +75,7 @@ var n_locations = 0;
 var val_idx = 0;
 #var location_map = {};
 
-func reset():
+func reset()->void:
 	IR = {};
 	all_syms = {};
 	assy_block_stack = [];
@@ -137,7 +137,7 @@ func deserialize(text:String)->void:
 		for val in scope.funcs: all_syms[val.ir_name] = val; bump_val_idx(key);
 
 ## makes sure that val_idx > name_<idx> 
-func bump_val_idx(ir_name):
+func bump_val_idx(ir_name)->void:
 	var regex = RegEx.new();
 	regex.compile("[0-9]+");
 	var res = regex.search(ir_name);
@@ -209,7 +209,7 @@ func generate(task:Task)->String:
 	call_deferred("defer_locations_ready", cur_assy_block.loc_map); #locations_ready.emit(cur_assy_block.loc_map);
 	return cur_assy_block.code;
 	
-func defer_locations_ready(arg):
+func defer_locations_ready(arg)->void:
 	#locations_ready.emit(arg);
 	push_warning("can't emit locations_ready");
 	pass;
@@ -294,15 +294,15 @@ func leave_scope()->void:
 
 func maybe_emit_func_ret(ir_name:String)->void:
 	var calling_func = is_referenced_by_func(ir_name);
-	if calling_func:	emit_raw("ret;\n", cmd_size, "maybe_emit_func_ret(%s)" % ir_name);
+	if calling_func != "":	emit_raw("ret;\n", cmd_size, "maybe_emit_func_ret(%s)" % ir_name);
 
-func is_referenced_by_func(ir_name:String):
+func is_referenced_by_func(ir_name:String)->String:
 	for key in all_syms:
 		var sym = all_syms[key];
 		if sym.val_type == "func":
 			if sym.code == ir_name:
 				return sym.ir_name;
-	return null
+	return ""
 
 func check_if_block_continued(i:int, code:Array[IR_Cmd])->bool:
 	cur_block.if_block_continued = false;
@@ -354,7 +354,7 @@ func generate_cmd_op(cmd:IR_Cmd)->void:
 		generate_cmd_op_helper(op,arg1,arg2,res,op_str);
 	mark_loc_end(loc);
 
-func generate_cmd_op_helper(op:String, arg1:String, arg2:String, res:String, op_str:String):
+func generate_cmd_op_helper(op:String, arg1:String, arg2:String, res:String, op_str:String)->void:
 	for imm in imm_map: ## for CMP_Z and other assembly constants
 		var imm_val = imm_map[imm];
 		if op_str.find(imm) != -1:
@@ -594,7 +594,7 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 	while true:
 		lc.step();
 		var ref_load = find_reference(text, "$");
-		if not ref_load: break;
+		if ref_load.is_empty(): break;
 		var res = load_value(ref_load.val);
 		emit_comment("# load_value(%s)->%s\n" % [ref_load.val, res]);
 		var handle = all_syms[ref_load.val];
@@ -647,7 +647,7 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 	while true:
 		lc.step();
 		var ref_addr = find_reference(text, "@");
-		if not ref_addr: break;
+		if ref_addr.is_empty(): break;
 		var res = address_value(ref_addr.val);
 		emit_comment("# address_value(%s)->%s\n" % [ref_addr.val, res]);
 		if imm_flag: 
@@ -662,7 +662,7 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 	while true:
 		lc.step();
 		var ref_loadstore = find_reference(text, "!");
-		if not ref_loadstore: break;
+		if ref_loadstore.is_empty(): break;
 		var res = load_value(ref_loadstore.val);
 		var handle = all_syms[ref_loadstore.val];
 		if ("needs_deref" in handle) and handle.needs_deref:
@@ -710,7 +710,7 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 	while true:
 		lc.step();
 		var ref_store = find_reference(text, "^");
-		if not ref_store: break;
+		if ref_store.is_empty(): break;
 		var handle = all_syms[ref_store.val];
 		var res_load = load_value(ref_store.val); allocs.append(res_load);
 		emit_comment("# load_value(%s)->%s\n" % [ref_store.val, res_load]);
@@ -759,9 +759,9 @@ func demote(reg:String, allocs:Array)->String:
 	free_val(reg);
 	return tmp;
 
-func find_reference(text:String, marker:String):
+func find_reference(text:String, marker:String)->Dictionary:
 	var marker_pos = text.find(marker);
-	if(marker_pos == -1): return null;
+	if(marker_pos == -1): return {};
 	var end_pos = G.find_first_of(text, " ,:;\n", marker_pos);
 	var val = text.substr(marker_pos+1, end_pos-(marker_pos+1));
 	var res = {"from":marker_pos, "to":end_pos, "val":val};
@@ -817,7 +817,7 @@ func load_value(val:String)->String:
 	return res;
 
 ## makes the number smaller so that it fits in size_bytes
-func truncate_number(num:int, size_bytes:int):
+func truncate_number(num:int, size_bytes:int)->int:
 	var max_b = 2**(8*size_bytes)-1;
 	var res = sign(num)*min(abs(num), max_b);
 	#print("truncate_number(%d, %d) = %d (max_b = %d)\n" % [num, size_bytes, res, max_b]);
@@ -883,22 +883,22 @@ func store_val(val:String)->String:
 	#return reg;
 	return res;
 
-func free_val(val:String):
+func free_val(val:String)->void:
 	if val in regs:
 		regs_in_use[val] = false;
 	else:
 		pass;
 
-func alloc_register(where:String):
+func alloc_register(where:String)->String:
 	for reg in regs:
 		if not reg in regs_in_use: regs_in_use[reg] = false;
 		if not regs_in_use[reg]:
 			regs_in_use[reg] = where;
 			return reg;
 	assert(false, "Codegen: out of registers!");
-	return null;
+	return "";
 
-func allocate_vars():
+func allocate_vars()->void:
 	for key in IR.scopes:
 		var scope = IR.scopes[key];
 		#var stack_pos = 0; # we will be placing local vars on the stack
@@ -1036,15 +1036,24 @@ func generate_cmd_mov_arr(cmd:IR_Cmd)->void:
 	emit("sub ESP, 4;\n" , cmd_size, "generate_cmd_mov_arr.inc2");
 	#free_val(tmp);
 
-func calc_shadow_markers(scope):
-	var markers = {};
-	markers["markers"] = {};
-	markers["ir_names"] = {};
+class ShadowMarker:
+	var marker:int=0;
+	var ir_name:String="";
+	func _init(_marker=0,_ir_name=""):
+		marker=_marker;
+		ir_name=_ir_name;
+
+func calc_shadow_markers(scope)->Dictionary:
+	var markers:Dictionary = {}
+	#markers["markers"] = {};
+	#markers["ir_names"] = {};
 	#3. mark EBP and IP
-	markers.markers[1] = ISA.SHADOW_FRAME_PREV_EBP;
-	markers.ir_names[1] = "PREV_EBP";
-	markers.markers[5] = ISA.SHADOW_FRAME_PREV_IP;
-	markers.ir_names[5] = "PREV_IP";
+	markers[1] = ShadowMarker.new(ISA.SHADOW_FRAME_PREV_EBP, "PREV_EBP");
+	markers[5] = ShadowMarker.new(ISA.SHADOW_FRAME_PREV_IP, "PREV_IP");
+	#markers.markers[1] = ISA.SHADOW_FRAME_PREV_EBP;
+	#markers.ir_names[1] = "PREV_EBP";
+	#markers.markers[5] = ISA.SHADOW_FRAME_PREV_IP;
+	#markers.ir_names[5] = "PREV_IP";
 	#4. mark arguments (ecx = number of arguments at time of call)
 	#5. mark locals and temporaries according to their storage location within current scope
 	for handle in scope.vars:
@@ -1055,22 +1064,23 @@ func calc_shadow_markers(scope):
 				marker = ISA.SHADOW_FRAME_TEMP;
 			assert(handle.storage.pos not in markers, "INTERNAL ERROR: stack location double-booked");
 			var pos = handle.storage.pos;
-			markers.markers[pos] = marker;
-			markers.ir_names[pos] = handle.ir_name;
+			markers[pos] = ShadowMarker.new(marker,handle.ir_name);
+			#markers.markers[pos] = marker;
+			#markers.ir_names[pos] = handle.ir_name;
 	return markers;
 
-func flip_markers_when_leaving(markers):
+func flip_markers_when_leaving(markers)->void:
 	for key in markers.markers:
 		markers[key] = ISA.SHADOW_UNUSED;
 
-func text_emit_shadow_frame_pointer(counters):
+func text_emit_shadow_frame_pointer(counters)->String:
 	var text = "";
 	text += "mov eax, ebp;\n"
 	text += "sub eax, %d;\n" % (65536 - SHADOW_STACK_ADR - counters.cur_offset);
 	counters.n_emitted += 2;
 	return text;
 
-func text_emit_mark_shadow_positions(markers, positions, counters):
+func text_emit_mark_shadow_positions(markers, positions, counters)->String:
 	var text = "";
 	var first = true;
 	for pos in positions:
@@ -1085,7 +1095,7 @@ func text_emit_mark_shadow_positions(markers, positions, counters):
 		counters.n_emitted += 1;	
 	return text;
 
-func verify_and_text_emit_padding(counters):
+func verify_and_text_emit_padding(counters)->String:
 	var text = "";
 	var n_remaining = (shadow_update_size/cmd_size - counters.n_emitted);
 	#7. assert false if out of space in the update block
@@ -1094,7 +1104,7 @@ func verify_and_text_emit_padding(counters):
 	text += "nop;\n".repeat(n_remaining);
 	return text;
 
-func generate_shadow_update(scope, is_leaving):
+func generate_shadow_update(scope, is_leaving)->String:
 	var text = "";
 	if is_leaving: text += "#-- SHADOW.leave begin\n";
 	else: text += "#-- SHADOW.enter begin\n";
@@ -1115,10 +1125,10 @@ func generate_shadow_update(scope, is_leaving):
 	#8. return resulting block assembly text.
 	return text;
 
-func generate_shadow_enter_update(scope):
+func generate_shadow_enter_update(scope)->String:
 	return generate_shadow_update(scope, false);
 
-func generate_shadow_leave_update(scope):
+func generate_shadow_leave_update(scope)->String:
 	return generate_shadow_update(scope, true);
 
 func fixup_enter_leave(assy_block:AssyBlock)->void:
@@ -1224,7 +1234,7 @@ func translate_ab_loc(src_lmap:Dictionary, src_ip:int, dest_lmap:Dictionary, des
 	assert(len_out == (len_src + len_dst));
 	#print("   (ip %d->%d): src %d + dest %d = out %d" % [src_ip, dest_ip, len_src, len_dst, len_out]);
 
-func add_ab_locations(loc_map_in:LocationMap):
+func add_ab_locations(loc_map_in:LocationMap)->void:
 	for ip in loc_map_in.begin:
 		translate_ab_loc(loc_map_in.begin, ip, cur_assy_block.loc_map.begin, ip);
 	for ip in loc_map_in.end:

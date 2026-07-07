@@ -13,15 +13,15 @@ var language = "";
 signal update_my_tab(efile);
 
 # Called when the node enters the scene tree for the first time.
-func _ready():
+func _ready()->void:
 	show_line_numbers();
 	pass # Replace with function body.
 
-func show_line_numbers():
+func show_line_numbers()->void:
 	n_text.add_gutter();
 	update_line_numbers();
 
-func update_line_numbers():
+func update_line_numbers()->void:
 	var num_lines = n_text.get_line_count();
 	#print("update line numbers: "+str(num_lines)+" lines");
 	var col_linenum = Color.DIM_GRAY;
@@ -30,9 +30,9 @@ func update_line_numbers():
 		n_text.set_line_gutter_item_color(i,0,col_linenum);
 		#n_text.set_line_gutter_text(0,i,str(i));
 
-func file_save(): return file_save_as(path);
+func file_save()->bool: return file_save_as(path);
 
-func file_save_as(new_path): 
+func file_save_as(new_path)->bool: 
 	path = new_path;
 	var text = n_text.text;
 	var file = FileAccess.open(new_path, FileAccess.WRITE);
@@ -46,7 +46,7 @@ func file_save_as(new_path):
 		print("could not save file ("+file_name+") to ["+new_path+"]");
 		return false;
 
-func file_load(new_path):
+func file_load(new_path)->bool:
 	var file = FileAccess.open(new_path, FileAccess.READ);
 	if file:
 		var text = file.get_as_text();
@@ -67,22 +67,22 @@ func file_load(new_path):
 #	printI += 1;
 #	pass
 
-func _on_text_edit_text_changed():
+func _on_text_edit_text_changed()->void:
 	is_dirty = true;
 	update_line_numbers();
 	update_my_tab.emit(self);
 
-func set_syntax(new_syntax:SyntaxHighlighter):
+func set_syntax(new_syntax:SyntaxHighlighter)->void:
 	n_text.syntax_highlighter = new_syntax;
 
-func get_text():
+func get_text()->String:
 	return n_text.text;
 
 
-func _on_text_edit_text_set():
+func _on_text_edit_text_set()->void:
 	update_line_numbers();
 
-func highlight_line(loc:LocationRange):#(line_idx, col=-1, length=-1):
+func highlight_line(loc:LocationRange)->void:#(line_idx, col=-1, length=-1):
 	var line_idx = loc.begin.line_idx;
 	#print("highlighting line %d, col %d, length %d" % [line_idx, col, length])
 	#print("highlighting %s" % str(loc));
@@ -101,5 +101,5 @@ func highlight_line(loc:LocationRange):#(line_idx, col=-1, length=-1):
 	var spos = n_text.get_scroll_pos_for_line(line_idx);
 	n_text.scroll_vertical = spos-5;
 
-func get_cur_line_idx():
+func get_cur_line_idx()->int:
 	return n_text.get_caret_line(0);

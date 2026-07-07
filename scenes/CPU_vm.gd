@@ -36,18 +36,18 @@ var no_side_effects:bool = false; #set to true to use utility functions as pure
 
 signal on_cpu_error(new_errcode);
 
-func cpu_error(code:int, msg:String):
+func cpu_error(code:int, msg:String)->void:
 	print(msg);
 	errcode = code;
 	on_cpu_error.emit(code);
 	halt();
 
-func cpu_assert(cond, code:int, msg:String):
+func cpu_assert(cond, code:int, msg:String)->bool:
 	var b = bool(cond);
 	if (not b) and not no_side_effects: cpu_error(code, msg);
 	return b;
 
-func set_on(on):
+func set_on(on)->void:
 	if on:
 		regs[ISA.REG_CTRL] |= ISA.BIT_PWR;
 		if(debug_vm):print("cpu turned on");
@@ -55,7 +55,7 @@ func set_on(on):
 		regs[ISA.REG_CTRL] &= ~ISA.BIT_PWR;
 		if(debug_vm):print("cpu turned off");
 
-func reset():
+func reset()->void:
 	regs = PackedInt32Array([
 	0, # NONE (not-a-register)
 	0, #0:EAX       -\
@@ -75,7 +75,7 @@ func reset():
 	errcode = 0;
 	pass;
 
-func setBit(Byte:int, bit:int, val:int=1):
+func setBit(Byte:int, bit:int, val:int=1)->int:
 	Byte &= 0b11111111; # mod 255
 	if(val):
 		Byte |= 0b1 << bit;
@@ -83,28 +83,28 @@ func setBit(Byte:int, bit:int, val:int=1):
 		Byte &= ~(0b1 << bit);
 	return Byte;
 
-func getBit(Byte:int, bit:int):
+func getBit(Byte:int, bit:int)->int:
 	return (Byte & (0b1 << bit)) >> bit;
 
-func clearBit(Byte, bit): setBit(Byte, bit, 0);
+func clearBit(Byte, bit)->int: return setBit(Byte, bit, 0);
 
-func fetchByte():
+func fetchByte()->int:
 	var byte = read8(regs[ISA.REG_IP]); #Bus.readCell(regs[REG_IP]);
 	regs[ISA.REG_IP] = to_U32(regs[ISA.REG_IP]+1);
 	return byte;
 
 var bus_setting = [];
-func dbg_push_bus_dbg():
+func dbg_push_bus_dbg()->void:
 	bus_setting.push_back(Bus.debug_bus_read);
 	#bus_setting.push_back(Bus.debug_bus_write);
-func dbg_pop_bus_dbg():
+func dbg_pop_bus_dbg()->void:
 	#Bus.debug_bus_write = bus_setting.pop_back()
 	Bus.debug_bus_read = bus_setting.pop_back();
-func dbg_suppress_bus_dbg():
+func dbg_suppress_bus_dbg()->void:
 	Bus.debug_bus_read = false;
 	#Bus.debug_bus_write = false;
 
-func fetchCmd():
+func fetchCmd()->PackedByteArray:
 	dbg_push_bus_dbg();
 	dbg_suppress_bus_dbg();
 	var cmd = [];
@@ -112,24 +112,24 @@ func fetchCmd():
 	dbg_pop_bus_dbg();
 	return PackedByteArray(cmd);
 
-func disasm_pure(cmd:PackedByteArray):
+func disasm_pure(cmd:PackedByteArray)->String:
 	no_side_effects = true;
 	var decoded = decodeCmd(cmd);
 	if not decoded: 
 		no_side_effects = false;
-		return false;
+		return "";
 	var text = debug_disasm_cmd(decoded);
 	no_side_effects = false;
 	return text;
 
-func decode_pure(cmd:PackedByteArray):
+func decode_pure(cmd:PackedByteArray)->String:
 	no_side_effects = true;
 	var decoded = decodeCmd(cmd);
 	no_side_effects = false;
 	return decoded;
 
 
-func decodeCmd(cmd:PackedByteArray):
+func decodeCmd(cmd:PackedByteArray)->Dictionary:
 	var op:int = cmd[0];
 	var flags:int = cmd[1];
 	var regsel:int = cmd[2];
@@ -146,7 +146,7 @@ func decodeCmd(cmd:PackedByteArray):
 	if not (cpu_assert(op in range(ISA.opcodes.size()), ERR_EXEC_DATA,"trying to execute data")
 	and cpu_assert(reg1 in range(ISA.regnames.size()), ERR_BAD_OP, "dest-register index out of bounds ("+str(reg1)+")") 
 	and cpu_assert(reg2 in range(ISA.regnames.size()), ERR_BAD_OP, "src-register index out of bounds ("+str(reg2)+")")):
-		return false;
+		return {};#false;
 	
 	var regname1 = ISA.regnames[reg1];
 	var regname2 = ISA.regnames[reg2];
@@ -171,7 +171,7 @@ func decodeCmd(cmd:PackedByteArray):
 	if(debug_vm):print("Decoded command: [ "+debug_disasm_cmd(decoded)+" ]");
 	return decoded;
 
-func decode_op_variant(decoded:Dictionary):
+func decode_op_variant(decoded:Dictionary)->String:
 	var op_name = decoded.op_str;
 	if op_name in ISA.spec_ops:
 		var spec_op = ISA.spec_ops[op_name];
@@ -183,7 +183,7 @@ func decode_op_variant(decoded:Dictionary):
 				break;
 	return op_name;
 
-func debug_disasm_cmd(decoded:Dictionary):
+func debug_disasm_cmd(decoded:Dictionary)->String:
 	var S = "";
 	var op_name = decode_op_variant(decoded);
 	S += op_name;
@@ -195,7 +195,7 @@ func debug_disasm_cmd(decoded:Dictionary):
 	if(has_arg1):
 		if(decoded.flags.deref1):
 			if(decoded.reg1_num):
-				if not cpu_assert(decoded.reg1_str != "", ERR_SANITY, ""): return false;
+				if not cpu_assert(decoded.reg1_str != "", ERR_SANITY, ""): return "";
 				if(decoded.reg1_im):
 					# eax[num] syntax
 					S += decoded.reg1_str + "[" + str(decoded.im) + "]";
@@ -207,7 +207,7 @@ func debug_disasm_cmd(decoded:Dictionary):
 				S += "*" + str(decoded.im);
 		else:
 			if(decoded.reg1_num):
-				if not cpu_assert(decoded.reg1_str != "", ERR_SANITY, ""): return false;
+				if not cpu_assert(decoded.reg1_str != "", ERR_SANITY, ""): return "";
 				if(decoded.reg1_im and decoded.im):
 					# eax+num syntax
 					S += decoded.reg1_str + "+" + str(decoded.im);
@@ -222,7 +222,7 @@ func debug_disasm_cmd(decoded:Dictionary):
 	if(has_arg2):
 		if(decoded.flags.deref2):
 			if(decoded.reg2_num):
-				if not cpu_assert(decoded.reg2_str != "", ERR_SANITY, ""): return false;
+				if not cpu_assert(decoded.reg2_str != "", ERR_SANITY, ""): return "";
 				if(decoded.reg2_im):
 					# eax[num] syntax
 					S += decoded.reg2_str + "[" + str(decoded.im) + "]";
@@ -234,7 +234,7 @@ func debug_disasm_cmd(decoded:Dictionary):
 				S += "*" + str(decoded.im);
 		else:
 			if(decoded.reg2_num):
-				if not cpu_assert(decoded.reg2_str != "", ERR_SANITY, ""): return false;
+				if not cpu_assert(decoded.reg2_str != "", ERR_SANITY, ""): return "";
 				if(decoded.reg2_im and decoded.im):
 					# eax+num syntax
 					S += decoded.reg2_str + "+" + str(decoded.im);
@@ -247,11 +247,11 @@ func debug_disasm_cmd(decoded:Dictionary):
 	S += ";"
 	return S;
 
-func dummy_func(cmd):
+func dummy_func(cmd)->void:
 	if(debug_vm):print("CPU cmd not implemented: "+cmd.op_str);
 	pass
 
-func check_jmp_cond(cmd):
+func check_jmp_cond(cmd)->bool:
 	if cmd.flags.special == 0: 
 		if(debug_vm):print("(jmp cond 0 - uncoditional)");
 		return true;
@@ -270,7 +270,7 @@ func check_jmp_cond(cmd):
 	return false;
 
 
-func fetch_src(cmd):
+func fetch_src(cmd)->int:
 	var src_val:int = 0;
 	if(cmd.reg2_num): src_val = to_U32(src_val+regs[cmd.reg2_num]);
 	if(cmd.reg2_im): src_val = to_U32(src_val+cmd.im);
@@ -281,7 +281,7 @@ func fetch_src(cmd):
 			src_val = read8(src_val); #Bus.readCell(src_val);
 	return src_val;
 
-func fetch_dest(cmd):
+func fetch_dest(cmd)->int:
 	var dst_val:int = 0;
 	if(cmd.reg1_num): dst_val = to_U32(dst_val+regs[cmd.reg1_num]);
 	if(cmd.reg1_im): dst_val = to_U32(dst_val+cmd.im);
@@ -292,7 +292,7 @@ func fetch_dest(cmd):
 			dst_val = read8(dst_val); #Bus.readCell(dst_val);
 	return dst_val; 
 
-func store_dest(cmd, val):
+func store_dest(cmd, val)->void:
 	var dest_adr = 0;
 	if(cmd.flags.deref1):
 		if(cmd.reg1_num): dest_adr = to_U32(dest_adr+regs[cmd.reg1_num]);
@@ -307,26 +307,26 @@ func store_dest(cmd, val):
 			not cmd.reg1_im, 
 			ERR_BAD_OP,
 			"can't store to (reg+im) register, need deref."
-			): return false;
+			): return;
 			
 		regs[cmd.reg1_num] = val;
 		if(debug_vm):print("reg "+str(cmd.reg1_str)+" is now "+str(regs[cmd.reg1_num]));
 	
-func error_overflow(): if(debug_vm):print("CPU error: Stack Overflow"); halt();
-func error_underflow(): if(debug_vm):print("CPU error: Stack Underflow"); halt();
-func error_interrupt_oor(): if(debug_vm):print("CPU error: Interrupt index out of range"); halt();
+func error_overflow()->void: if(debug_vm):print("CPU error: Stack Overflow"); halt();
+func error_underflow()->void: if(debug_vm):print("CPU error: Stack Underflow"); halt();
+func error_interrupt_oor()->void: if(debug_vm):print("CPU error: Interrupt index out of range"); halt();
 
-func push(val): push32(val);
-func pop(): return pop32();
+func push(val)->void: push32(val);
+func pop()->int: return pop32();
 
-func push32(val):
+func push32(val)->void:
 	var buff = PackedByteArray([0,0,0,0]);
 	buff.encode_u32(0,val);
 	#for n in buff: push8(n);
 	for i in range(4):
 		push8(buff[3-i]);
 
-func pop32():
+func pop32()->int:
 	var buff = PackedByteArray([0,0,0,0]);
 	for i in range(buff.size()): 
 		#buff[buff.size()-1-i] = pop8();
@@ -334,35 +334,35 @@ func pop32():
 	var n = buff.decode_u32(0);
 	return n;
 
-func read8(adr): 
+func read8(adr)->int: 
 	var val = Bus.readCell(adr);
 	mem_accessed.emit(adr, val, false);
 	return val;
-func write8(adr, val): 
+func write8(adr, val)->void: 
 	if(val > 255):
 		if(debug_vm):print("warning: write8("+str(val)+" > 255)");
 	mem_accessed.emit(adr, val, true);
 	Bus.writeCell(adr, val);
-func read32(adr):
+func read32(adr)->int:
 	var buff = PackedByteArray([0,0,0,0]);
 	for i in range(buff.size()):
 		buff[i] = read8(adr+i);
 	var val = buff.decode_u32(0);
 	return val;
-func write32(adr, val):
+func write32(adr, val)->void:
 	var buff = PackedByteArray([0,0,0,0]);
 	buff.encode_u32(0, val);
 	for i in range(buff.size()):
 		write8(adr+i, buff[i]);
 
-func push8(val):
+func push8(val)->void:
 	if(regs[ISA.REG_ESP] <= regs[ISA.REG_ESS]): 
 		error_overflow();
 	else:
 		write8(regs[ISA.REG_ESP], val); #Bus.writeCell(regs[REG_ESP], val);
 		regs[ISA.REG_ESP] -= 1;
 
-func pop8():
+func pop8()->int:
 	if(regs[ISA.REG_ESP] >= regs[ISA.REG_ESZ]):
 		error_underflow();
 		return 0;
@@ -371,38 +371,38 @@ func pop8():
 		var val = Bus.readCell(regs[ISA.REG_ESP]);
 		return val;
 
-func push_all(): for i in range(1, regs.size()): push(regs[i]);
-func pop_all(): for i in range(1, regs.size()): regs[i] = pop();
+func push_all()->void: for i in range(1, regs.size()): push(regs[i]);
+func pop_all()->void: for i in range(1, regs.size()): regs[i] = pop();
 
-func _call(new_ip):
+func _call(new_ip)->void:
 	if(debug_vm):print("calling ("+str(new_ip)+")");
 	push(regs[ISA.REG_IP]);
 	push(regs[ISA.REG_EBP]);
 	regs[ISA.REG_EBP] = regs[ISA.REG_ESP];
 	regs[ISA.REG_IP] = new_ip;
 
-func _ret(): 
+func _ret()->void: 
 	regs[ISA.REG_ESP] = regs[ISA.REG_EBP];
 	regs[ISA.REG_EBP] = pop();
 	regs[ISA.REG_IP] = pop(); 
 
-func halt(): regs[ISA.REG_CTRL] &= ~ISA.BIT_PWR;
+func halt()->void: regs[ISA.REG_CTRL] &= ~ISA.BIT_PWR;
 
-func cmd_halt(_cmd): 
+func cmd_halt(_cmd)->void: 
 	if(debug_vm):print("CPU halted.");
 	halt();
-func cmd_reset(_cmd): reset();
-func cmd_jmp(cmd): 
+func cmd_reset(_cmd)->void: reset();
+func cmd_jmp(cmd)->void: 
 	var dest = fetch_dest(cmd); 
 	var cond = check_jmp_cond(cmd);
 	if(cond): 
 		regs[ISA.REG_IP] = dest;
 	if(debug_vm):print("[JMP to "+str(dest)+", cond "+str(cond)+"]")
-func cmd_call(cmd): 
+func cmd_call(cmd)->void: 
 	var dest = fetch_dest(cmd);
 	if(check_jmp_cond(cmd)): _call(dest);
-func cmd_ret(_cmd): _ret();
-func cmd_cmp(cmd):
+func cmd_ret(_cmd)->void: _ret();
+func cmd_cmp(cmd)->void:
 	var A = fetch_dest(cmd);
 	var B = fetch_src(cmd);
 	var is_L = int(A < B);
@@ -415,25 +415,25 @@ func cmd_cmp(cmd):
 	if is_E: regs[ISA.REG_CTRL] |= ISA.BIT_CMP_Z;
 	if is_G: regs[ISA.REG_CTRL] |= ISA.BIT_CMP_G;
 	
-func cmd_int(cmd):
+func cmd_int(cmd)->void:
 	var int_num = fetch_src(cmd);
 	if( not (regs[ISA.REG_CTRL] & ISA.BIT_IE)): return; #interrupts disabled
 	if(regs[ISA.REG_CTRL] & ISA.BIT_IRS): return; # already in interrupt
 	regs[ISA.REG_IRQ] = int_num; # interrupt will be serviced next step
-func cmd_intret(_cmd):
+func cmd_intret(_cmd)->void:
 	regs[ISA.REG_CTRL] &= ~ISA.BIT_IRS;
 	_ret();
 	pop_all();
-func cmd_mov(cmd):
+func cmd_mov(cmd)->void:
 	var src = fetch_src(cmd);
 	store_dest(cmd, src);
-func cmd_push(cmd):
+func cmd_push(cmd)->void:
 	var dest = fetch_dest(cmd);
 	if(cmd.is_32bit):
 		push32(dest);
 	else:
 		push8(dest);
-func cmd_pop(cmd):
+func cmd_pop(cmd)->void:
 	var val = 0;
 	if(cmd.is_32bit):
 		val = pop32();
@@ -441,57 +441,57 @@ func cmd_pop(cmd):
 		val = pop8();
 	store_dest(cmd, val);
 
-func ALU_op(cmd, op):
+func ALU_op(cmd, op)->void:
 	var A = fetch_dest(cmd);
 	var B = fetch_src(cmd);
 	var C = int(op.call(A,B)) & (2**32-1);
 	store_dest(cmd, C);
 
-func op_add(A, B): return A+B;
-func op_sub(A, B): return A-B;
-func op_mul(A, B): return A*B;
-func op_div(A, B): return A/B;
-func op_mod(A, B): return A%B;
-func op_abs(A, _B): return abs(A);
-func op_neg(A, _B): return -A;
-func op_inc(A, _B): return A+1;
-func op_dec(A, _B): return A-1;
-func op_and(A, B): return A and B;
-func op_or(A, B): return A or B;
-func op_xor(A, B): return (A and not B) or (not A and B);
-func op_not(A, _B): return not A;
-func op_band(A, B): return A & B;
-func op_bor(A, B): return A | B;
-func op_bxor(A, B): return A ^ B;
-func op_bnot(A, _B): return ~A;
-func op_bset(A, B): return setBit(A, B);
-func op_bget(A, B): return getBit(A, B);
-func op_bclear(A, B): return clearBit(A, B);
+func op_add(A, B)->int: return A+B;
+func op_sub(A, B)->int: return A-B;
+func op_mul(A, B)->int: return A*B;
+func op_div(A, B)->int: return A/B;
+func op_mod(A, B)->int: return A%B;
+func op_abs(A, _B)->int: return abs(A);
+func op_neg(A, _B)->int: return -A;
+func op_inc(A, _B)->int: return A+1;
+func op_dec(A, _B)->int: return A-1;
+func op_and(A, B)->int: return A and B;
+func op_or(A, B)->int: return A or B;
+func op_xor(A, B)->int: return (A and not B) or (not A and B);
+func op_not(A, _B)->int: return not A;
+func op_band(A, B)->int: return A & B;
+func op_bor(A, B)->int: return A | B;
+func op_bxor(A, B)->int: return A ^ B;
+func op_bnot(A, _B)->int: return ~A;
+func op_bset(A, B)->int: return setBit(A, B);
+func op_bget(A, B)->int: return getBit(A, B);
+func op_bclear(A, B)->int: return clearBit(A, B);
 
 
-func cmd_add(cmd): ALU_op(cmd, op_add);
-func cmd_sub(cmd): ALU_op(cmd, op_sub);
-func cmd_mul(cmd): ALU_op(cmd, op_mul);
-func cmd_div(cmd): ALU_op(cmd, op_div);
-func cmd_mod(cmd): ALU_op(cmd, op_mod);
-func cmd_abs(cmd): ALU_op(cmd, op_abs);
-func cmd_neg(cmd): ALU_op(cmd, op_neg);
-func cmd_inc(cmd): ALU_op(cmd, op_inc);
-func cmd_dec(cmd): ALU_op(cmd, op_dec);
-func cmd_and(cmd): ALU_op(cmd, op_and);
-func cmd_or(cmd):  ALU_op(cmd, op_or);
-func cmd_xor(cmd): ALU_op(cmd, op_xor);
-func cmd_not(cmd): ALU_op(cmd, op_not);
-func cmd_band(cmd):ALU_op(cmd, op_band);
-func cmd_bor(cmd): ALU_op(cmd, op_bor);
-func cmd_bxor(cmd):ALU_op(cmd, op_bxor);
-func cmd_bnot(cmd):ALU_op(cmd, op_bnot);
+func cmd_add(cmd)->void: ALU_op(cmd, op_add);
+func cmd_sub(cmd)->void: ALU_op(cmd, op_sub);
+func cmd_mul(cmd)->void: ALU_op(cmd, op_mul);
+func cmd_div(cmd)->void: ALU_op(cmd, op_div);
+func cmd_mod(cmd)->void: ALU_op(cmd, op_mod);
+func cmd_abs(cmd)->void: ALU_op(cmd, op_abs);
+func cmd_neg(cmd)->void: ALU_op(cmd, op_neg);
+func cmd_inc(cmd)->void: ALU_op(cmd, op_inc);
+func cmd_dec(cmd)->void: ALU_op(cmd, op_dec);
+func cmd_and(cmd)->void: ALU_op(cmd, op_and);
+func cmd_or(cmd)->void:  ALU_op(cmd, op_or);
+func cmd_xor(cmd)->void: ALU_op(cmd, op_xor);
+func cmd_not(cmd)->void: ALU_op(cmd, op_not);
+func cmd_band(cmd)->void:ALU_op(cmd, op_band);
+func cmd_bor(cmd)->void: ALU_op(cmd, op_bor);
+func cmd_bxor(cmd)->void:ALU_op(cmd, op_bxor);
+func cmd_bnot(cmd)->void:ALU_op(cmd, op_bnot);
 
 # --------- shift operation helpers --------------
 # here n refers to (signed) amount to shift by
 # and determines which end of a number, bits disappear from
 
-func basic_shift(val:int, n:int):
+func basic_shift(val:int, n:int)->int:
 	#var val_in = val;
 	if n > 0:
 		val = val << abs(n);
@@ -500,7 +500,7 @@ func basic_shift(val:int, n:int):
 		val = val >> abs(n);
 	return val;
 
-func getEndBit(val, n):
+func getEndBit(val, n)->int:
 	var bit = 0;
 	if n > 0:
 		bit = getBit(val, 31);
@@ -508,14 +508,14 @@ func getEndBit(val, n):
 		bit = getBit(val, 0);
 	return bit;
 
-func setStartBit(val, n, bit):
+func setStartBit(val, n, bit)->int:
 	if n > 0:
 		val = setBit(val, 0, bit);
 	else:
 		val = setBit(val, 31, bit);
 	return val;
 
-func cmd_shift(cmd):
+func cmd_shift(cmd)->void:
 	var src = fetch_src(cmd);
 	var dest = fetch_dest(cmd);
 	var dest_initial = dest;
@@ -544,17 +544,17 @@ func cmd_shift(cmd):
 			if not cpu_assert(
 				false, 
 				ERR_BAD_OP,
-				"can't figure out shift flags"): return false;
+				"can't figure out shift flags"): return;
 				
 	if(debug_vm):print("cmd shift ("+str(dest_initial)+" << "+str(src)+") = "+str(dest));
 	store_dest(cmd, dest);
 
 #----------------------------------------------------------------
 
-func cmd_bset(cmd):ALU_op(cmd, op_bset);
-func cmd_bget(cmd):ALU_op(cmd, op_bget);
-func cmd_bclear(cmd):ALU_op(cmd, op_bclear);
-func cmd_nop(_cmd):pass;
+func cmd_bset(cmd)->void:ALU_op(cmd, op_bset);
+func cmd_bget(cmd)->void:ALU_op(cmd, op_bget);
+func cmd_bclear(cmd)->void:ALU_op(cmd, op_bclear);
+func cmd_nop(_cmd)->void:pass;
 
 var cmd_handlers = {
 	"HALT":		cmd_halt,  # 0
@@ -599,8 +599,8 @@ var cmd_handlers = {
 	"NOP":		cmd_nop, #32
 };
 
-func run_single_command(cmd:Dictionary):
-	if not cpu_assert(cmd.op_str in cmd_handlers, ERR_BAD_OP, "unrecognized command"): return false;
+func run_single_command(cmd:Dictionary)->void:
+	if not cpu_assert(cmd.op_str in cmd_handlers, ERR_BAD_OP, "unrecognized command"): return;
 	#print("cmd ["+cmd.op_str+"]");
 	cmd_handlers[cmd.op_str].call(cmd);
 
@@ -610,7 +610,7 @@ const IVT_entry_size = 1;
 # --- no other params for now
 
 
-func service_interrupt():
+func service_interrupt()->void:
 	# flag it that we are currently servicing an interrupt
 	# and therefore there is no need to jump into other interrupts
 	regs[ISA.REG_CTRL] |= ISA.BIT_IRS;
@@ -627,24 +627,24 @@ func service_interrupt():
 	call(IV_addr);
 	
 	
-func step():
+func step()->void:
 	if(regs[ISA.REG_IRQ] and not (regs[ISA.REG_CTRL] & ISA.BIT_IRS)):
 		service_interrupt();
 	var cmd = fetchCmd();
 	var decode = decodeCmd(cmd);
-	if not decode: return;
+	if decode.is_empty(): return;
 	run_single_command(decode);
 	#if(regs[ISA.REG_CTRL] & ISA.BIT_STEP):
 	#	regs[ISA.REG_CTRL] &= ~ISA.BIT_PWR;
 	cpu_step_done.emit(self);
 
-func setup(dict:Dictionary):
+func setup(dict:Dictionary)->void:
 	assert("bus" in dict); # this is an actual assert because it's not related to VM emulation
 	Bus = dict.bus;
 	is_setup = true;
 
 # Called when the node enters the scene tree for the first time.
-func _ready():
+func _ready()->void:
 	reset();
 	pass # Replace with function body.
 
@@ -652,7 +652,7 @@ func _ready():
 
 var tick_debt = 0.0;
 
-func _process(delta):
+func _process(delta)->void:
 	if not (regs[ISA.REG_CTRL] & ISA.BIT_PWR): return;
 	tick_debt += freq*delta;
 	var lc = LoopCounter.new(freq+1);
@@ -666,5 +666,5 @@ func _process(delta):
 
 const MAX_U8 = 256-1;
 const MAX_U32 = 2**32-1;
-func to_U8(x): return x & MAX_U8;
-func to_U32(x): return x & MAX_U32;
+func to_U8(x)->int: return x & MAX_U8;
+func to_U32(x)->int: return x & MAX_U32;

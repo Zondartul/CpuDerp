@@ -16,13 +16,13 @@ var cur_filename: set=set_cur_filename;
 var cur_path: set=set_cur_path;
 var has_error = false;
 
-func reset():
+func reset()->void:
 	cur_filename = "";
 	cur_path = "";
 	has_error = false;
 	tokenizer.reset();
 
-func compile(input, task:Task):
+func compile(input, task:Task)->Variant:
 	var t_tok = task.add_subtask("tokenize");
 	var t_parse = task.add_subtask("parse");
 	var t_anz = task.add_subtask("analyze");
@@ -51,13 +51,13 @@ func compile(input, task:Task):
 	t_lnk.mark_done();
 	return true;
 
-func defer_open_file_request(arg):
+func defer_open_file_request(arg)->void:
 	open_file_request.emit(arg);
 
-func defer_sym_table_ready(arg):
+func defer_sym_table_ready(arg)->void:
 	sym_table_ready.emit(arg);
 
-func save_file(text:String, filename:String):
+func save_file(text:String, filename:String)->void:
 	var fp = FileAccess.open(filename, FileAccess.WRITE);
 	if not fp: push_error("Can't save file ["+filename+"]"); has_error = true; return;
 	fp.store_string(text);
@@ -66,8 +66,8 @@ func save_file(text:String, filename:String):
 func _on_tokenizer_md_tokens_ready(tokens) -> void:
 	tokens_ready.emit(tokens);
 
-func set_cur_filename(val): cur_filename = val; tokenizer.cur_filename = val;
-func set_cur_path(val): cur_path = val; tokenizer.cur_path = val;
+func set_cur_filename(val)->void: cur_filename = val; tokenizer.cur_filename = val;
+func set_cur_path(val)->void: cur_path = val; tokenizer.cur_path = val;
 
 
 

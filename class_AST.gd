@@ -25,7 +25,7 @@ func get_location()->LocationRange:
 	assert(cached_loc != null, "Location needs to be precomputed");
 	return cached_loc;
 
-func precompute_location():
+func precompute_location()->void:
 	for ch in children:
 		ch.precompute_location();
 	var res;

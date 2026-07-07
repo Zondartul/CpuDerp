@@ -4,15 +4,29 @@ extends Control
 @onready var memview = $BoxContainer/TextEdit;
 const ISA = preload("res://lang_zvm.gd");
 
+class MemHandle:
+	var pos:int;
+	var size:int;
+	var name:String;
+	var item_no:int;
+	var valid:bool;
+	func _init(_pos=0,_size=0,_name="",_item_no=0,_valid=true):
+		pos=_pos;
+		size=_size;
+		name=_name;
+		item_no=_item_no;
+		valid=_valid
+	static var _null:MemHandle = MemHandle.new(0,0,"",0,false);
+		
 # memory handles are buttons on the memory map
-var mem_handles = [];
+var mem_handles:Array[MemHandle] = [];
 var handle_map = {};
 var Memory;
 var cpu_vm;
 var is_setup = false;
 #var mvhl:CodeHighlighter = CodeHighlighter.new();
 var perf_limiter = {"freq":1, "credit":0.0, "updates":{"mem":true, "color":true, "disasm":true}};
-func run_perf_limiter(delta:float):
+func run_perf_limiter(delta:float)->bool:
 	perf_limiter.credit += delta;
 	var cost = 1.0/float(perf_limiter.freq);
 	if perf_limiter.credit >= cost:
@@ -28,33 +42,34 @@ func run_perf_limiter(delta:float):
 #	mvhl.member_variable_color = Color.WHITE;
 #	memview.syntax_highlighter = mvhl;
 
-func setup(dict:Dictionary):
+func setup(dict:Dictionary)->void:
 	assert("memory" in dict);
 	assert("cpu" in dict);
 	Memory = dict.memory;
 	cpu_vm = dict.cpu;
 	is_setup = true;
 
-func clear():
+func clear()->void:
 	map.clear();
 	mem_handles = [];
 	handle_map = {};
 
 const step = 8;
-func align_addr(addr): return addr - addr % step;
-func align_size(s): return max(step, s + step-1 - ((s+step-1) % step));
+func align_addr(addr)->int: return addr - addr % step;
+func align_size(s)->int: return max(step, s + step-1 - ((s+step-1) % step));
 
-func add_memory_region(m_pos, m_size, m_name):
+
+func add_memory_region(m_pos, m_size, m_name)->MemHandle:
 	m_pos = align_addr(m_pos);
 	m_size = align_size(m_size);
 	var text = m_name + "\n"+str(m_size);
 	var idx = map.add_item(text)
-	var handle_info = {"pos":m_pos, "size":m_size, "name":m_name, "item_no":idx};
+	var handle_info:MemHandle = MemHandle.new(m_pos,m_size,m_name,idx);#{"pos":m_pos, "size":m_size, "name":m_name, "item_no":idx};
 	handle_map[idx] = handle_info;
 	mem_handles.append(handle_info);
 	return handle_info;
 
-func update_memory_handle_text(idx):
+func update_memory_handle_text(idx)->void:
 	var handle = handle_map[idx]
 	var text = handle.name + "\n" + str(handle.size);
 	map.set_item_text(idx, text);
@@ -62,13 +77,13 @@ func update_memory_handle_text(idx):
 var color_fixups = [];
 var shadow_at = 0;
 
-func _process(delta):
+func _process(delta)->void:
 	var lc = LoopCounter.new();
 	while run_perf_limiter(delta):
 		lc.step();
 		update_mem_view();
 
-func update_mem_view():
+func update_mem_view()->void:
 	if not perf_limiter.updates.mem: return;
 	perf_limiter.updates.mem = false;
 	color_fixups = [];
@@ -117,21 +132,21 @@ func update_mem_view():
 		#var highlight = mvhl.get_line_syntax_highlighting(fx.line);
 		#highlight[0] = Color.DEEP_PINK;
 
-func read_cell(idx):
+func read_cell(idx)->int:
 	return Memory.readCell(idx);
 
-func _on_mem_map_item_selected(_index):
+func _on_mem_map_item_selected(_index)->void:
 	perf_limiter.updates.mem = true;
 	update_mem_view();
 
-func to_hex(num:int):
+func to_hex(num:int)->String:
 	const hex_alph = "0123456789ABCDEF";
 	if(num < 0) or (num > 255): return "XX";
 	@warning_ignore("integer_division")
 	return hex_alph[num/16] + hex_alph[num % 16];
 
 # returns a string with a possible interpretation of the selected bytes
-func interp_text(from, to):
+func interp_text(from, to)->String:
 	var bytes:PackedByteArray = PackedByteArray();
 	var sbytes:PackedByteArray = PackedByteArray();
 	for i in range(from,to):
@@ -153,7 +168,7 @@ func interp_text(from, to):
 		text = to_bb(Color.DEEP_PINK, interp_as_text(bytes));
 	return text;
 
-func interp_numbers(from, to):
+func interp_numbers(from, to)->String:
 	var bytes:PackedByteArray = PackedByteArray();
 	for i in range(from,to):
 		bytes.append(read_cell(i));
@@ -165,10 +180,10 @@ func interp_numbers(from, to):
 		I += 4;
 	return text;
 
-func to_bb(col:Color, text):
+func to_bb(col:Color, text)->String:
 	return "[color=" + col.to_html(false)+"]" + text + "[/color]";
 
-func interp_as_text(bytes):
+func interp_as_text(bytes)->String:
 	var text = "";
 	# if not disassembled, conver to chars
 	for i in range(bytes.size()):
@@ -179,7 +194,7 @@ func interp_as_text(bytes):
 		text += c;
 	return text;
 
-func is_all_empty(bytes):
+func is_all_empty(bytes)->bool:
 	for b in bytes:
 		if b != 0: return false;
 	return true;
@@ -215,36 +230,36 @@ const allowed_data_bytes = [
 	ISA.SHADOW_PADDING
 ];
 
-func is_shadow_cmd(sbytes):
+func is_shadow_cmd(sbytes)->bool:
 	if not (sbytes[0] == ISA.SHADOW_CMD_HEAD): return false;
 	for i in range(1,8):
 		if not sbytes[i] in allowed_cmd_tail_bytes:
 			return false;
 	return true;
 
-func is_shadow_data(sbytes):
+func is_shadow_data(sbytes)->bool:
 	for i in range(8):
 		if not sbytes[i] in allowed_data_bytes:
 			return false;
 	return true;
 
 
-func _on_cpu_vm_cpu_step_done(_cpu):
+func _on_cpu_vm_cpu_step_done(_cpu)->void:
 	perf_limiter.updates.mem = true; #update_mem_view();
 
 
 func _on_cpu_vm_mem_accessed(addr: Variant, _val: Variant, _is_write: Variant) -> void:
 	var region = get_mem_region(addr);
-	if not region:
+	if region.valid:
 		var next_up = get_mem_region(addr+1);
 		var next_down = get_mem_region(addr-1);
-		if next_up and next_down:
+		if next_up.valid and next_down.valid:
 			merge_mem_region(next_up, next_down);
 			print("mem region: merged")
-		elif next_up:
+		elif next_up.valid:
 			extend_mem_region(next_up, addr);
 			print("mem region: ext up")
-		elif next_down:
+		elif next_down.valid:
 			extend_mem_region(next_down, addr);
 			print("mem region: ext down")
 		else:
@@ -252,26 +267,26 @@ func _on_cpu_vm_mem_accessed(addr: Variant, _val: Variant, _is_write: Variant) -
 			print("mem region: new")
 			next_up = get_mem_region(new_reg.pos+new_reg.size);
 			next_down = get_mem_region(new_reg.pos-1);
-			if next_up and next_down:
+			if next_up.valid and next_down.valid:
 				merge_mem_region(next_up, next_down);
 				remove_mem_region(new_reg);
 				print("mem region: merged2")
-			elif next_up:
+			elif next_up.valid:
 				extend_mem_region(next_up, addr);
 				remove_mem_region(new_reg);
 				print("mem region: ext up2")
-			elif next_down:
+			elif next_down.valid:
 				extend_mem_region(next_down, addr);
 				remove_mem_region(new_reg);
 				print("mem region: ext down2")
 
-func get_mem_region(addr):
+func get_mem_region(addr)->MemHandle:
 	for handle in mem_handles:
 		if (handle.pos <= addr) and (handle.pos + handle.size > addr):
 			return handle;
-	return null;
+	return MemHandle._null;
 
-func extend_mem_region(handle, addr):
+func extend_mem_region(handle, addr)->void:
 	if handle.pos > addr: 
 		var diff = handle.pos - addr;
 		handle.pos = align_addr(addr);
@@ -280,7 +295,7 @@ func extend_mem_region(handle, addr):
 		handle.size = align_size(addr - handle.pos + 1);
 	update_memory_handle_text(handle.item_no);
 	
-func merge_mem_region(handle1, handle2):
+func merge_mem_region(handle1, handle2)->void:
 	var min_start = min(handle1.pos, handle2.pos);
 	var max_end = max(handle1.pos+handle1.size, handle2.pos+handle2.size);
 	remove_mem_region(handle2);
@@ -288,7 +303,7 @@ func merge_mem_region(handle1, handle2):
 	handle1.size = align_size(max_end - min_start + 1);
 	update_memory_handle_text(handle1.item_no);
 
-func remove_mem_region(handle):
+func remove_mem_region(handle)->void:
 	for handle2 in mem_handles:
 		if handle2.item_no > handle.item_no:
 			handle2.item_no -= 1;

@@ -16,20 +16,20 @@ var result_idx = 0;
 var query_len = 0;
 signal sig_highlight_line(line_idx, col, len);
 
-func setup():
+func setup()->void:
 	pass;
 
-func _ready():
+func _ready()->void:
 	n_VSearch = Editor.get_node("V/VSearch");
 	n_LE = n_VSearch.get_node("H/LineEdit");
 	n_lbl_results = n_VSearch.get_node("H/lbl_res");
 
-func popup():
+func popup()->void:
 	n_VSearch.show();
 	n_LE.grab_focus();
 	n_LE.select_all();
 
-func hide():
+func hide()->void:
 	n_VSearch.hide();
 
 
@@ -37,7 +37,7 @@ func _on_line_edit_text_submitted(new_text: String) -> void:
 	n_LE.deselect();
 	search(new_text);
 
-func search(text):
+func search(text)->void:
 	print("Search "+text);
 	query_len = len(text);
 	if comp_file.cur_efile:
@@ -65,7 +65,7 @@ func _on_btn_next_pressed() -> void:
 	jump_to_result(result_idx+1);
 	pass # Replace with function body.
 
-func jump_to_result(idx):
+func jump_to_result(idx)->void:
 	if not n_results: return;
 	idx = idx % n_results; #clamp(idx, 0, n_results-1);
 	result_idx = idx;
@@ -84,5 +84,5 @@ func _on_line_edit_gui_input(event: InputEvent) -> void:
 		if event.pressed and event.keycode == KEY_ESCAPE:
 			hide();
 
-func update_lbl_res():
+func update_lbl_res()->void:
 	n_lbl_results.text = "%s/%s Results" % [result_idx+1, n_results];

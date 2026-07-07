@@ -3,16 +3,16 @@ extends Window
 @onready var content = $BC/SC/FC
 var scene_tile:PackedScene = load("res://scenes/tile_label_tooltip.tscn");
 
-func _ready():
+func _ready()->void:
 	add_item("red", Color.RED, "red");
 	add_item("green", Color.GREEN, "green");
 	add_item("blue", Color.BLUE, "blue");
 
-func clear():
+func clear()->void:
 	for ch in content.get_children():
 		ch.queue_free();
 
-func add_item(text:String, col:Color, tooltip:String):
+func add_item(text:String, col:Color, tooltip:String)->void:
 	var tile:Control = scene_tile.instantiate();
 	var lbl:Label = tile.get_node(NodePath("M/Label"));
 	lbl.text = text;
@@ -27,16 +27,16 @@ const repl_dict = {
 	"\r":"\\r",
 };
 
-func set_tokens(tokens):
+func set_tokens(tokens)->void:
 	clear();
 	show();
 	var prev_line_idx = [null];
 	for token in tokens:
-		var line_idx = maybe_prop(token, "token_viewer_line");
+		var line_idx = G.maybe_prop(token, "token_viewer_line");
 		if val_changed(line_idx, prev_line_idx):
 			add_newline();
 		var tooltip = array_to_str(token);
-		var color = maybe_prop(token, "token_viewer_color", Color.WHITE);
+		var color = G.maybe_prop(token, "token_viewer_color", Color.WHITE);
 		var text = token.text;
 		if text in repl_dict: text = repl_dict[text];
 		add_item(text, color, tooltip);
@@ -45,7 +45,7 @@ func set_tokens(tokens):
 	call_deferred("hide");
 
 # returns true if the value changed and saves the new value
-func val_changed(new_val, prev_val:Array):
+func val_changed(new_val, prev_val:Array)->bool:
 	var res = false;
 	if prev_val[0] != null:
 		if new_val != prev_val[0]:
@@ -53,22 +53,15 @@ func val_changed(new_val, prev_val:Array):
 	prev_val[0] = new_val;
 	return res;
 
-func maybe_prop(obj:RefCounted, propname, default=null):
-	if obj.has_meta(propname):
-		return obj.get_meta(propname, default);
-	elif propname in obj:
-		return obj[propname];
-	return default;
-
-func array_to_str(arr):
+func array_to_str(arr)->String:
 	return str(arr);
 
-func add_newline():
+func add_newline()->void:
 	var sp:Control = Control.new();
 	#sp.size_flags_horizontal = Control.SIZE_EXPAND;
 	content.add_child(sp);
 	call_deferred("resize_newline", sp);
 
-func resize_newline(sp):
+func resize_newline(sp)->void:
 	sp.custom_minimum_size = Vector2(content.size.x-10, 1);
 	sp.size = Vector2(content.size.x-10,1);

@@ -94,7 +94,7 @@ func _ready():
 	init_reg_view();
 	pass # Replace with function body.
 
-func setup(dict:Dictionary):
+func setup(dict:Dictionary)->void:
 	assert("cpu" in dict);
 	assert("bus" in dict);
 	assert("asm" in dict);
@@ -107,7 +107,7 @@ func setup(dict:Dictionary):
 	init_sliders();
 	reset_cpu_history();
 
-func init_reg_view():
+func init_reg_view()->void:
 	for reg in regnames:
 		n_regview.add_item(reg);
 		n_regview.add_item("");
@@ -116,13 +116,13 @@ func init_reg_view():
 #func _process(delta):
 #	pass
 
-func format_val(val):
+func format_val(val)->String:
 	if mode_hex:
 		return "%08X" % val;
 	else:
 		return "%d" % val;
 
-func update_registers():
+func update_registers()->void:
 	if not perf.regs.run(0): return;
 	
 	for i in range(regnames.size()):
@@ -133,14 +133,14 @@ func update_registers():
 var op_ips:Array = [];
 var op_locations:Array;
 
-func cache_op_locations():
+func cache_op_locations()->void:
 	op_ips = [];
 	op_locations = assembler.op_locations.duplicate();
 	for op in op_locations:
 		op_ips.append(op.ip);
 
 var last_highlighted_line = -1;
-func update_ip_highlight():
+func update_ip_highlight()->void:
 	if not win.visible: return;
 	if not perf.ip.run(0): return;
 	
@@ -169,7 +169,7 @@ func get_loc_asm()->LocationRange:
 			return cur_loc;
 	return LocationRange.new();
 
-func get_loc_hl():
+func get_loc_hl()->LocationRange:
 	#if loc_map:
 		#var ip = cpu.regs[cpu.ISA.REG_IP];
 		#var idx = loc_map.begin.keys().bsearch(ip, false)-1;
@@ -200,19 +200,19 @@ func get_loc_hl():
 			#return ELM[cmd_idx].hl.smallest_ip.loc;
 	return LocationRange.new();
 
-func dbg_locs_to_str(loc_arr:Array[LocationRange]):
+func dbg_locs_to_str(loc_arr:Array[LocationRange])->String:
 	var S = "";
 	for loc in loc_arr:
 		S += "%s [%s]\n" % [str(loc), loc.begin.line];
 	return S;
 
-func _process(delta):
+func _process(delta)->void:
 	if not win.visible: return;
 	perf.credit_all(delta);
 	update_cpu();
 	$V/H2/lbl_history.text = "steps recorded: "+str(cpu_n_steps);
 
-func update_cpu():
+func update_cpu()->void:
 	if not win.visible: return;
 	update_registers();
 	update_stack();
@@ -221,19 +221,19 @@ func update_cpu():
 	update_locals();
 	update_HL_locals();
 	
-func read32(adr):
+func read32(adr)->int:
 	var buff = PackedByteArray([0,0,0,0]);
 	for i in range(4): buff[i] = bus.readCell(adr+i);
 	return buff.decode_u32(0);
 
 #reverse
-func read32r(adr):
+func read32r(adr)->int:
 	var buff = PackedByteArray([0,0,0,0]);
 	for i in range(4): buff[3-i] = bus.readCell(adr+i);
 	return buff.decode_u32(0);
 	
 # cpu bug? push/pull store LSB while mov stores MSB
-func custom_search(k_has, k_want):
+func custom_search(k_has, k_want)->void:
 	print("k_has = ["+str(k_has)+"], k_want = "+str(k_want))
 
 # we need to do a binary search among the values of a dictionary,
@@ -243,7 +243,7 @@ var label_inv_dict = {};
 var label_ips = [];
 var label_names = [];
 
-func update_labels():
+func update_labels()->void:
 	label_inv_dict = {};
 	for k:String in assembler.final_labels.keys():
 		var v:int = assembler.final_labels[k];
@@ -256,10 +256,10 @@ func update_labels():
 		label_names.append(v);
 		label_ips.append(k);
 
-func assert_materialized(lbl):
+func assert_materialized(lbl)->void:
 	assert(lbl in assembler.final_labels, "Label [%s] not materialized" % str(lbl));
 
-func update_labels_from_sym_table():
+func update_labels_from_sym_table()->void:
 	symtable_label_ips.clear();
 	symtable_label_names.clear();
 	for key in cur_sym_table.funcs:
@@ -275,7 +275,7 @@ func update_labels_from_sym_table():
 		symtable_label_ips.append(ip_to);
 		symtable_label_names.append("(between)");
 
-func decode_ip(ip):
+func decode_ip(ip)->String:
 	if(not assembler or (assembler.final_labels.size() == 0)):
 		return "(no data)";
 	else:
@@ -293,7 +293,7 @@ func decode_ip(ip):
 		else: return "(null)";
 	#return "(no data)";
 
-func update_stack():
+func update_stack()->void:
 	if not perf.stack.run(0): return;
 	
 	n_stackview.clear();
@@ -318,7 +318,7 @@ func update_stack():
 		cur_ebp = prev_ebp;
 		cur_ip = prev_ip;
 
-func _on_cpu_vm_cpu_step_done(_vm_cpu):
+func _on_cpu_vm_cpu_step_done(_vm_cpu)->void:
 	assert(is_setup);
 	#if(cpu.regs[cpu.ISA.REG_CTRL] & cpu.ISA.BIT_STEP):
 	#	update_cpu();
@@ -329,16 +329,16 @@ func _on_btn_run_pressed():
 	cpu.regs[cpu.ISA.REG_CTRL] &= ~cpu.ISA.BIT_STEP;
 	cpu.regs[cpu.ISA.REG_CTRL] |= cpu.ISA.BIT_PWR;
 	
-func _on_btn_pause_pressed():
+func _on_btn_pause_pressed()->void:
 	cpu.regs[cpu.ISA.REG_CTRL] ^= cpu.ISA.BIT_PWR;
 
-func _on_btn_stop_pressed():
+func _on_btn_stop_pressed()->void:
 	cpu.regs[cpu.ISA.REG_CTRL] &= ~cpu.ISA.BIT_PWR; #~cpu.ISA.BIT_STEP;
 	cpu.reset();
 	reset_cpu_history();
 	perf.all.prime();
 
-func _on_btn_step_pressed():
+func _on_btn_step_pressed()->void:
 	#cpu.regs[cpu.ISA.REG_CTRL] |= (cpu.ISA.BIT_STEP | cpu.ISA.BIT_PWR);
 	if highlight_mode == HighlightMode.HIGH_LEVEL:
 		var old_loc = cur_loc;
@@ -351,20 +351,20 @@ func _on_btn_step_pressed():
 		cpu.step();
 		perf.all.prime();
 
-func _on_btn_next_line_pressed():
+func _on_btn_next_line_pressed()->void:
 	print("unimplemented");
 
-func _on_btn_step_in_pressed():
+func _on_btn_step_in_pressed()->void:
 	print("unimplemented");
 
-func _on_btn_step_out_pressed():
+func _on_btn_step_out_pressed()->void:
 	var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
 	for i in range(10000):
 		if(cpu.regs[cpu.ISA.REG_EBP] > cur_ebp): break;
 		cpu.step();
 	perf.all.prime();
 
-func _on_btn_run_to_line_pressed():
+func _on_btn_run_to_line_pressed()->void:
 	print("unimplemented");
 	var cur_line = editor.get_cur_line_idx();
 	var best_oploc = op_locations[0];
@@ -388,7 +388,7 @@ func get_pointer_tooltip(addr, val)->String:
 	var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
 	return "byte %02X (%d) at address %02X (%d)\n(EBP + %d)" % [val, val, addr, addr, (addr-cur_ebp)];
 
-func init_sliders():
+func init_sliders()->void:
 	slider_base_addr = int(n_sb_addr.value);
 	for i in range(-8,8):
 		var addr = slider_base_addr+i;
@@ -405,12 +405,12 @@ func init_sliders():
 	#for i in range(32):
 	#	slider_top.add_item("-"); 
 	
-func update_pointers():
+func update_pointers()->void:
 	if not perf.pointers.run(0): return;
 	update_mid();
 	update_top();
 
-func update_mid():
+func update_mid()->void:
 	slider_base_addr = n_sb_addr.value;
 	var idx = 0;
 	for i in range(-8,8):
@@ -424,7 +424,7 @@ func update_mid():
 		slider_mid.set_item_custom_bg_color(idx, item_col);
 		idx += 1;
 
-func calc_highlight_color(addr):
+func calc_highlight_color(addr)->Color:
 	var item1_col = Color.BLACK;
 	var item2_col = Color.BLACK;
 	for item in stack_items:
@@ -440,7 +440,7 @@ func calc_highlight_color(addr):
 		item2_col = Color.CYAN;
 	return item1_col.lerp(item2_col, 0.5);
 
-func is_in_range(x,from,to):
+func is_in_range(x,from,to)->bool:
 	return (x >= from) and (x < to);
 
 const type_sizes = {
@@ -457,7 +457,7 @@ const type_sizes = {
 	#const sp_width = 12.0;
 	#return " ".repeat(int(float(px)/sp_width));
 	
-func update_top():
+func update_top()->void:
 	for ch in slider_top.get_children():
 		ch.queue_free();
 	
@@ -512,7 +512,7 @@ func update_top():
 	#for i in range(first_is_blank, 16):
 	#	slider_top.set_item_text(i, pix_to_spaces(step_px*view_size));
 	
-func get_slider_text(pos, view_type):
+func get_slider_text(pos, view_type)->String:
 	var view_size = type_sizes[view_type];
 	var arr = [];
 	for i in range(view_size):
@@ -537,12 +537,25 @@ var always_update_locals = false;
 
 @onready var n_locals_view = $V/TabContainer/local_view/V/H/ob_view;
 
+class DbgLocal:
+	var pos:int;
+	var type:String;
+	var ip:int;
+	var access:String;
+	func _init(_pos=0,_type="",_ip=0,_access=""):
+		pos = _pos;
+		type = _type;
+		ip = _ip;
+		access = _access;
+			#{"pos":cmd_offs, "type":local_type, 
+			#"ip":cur_ip, "access":access_type});
+
 var local_is_lbl = false;
-var locals = [];
+var locals:Array[DbgLocal] = [];
 var locals_func = "";
 var locals_ebp = 0;
 
-func update_locals():
+func update_locals()->void:
 	if not perf.locals.run(0): return;
 	
 	n_indicator.color = Color.GREEN;
@@ -600,7 +613,7 @@ func update_locals():
 			format_local_access_word(local, col);
 			format_local_val_word(local, col);
 
-func format_local_main_word(local, col):
+func format_local_main_word(local, col)->void:
 	var text = "";
 	if local.type in ["lbl", "imm"]:
 		if local.pos in label_inv_dict:
@@ -619,7 +632,7 @@ func format_local_main_word(local, col):
 	var idx = n_locals.add_item(text);
 	n_locals.set_item_custom_fg_color(idx, col);
 
-func format_intro_line(cur_func:String):
+func format_intro_line(cur_func:String)->void:
 	n_locals.add_item("Showing:");
 	n_locals.add_item(locals_func);
 	if cur_func != locals_func:
@@ -627,7 +640,7 @@ func format_intro_line(cur_func:String):
 		n_locals.add_item(cur_func);
 	G.complete_line(n_locals);
 
-func format_local_val_word(local, col):
+func format_local_val_word(local, col)->void:
 	var val = 0;
 	var EBP = locals_ebp;
 	if local.type == "stack":
@@ -641,21 +654,21 @@ func format_local_val_word(local, col):
 	var idx = n_locals.add_item(str(val));
 	n_locals.set_item_custom_fg_color(idx, col);
 
-func format_local_access_word(local, col):
+func format_local_access_word(local, col)->void:
 	var idx = n_locals.add_item(local.access);
 	n_locals.set_item_custom_fg_color(idx, col);
 
-func format_local_ip_word(local, col):
+func format_local_ip_word(local, col)->void:
 	var idx = n_locals.add_item(str(local.ip));
 	n_locals.set_item_custom_fg_color(idx, col);
 
-func get_cur_func_name():
+func get_cur_func_name()->String:
 	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
 	var cur_func = decode_ip(cur_ip);
 	return cur_func;
 
-func find_locals():
-	var found_locals = [];
+func find_locals()->Array[DbgLocal]:
+	var found_locals:Array[DbgLocal] = [];
 	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
 	var next_ret = find_ret(cur_ip);
 	print("next_ret = %d" % next_ret);
@@ -722,13 +735,15 @@ func find_locals():
 						is_valid = true;
 		if is_valid: 
 			found_locals.append(
-			{"pos":cmd_offs, "type":local_type, 
-			"ip":cur_ip, "access":access_type});
+				DbgLocal.new(cmd_offs,local_type,
+							cur_ip,access_type));
+			#{"pos":cmd_offs, "type":local_type, 
+			#"ip":cur_ip, "access":access_type});
 		cur_ip += cmd_size;
 	return found_locals;
 
-func group_locals(in_locals, mode:String):
-	var new_locals:Array = [];
+func group_locals(in_locals:Array[DbgLocal], mode:String)->Array[DbgLocal]:
+	var new_locals:Array[DbgLocal] = [];
 	if mode == "by_ip":
 		new_locals = in_locals.duplicate();
 		new_locals.sort_custom(func(a,b): 
@@ -749,14 +764,14 @@ func group_locals(in_locals, mode:String):
 
 const cmd_size = 8;
 # returns the ip of the next "ret" instruction
-func find_ret(cur_ip):
+func find_ret(cur_ip)->int:
 	for i in range(100):
 		var pos = i*cmd_size+cur_ip;
 		if get_cmd(pos).decode_u8(0) == 0x05:
 			return pos;
 	return 0;
 	
-func get_cmd(pos):
+func get_cmd(pos)->PackedByteArray:
 	var arr = [];
 	for j in range(cmd_size):
 		arr.append(bus.readCell(pos+j));
@@ -765,7 +780,7 @@ func get_cmd(pos):
 	return cmd;
 #ADD UNCOMPUTE BUTTON step back\
 
-func _on_cb_update_toggled(toggled_on):
+func _on_cb_update_toggled(toggled_on)->void:
 	always_update_locals = toggled_on;
 	if toggled_on: locals_ebp = -1;
 	perf.locals.prime();
@@ -792,12 +807,12 @@ const max_cpu_history = 1000;
 var cpu_history = [];
 var cpu_n_steps = 0;
 
-func reset_cpu_history():
+func reset_cpu_history()->void:
 	cpu_history.clear();
 	cpu_n_steps = 0;
 	save_cpu_state();
 
-func save_cpu_state():
+func save_cpu_state()->void:
 	#print("--- + Step + ---");
 	var state = {"regs":cpu.regs.duplicate()};
 	var event = {"type":"cpu", "state":state};
@@ -808,7 +823,7 @@ func save_cpu_state():
 	cpu_history.push_back(event);
 	cpu_n_steps += 1;
 
-func save_mem_access(addr, val, is_write):
+func save_mem_access(addr, val, is_write)->void:
 	if not is_write: return;
 	var access = {"addr":addr, "old":bus.readCell(addr), "new":val};
 	var event = {"type":"mem", "access":access};
@@ -818,7 +833,7 @@ func save_mem_access(addr, val, is_write):
 			cpu_n_steps -= 1;
 	cpu_history.push_back(event);
 
-func unstep():
+func unstep()->void:
 	#print("---- UNSTEP BEFORE ---");
 	#print_cpu_hist(10);
 	#print("---- UNSTEP ----");
@@ -882,11 +897,11 @@ func unstep():
 	#print("<next>");
 	#print_cpu_hist(10);
 
-func undo_mem(event):
+func undo_mem(event)->void:
 	bus.writeCell(event.access.addr, event.access.old);
 	print("undo mem %d -> %d" % [event.access.old, event.access.addr]);
 	
-func undo_cpu(event):
+func undo_cpu(event)->bool:
 	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
 	var old_ip = event.state.regs[cpu.ISA.REG_IP];
 	event.state.regs[cpu.ISA.REG_CTRL] &= ~cpu.ISA.BIT_PWR;
@@ -897,7 +912,7 @@ func undo_cpu(event):
 		print("undo cpu ip %d -> ip %d" % [cur_ip, old_ip]);
 		return true;
 
-func print_cpu_hist(n_events):
+func print_cpu_hist(n_events)->void:
 	print("cpu history:");
 	for i in range(n_events):
 		if i >= len(cpu_history): return;
@@ -911,7 +926,7 @@ func print_cpu_hist(n_events):
 func on_sym_table_ready(sym_table) -> void:
 	cur_sym_table = sym_table;
 
-func update_HL_locals():
+func update_HL_locals()->void:
 	n_hl_locals.clear();
 	if not cur_sym_table:
 		n_hl_locals.add_item("No symbol table");
@@ -938,7 +953,7 @@ func update_HL_locals():
 			var value = read_hl_local(val, cur_ebp);
 			n_hl_locals.add_item(str(value));
 
-func read_hl_local(val, cur_ebp):
+func read_hl_local(val, cur_ebp)->Variant:
 	if "value" in val.pos: return val.pos.value;
 	match val.pos.type:
 		"global":pass;
@@ -966,10 +981,10 @@ class IP_range:
 	var begin:int = -1;
 	var end:int = -1;
 	var loc:LocationRange;
-	func _init(dict=null):
+	func _init(dict=null)->void:
 		if dict:
 			G.dictionary_init(self, dict);
-	func is_valid():
+	func is_valid()->bool:
 		if not (begin != -1):
 			print("IP_range: begin unset");
 			return false;
@@ -997,10 +1012,10 @@ class ELM_sub_entry:
 	var all_ranges:Array[IP_range] = []; ## all ranges that overlap with current ip
 	var smallest_src:IP_range; ## range that corresponds to the smallest source text
 	var smallest_ip:IP_range; ## range that covers the smallest ip distance
-	func _init(dict=null):
+	func _init(dict=null)->void:
 		if dict:
 			G.dictionary_init(self, dict);
-	func is_valid():
+	func is_valid()->bool:
 		if not (all_ranges.all(func(x): return x.is_valid())):
 			print(" ELM_sub_entry: some ranges invalid");
 			return false;
@@ -1025,10 +1040,10 @@ class ELM_entry:
 	var ip:int = -1;
 	var asm:ELM_sub_entry;
 	var hl:ELM_sub_entry;
-	func _init(dict=null):
+	func _init(dict=null)->void:
 		if dict:
 			G.dictionary_init(self, dict);
-	func is_valid():
+	func is_valid()->bool:
 		#if not (asm != null):
 		#	print("ELM_entry: asm is null");
 		#	return false;
@@ -1049,7 +1064,7 @@ var ExpandedLocationMap:Array[ELM_entry]; ## <cmd_idx, entry>
 
 ## changes the loc_map from sparse to dense representation.
 ##  every ip will point to all the ranges that ovelap with it.
-func expand_location_map():
+func expand_location_map()->void:
 	var ELM:Array[ELM_entry] = ExpandedLocationMap;
 	ELM.clear();
 	var max_ip = get_max_loc_map_key();
@@ -1102,11 +1117,11 @@ func ELM_open_loc(ip:int, sub_entry_key:String, loc:LocationRange)->IP_range:
 	all_ranges.append(ip_range);
 	return ip_range;
 
-func ELM_close_loc(ip:int, ip_range:IP_range):
+func ELM_close_loc(ip:int, ip_range:IP_range)->void:
 	#print("close loc [%s] at ip %d" % [ip_range.loc.begin.line, ip]);
 	ip_range.end = ip;
 
-func ELM_continue_loc(ip:int, sub_entry_key:String, ip_range:IP_range):
+func ELM_continue_loc(ip:int, sub_entry_key:String, ip_range:IP_range)->void:
 	var ELM:Array[ELM_entry] = ExpandedLocationMap;
 	var cmd_idx = ip / cmd_size;
 	var entry = ELM[cmd_idx];
@@ -1118,7 +1133,7 @@ func ELM_continue_loc(ip:int, sub_entry_key:String, ip_range:IP_range):
 	assert(ip_range not in all_ranges);
 	all_ranges.append(ip_range);
 
-func ELM_sort_ranges(subentry:ELM_sub_entry):
+func ELM_sort_ranges(subentry:ELM_sub_entry)->void:
 	assert(len(subentry.all_ranges), "can't have it so no ranges cover an ip");
 	subentry.all_ranges.sort_custom(
 		func(a:IP_range,b:IP_range)->bool:
@@ -1134,7 +1149,7 @@ func ELM_sort_ranges(subentry:ELM_sub_entry):
 		#if ip_range.loc == loc: return ip_range;
 	#return null
 
-func get_max_loc_map_key():
+func get_max_loc_map_key()->int:
 	var keys = loc_map.begin.keys().duplicate(); 
 	keys.sort(); 
 	var max_key = keys.back();
@@ -1143,7 +1158,7 @@ func get_max_loc_map_key():
 	max_key = max(max_key, keys.back());
 	return max_key;
 
-func set_cur_loc(new_loc):
+func set_cur_loc(new_loc)->void:
 	cur_loc = new_loc;
 	if G.has(cur_loc):
 		cur_loc_line = cur_loc.begin.line;

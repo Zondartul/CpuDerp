@@ -5,11 +5,11 @@ var memory;
 var console:RichTextLabel;
 var is_setup = false;
 
-func _ready():
+func _ready()->void:
 	$V/MenuBar/Settings.set_item_submenu_node(0,$V/MenuBar/Settings/Language);
 	pass;
 	
-func setup(dict:Dictionary):
+func setup(dict:Dictionary)->void:
 	assert("VM" in dict);
 	assert("memory" in dict);
 	assert("console" in dict);
@@ -28,29 +28,29 @@ func setup(dict:Dictionary):
 	$comp_build.setup(dict2);
 	$window_debug/debug_panel.setup(dict2);
 
-func switch_to_file(filename):
+func switch_to_file(filename)->void:
 	$comp_file.switch_to_file(filename);
 
-func print_console(text, col=Color.GRAY):
+func print_console(text, col=Color.GRAY)->void:
 	#var console:TextEdit = $V/TE_console;
 	console.text += "[color="+col.to_html(false)+"]"+ text + "[/color]" + "\n";
 	#scroll to bottom
 	#console.scroll_vertical = console.get_line_count();
 
-func clear_console():
+func clear_console()->void:
 	console.text = "";
 
-func set_progress(text:String, shown:bool):
+func set_progress(text:String, shown:bool)->void:
 	$V/H2/RTL_progress.text = text;
 	$V/H2/RTL_progress.visible = shown;
 
-func _process(_delta):
+func _process(_delta)->void:
 	if Input.is_action_just_pressed("action_save"):
 		await $comp_file.async_save_file();
 	if Input.is_action_just_pressed("action_search"):
 		$comp_search.popup();
 
-func save():
+func save()->void:
 	await $comp_file.async_save_file();
 
 func _on_view_index_pressed(index: int) -> void:

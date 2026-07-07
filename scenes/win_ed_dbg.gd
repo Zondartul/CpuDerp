@@ -10,7 +10,7 @@ extends Window
 
 var watch = [];
 
-func _ready():
+func _ready()->void:
 	watch = [
 		{"node":comp_file, "propname":"cur_efile", "propval":null, "desc":"Editor's efile", "subprop":"language", "subpropval":null},
 		{"node":tab_EFiles, "propname":"current_tab", "propval":null, "desc":"Current tab"},
@@ -22,12 +22,12 @@ func _ready():
 		{"node":debug_panel, "propname":"all_locs_here_str", "propval":null, "desc":"locs here"},
 	];
 
-func _process(_delta):
+func _process(_delta)->void:
 	if not visible: return;
 	update_watch_vars();
 	update_watch_view();
 
-func update_watch_vars():
+func update_watch_vars()->void:
 	for v in watch:
 		if v.propname in v.node:
 			var val = v.node.get(v.propname);
@@ -39,13 +39,13 @@ func update_watch_vars():
 		else:
 			v.propval = "<no property>";
 
-func dbg_to_string(obj):
+func dbg_to_string(obj)->String:
 	if obj is Node:
 		return "Node:"+obj.name;
 	else:
 		return str(obj);
 
-func update_watch_view():
+func update_watch_view()->void:
 	n_list.clear();
 	for v in watch:
 		n_list.add_item("%s: " % v.desc);
@@ -54,7 +54,7 @@ func update_watch_view():
 			n_list.add_item("...%s: " % v.subprop);
 			print_val(v.subpropval);
 			
-func print_val(val):
+func print_val(val)->void:
 	var S:String = val;
 	var SS = S.split("\n",false);
 	if len(SS) > 1:
