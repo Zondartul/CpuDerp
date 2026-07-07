@@ -3,23 +3,23 @@ extends Node
 # constants
 const uYaml = preload("res://scenes/uYaml.gd");
 # state
-var IR = null;
+var IR:IRKind;
 var cur_scope = null;
 var cur_code_block = null;
 var val_idx = 0;
 
 func reset()->void:
-	IR = null;
+	IR = IRKind.new();
 	cur_scope = null;
 	cur_code_block = null;
 	val_idx = 0;
 
 func clear_IR()->void:
 	reset();
-	IR = {
-		"code_blocks":{},
-		"scopes":{},
-	};
+	#IR = {
+	#	"code_blocks":{},
+	#	"scopes":{},
+	#};
 	var global_scope = new_scope("global", "none");
 	cur_scope = global_scope;
 	var global_code_block = new_code_block();
@@ -167,18 +167,18 @@ func pop_scope(old_scope:Scope)->Scope:
 	
 func new_scope(scp_name:String="", scp_parent:String="")->Scope:
 	if scp_name == "": scp_name = "NULL";
-	var scp = {
+	var scp:Scope = Scope.new({
 				"ir_name":make_unique_IR_name("scp",scp_name),
 				"user_name":scp_name,
 				"parent":scp_parent,
-				"vars":[],
-				"funcs":[],
-			};
+				#"vars":[],
+				#"funcs":[],
+			});
 	IR.scopes[scp.ir_name] = scp;
 	return scp;
 
 func get_var(var_name:String)->IR_Var:
-	var seek_scope = cur_scope;
+	var seek_scope:Scope = cur_scope;
 	var lc = LoopCounter.new();
 	while true:
 		lc.step();
@@ -193,7 +193,7 @@ func get_var(var_name:String)->IR_Var:
 	return null;
 
 func get_func(fun_name:String)->IR_func:
-	var seek_scope = cur_scope;
+	var seek_scope:Scope = cur_scope;
 	var lc = LoopCounter.new();
 	while true:
 		lc.step();
@@ -223,8 +223,8 @@ func serialize_full()->String:
 
 func serialize_vals(arr)->void:
 	for i in range(len(arr)):
-			var old_var = arr[i];
-			var new_var = [];
+			var old_var:Variant = arr[i];
+			var new_var:Array = [];
 			if old_var.data_type:
 				old_var.data_size = str(old_var.data_type.get_size());
 				old_var.data_type = old_var.data_type.full_name;
@@ -277,7 +277,7 @@ func serialize_vals(arr)->void:
 	#return new_str;
 
 func to_file(filename)->void:
-	var fp = FileAccess.open(filename, FileAccess.ModeFlags.WRITE);
+	var fp:FileAccess = FileAccess.open(filename, FileAccess.ModeFlags.WRITE);
 	if not fp: push_error("can't write file: "+filename); return;
 	var text = serialize_full();
 	fp.store_line(text);

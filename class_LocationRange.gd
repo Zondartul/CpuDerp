@@ -11,7 +11,7 @@ func _init(dict=null):
 			set(key, dict[key]);
 			
 func duplicate()->LocationRange:
-	var loc2 = LocationRange.new();
+	var loc2:LocationRange = LocationRange.new();
 	G.duplicate_deep(self, loc2);
 	return loc2;
 
@@ -46,21 +46,21 @@ func to_string_full()->String:
 ## returns a comparable value
 func dist()->float:
 	assert(is_valid());
-	var line_diff = end.line_idx - begin.line_idx;
-	var col_diff = end.col - begin.col;
+	var line_diff:int = end.line_idx - begin.line_idx;
+	var col_diff:int = end.col - begin.col;
 	return line_diff + col_diff / 1000.0;
 
 static func from_loc_len(loc:Location, length:int)->LocationRange:
-	var loc2 = loc.duplicate();
+	var loc2:Location = loc.duplicate();
 	loc2.col += length;
 	return LocationRange.new({"begin":loc.duplicate(), "end":loc2});
 
 static func from_string(S:String)->LocationRange:
-	var idx = S.find("~");
-	var s_from = S.substr(0, idx);
-	var s_to = S.substr(idx+1);
-	var loc_from = Location.from_string(s_from);
-	var loc_to = Location.from_string(s_to);
-	var res = LocationRange.new({"begin":loc_from, "end":loc_to});
+	var idx:int = S.find("~");
+	var s_from:String = S.substr(0, idx);
+	var s_to:String = S.substr(idx+1);
+	var loc_from:Location = Location.from_string(s_from);
+	var loc_to:Location = Location.from_string(s_to);
+	var res:LocationRange = LocationRange.new({"begin":loc_from, "end":loc_to});
 	#print("LocationRange.from_string(%s) result: %s" % [S, res.to_string_full()])
 	return res;

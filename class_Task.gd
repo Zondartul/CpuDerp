@@ -13,9 +13,9 @@ var happy_path = true: # if not happy_path, proceed to exit asap
 	set(val): happy_path = val; _ping();
 var sub_tasks:Array[Task] = [];
 var parent:Task;
-var context = null;	# user data for this task
-var errors = [];	# errors collected during execution
-var print_proxy = null;
+var context:Variant = null;	# user data for this task
+var errors:Array = [];	# errors collected during execution
+var print_proxy:Variant = null;
 
 func _ping(): # tell parent that something changed
 	if parent: parent._pong();
@@ -25,7 +25,7 @@ func _pong():
 	#else: tprint(get_progress_tree(0));
 
 func get_progress_tree(indent:int)->String:
-	var text = " ".repeat(indent);
+	var text:String = " ".repeat(indent);
 	if indent > 0: text += "└";
 	text += get_progress_string() + "\n";
 	for ch in sub_tasks:
@@ -36,7 +36,7 @@ func fail()->void: happy_path = false;
 func mark_done()->void: done = true;
 
 func add_subtask(task_name)->Task:
-	var task = Task.new();
+	var task:Task = Task.new();
 	task.parent = self;
 	if task_name: task.user_name = task_name;
 	sub_tasks.append(task);
@@ -48,15 +48,15 @@ func get_done_ratio()->Array:
 	for task in sub_tasks:
 		n_total += 1;
 		n_complete += task.get_done_ratio()[2];
-	var ratio = 0;
+	var ratio:int = 0;
 	if n_total > 0: ratio = n_complete / n_total;
 	return [n_total, n_complete, ratio];
 
 func get_progress_string()->String:
-	var ratio = get_done_ratio();
-	var n_total = ratio[0];
-	var n_complete = ratio[1]; 
-	var percentage = 100.0*n_complete / float(n_total);
+	var ratio:Array = get_done_ratio();
+	var n_total:float = ratio[0];
+	var n_complete:float = ratio[1]; 
+	var percentage:float = 100.0*n_complete / float(n_total);
 	if is_nan(percentage): percentage = 0.0;
 	return "Task %s: %d%% (%d / %d)" % [user_name, percentage, n_complete, n_total];
 

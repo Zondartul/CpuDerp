@@ -18,7 +18,7 @@ const ISA = preload("res://lang_zvm.gd")
 
 const class_PerfLimitDirectory = preload("res://PerfLimitDirectory.gd");
 
-var perf = PerfLimitDirectory.new({
+var perf:PerfLimitDirectory = PerfLimitDirectory.new({
 	"all":1.0,
 	"regs":0.1,
 	"stack":0.1,
@@ -27,9 +27,9 @@ var perf = PerfLimitDirectory.new({
 	"locals":1.0,
 	});
 
-var perf_always_on = ["all", "regs", "stack"];#, "ip"];
+var perf_always_on:Array[String] = ["all", "regs", "stack"];#, "ip"];
 
-var regnames = [
+var regnames:Array[String] = [
 	"NONE",
 	"EAX", "EBX", "ECX", "EDX",
 	"IP", 
@@ -38,43 +38,53 @@ var regnames = [
 	"CTRL"
 ];
 
-const BIT_PWR = (0b1 << 0);
-const BIT_STEP = (0b1 << 1);
-const BIT_IRS = (0b1 << 2);
-const BIT_CMP_L = (0b1 << 3);
-const BIT_CMP_G = (0b1 << 4);
-const BIT_CMP_Z = (0b1 << 5);
-const BIT_IE = (0b1 << 6);
-const BIT_DEREF1 = (0b1 << 0);
-const BIT_DEREF2 = (0b1 << 1);
-const BIT_IMDEST = (0b1 << 2);
-const BIT_SPEC_IFLESS = (0b1 << 0);
-const BIT_SPEC_IFZERO = (0b1 << 1);
-const BIT_SPEC_IFGREATER = (0b1 << 2);
-const REG_NONE = 0
-const REG_EAX = 1;
-const REG_EBX = 2;
-const REG_ECX = 3;
-const REG_EDX = 4;
-const REG_IP = 5;
-const REG_ESP = 6;
-const REG_ESZ = 7;
-const REG_ESS = 8;
-const REG_EBP = 9;
-const REG_IVT = 10;
-const REG_IVS = 11;
-const REG_IRQ = 12;
-const REG_CTRL = 13;
-const step_limit = 1000; #how many CPU steps are permitted per frame
+const BIT_PWR:int = (0b1 << 0);
+const BIT_STEP:int = (0b1 << 1);
+const BIT_IRS:int = (0b1 << 2);
+const BIT_CMP_L:int = (0b1 << 3);
+const BIT_CMP_G:int = (0b1 << 4);
+const BIT_CMP_Z:int = (0b1 << 5);
+const BIT_IE:int = (0b1 << 6);
+const BIT_DEREF1:int = (0b1 << 0);
+const BIT_DEREF2:int = (0b1 << 1);
+const BIT_IMDEST:int = (0b1 << 2);
+const BIT_SPEC_IFLESS:int = (0b1 << 0);
+const BIT_SPEC_IFZERO:int = (0b1 << 1);
+const BIT_SPEC_IFGREATER:int = (0b1 << 2);
+const REG_NONE:int = 0
+const REG_EAX:int = 1;
+const REG_EBX:int = 2;
+const REG_ECX:int = 3;
+const REG_EDX:int = 4;
+const REG_IP:int = 5;
+const REG_ESP:int = 6;
+const REG_ESZ:int = 7;
+const REG_ESS:int = 8;
+const REG_EBP:int = 9;
+const REG_IVT:int = 10;
+const REG_IVS:int = 11;
+const REG_IRQ:int = 12;
+const REG_CTRL:int = 13;
+const step_limit:int = 1000; #how many CPU steps are permitted per frame
 
 var cpu:CPU_vm;
-var bus;
-var assembler;
-var efile;
-var editor;
-var is_setup = false;
-var mode_hex = false;
-var stack_items = [];
+var bus:Node;
+var assembler:Node;
+var efile:Node;
+var editor:Node;
+var is_setup:bool = false;
+var mode_hex:bool = false;
+
+class StackItem:
+	var ip:int
+	var ebp:int
+	var fun:String
+	func _init(_ip:int=0,_ebp:int=0,_fun=""):
+		ip=_ip;
+		ebp=_ebp;
+		fun=_fun;
+
+var stack_items:Array[StackItem] = [];
 var slider_base_addr:int = 0;
 var cur_sym_table = null;
 var symtable_label_ips = [];
@@ -130,8 +140,8 @@ func update_registers()->void:
 		val = format_val(val);
 		n_regview.set_item_text(i*2+1, val);
 
-var op_ips:Array = [];
-var op_locations:Array;
+var op_ips:Array[int] = [];
+var op_locations:Array[LocationRange];
 
 func cache_op_locations()->void:
 	op_ips = [];
@@ -301,8 +311,8 @@ func update_stack()->void:
 	n_stackview.add_item("IP");
 	n_stackview.add_item("EBP");
 	n_stackview.add_item("Function");
-	var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
-	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
+	var cur_ebp:int = cpu.regs[cpu.ISA.REG_EBP];
+	var cur_ip:int = cpu.regs[cpu.ISA.REG_IP];
 	stack_items.clear();
 	for i in range(10):
 		var cur_func = decode_ip(cur_ip);
@@ -311,10 +321,10 @@ func update_stack()->void:
 		n_stackview.add_item(cur_func);
 		stack_items.append({"ip":cur_ip, "ebp":cur_ebp, "fun":cur_func});
 		if cur_ebp == 0: break;
-		var prev_ebp_adr = cur_ebp+1;
-		var prev_ip_adr = cur_ebp+5;
-		var prev_ip = read32(prev_ip_adr);
-		var prev_ebp = read32(prev_ebp_adr);
+		var prev_ebp_adr:int = cur_ebp+1;
+		var prev_ip_adr:int = cur_ebp+5;
+		var prev_ip:int = read32(prev_ip_adr);
+		var prev_ebp:int = read32(prev_ebp_adr);
 		cur_ebp = prev_ebp;
 		cur_ip = prev_ip;
 
@@ -341,7 +351,7 @@ func _on_btn_stop_pressed()->void:
 func _on_btn_step_pressed()->void:
 	#cpu.regs[cpu.ISA.REG_CTRL] |= (cpu.ISA.BIT_STEP | cpu.ISA.BIT_PWR);
 	if highlight_mode == HighlightMode.HIGH_LEVEL:
-		var old_loc = cur_loc;
+		var old_loc:LocationRange = cur_loc;
 		for i in range(step_limit):
 			if cur_loc != old_loc: break;
 			cpu.step();
@@ -358,7 +368,7 @@ func _on_btn_step_in_pressed()->void:
 	print("unimplemented");
 
 func _on_btn_step_out_pressed()->void:
-	var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
+	var cur_ebp:int = cpu.regs[cpu.ISA.REG_EBP];
 	for i in range(10000):
 		if(cpu.regs[cpu.ISA.REG_EBP] > cur_ebp): break;
 		cpu.step();
@@ -366,8 +376,8 @@ func _on_btn_step_out_pressed()->void:
 
 func _on_btn_run_to_line_pressed()->void:
 	print("unimplemented");
-	var cur_line = editor.get_cur_line_idx();
-	var best_oploc = op_locations[0];
+	var cur_line:int = editor.get_cur_line_idx();
+	var best_oploc:LocationRange = op_locations[0];
 	for i in range(len(op_locations)):
 		var oploc = op_locations[i];
 		if (oploc.line <= cur_line) and (oploc.line > best_oploc.line):
@@ -461,36 +471,36 @@ func update_top()->void:
 	for ch in slider_top.get_children():
 		ch.queue_free();
 	
-	var view_type = n_ob_view.get_item_text(n_ob_view.selected);
-	var top_offs = n_sb_offs.value;
-	var view_size = type_sizes[view_type];
+	var view_type:String = n_ob_view.get_item_text(n_ob_view.selected);
+	var top_offs:int = n_sb_offs.value;
+	var view_size:int = type_sizes[view_type];
 	#const step_px = 24;
-	var offs_real = -(slider_base_addr % view_size) + top_offs;
+	var offs_real:int = -(slider_base_addr % view_size) + top_offs;
 	#var first_is_blank = 0;
 	
-	var n_views = ((16-offs_real)/view_size)+1;
+	var n_views:int = ((16-offs_real)/view_size)+1;
 
 	for i in range(n_views):
-		var first_item = offs_real + i*view_size;
-		var last_item = first_item + view_size - 1;
+		var first_item:int = offs_real + i*view_size;
+		var last_item:int = first_item + view_size - 1;
 		if (first_item < 0) or (last_item >= 16): continue;
-		var first_rect = slider_mid.get_item_rect(first_item);
-		var last_rect = slider_mid.get_item_rect(last_item);
-		var vec_from = first_rect.position;
-		var vec_to = last_rect.end;
+		var first_rect:Rect2 = slider_mid.get_item_rect(first_item);
+		var last_rect:Rect2 = slider_mid.get_item_rect(last_item);
+		var vec_from:Vector2 = first_rect.position;
+		var vec_to:Vector2 = last_rect.end;
 		#
 		#var view_panel:Panel = Panel.new();
 		#view_panel.set_position(vec_from);
 		#view_panel.set_size(vec_to-vec_from);
 		#slider_top.add_child(view_panel);
 		
-		var col_odd = Color(0.176, 0.192, 0.22, 1.0);
-		var col_even = Color(0.114, 0.133, 0.161, 1.0);
+		var col_odd:Color = Color(0.176, 0.192, 0.22, 1.0);
+		var col_even:Color = Color(0.114, 0.133, 0.161, 1.0);
 		
 		var view_box:ColorRect = ColorRect.new();
 		view_box.color = col_odd;
-		var pos = int(slider_base_addr+i*view_size+offs_real-8);
-		var is_even = (pos/view_size)%2 == 0;
+		var pos:int = int(slider_base_addr+i*view_size+offs_real-8);
+		var is_even:bool = (pos/view_size)%2 == 0;
 		if is_even: view_box.color = col_even;
 		view_box.set_position(vec_from);
 		view_box.set_size(vec_to-vec_from);
@@ -504,7 +514,7 @@ func update_top()->void:
 		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER;
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER;
 		
-		var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
+		var cur_ebp:int = cpu.regs[cpu.ISA.REG_EBP];
 		view_box.tooltip_text = "Value at %d+%d (EBP%+d)" % [pos, view_size, pos-cur_ebp];
 	#if offs_real:
 	#	first_is_blank = 1;
@@ -513,8 +523,8 @@ func update_top()->void:
 	#	slider_top.set_item_text(i, pix_to_spaces(step_px*view_size));
 	
 func get_slider_text(pos, view_type)->String:
-	var view_size = type_sizes[view_type];
-	var arr = [];
+	var view_size:int = type_sizes[view_type];
+	var arr:Array[int] = [];
 	for i in range(view_size):
 		arr.append(bus.readCell(pos+i));
 	var data = PackedByteArray(arr);
@@ -533,9 +543,9 @@ func get_slider_text(pos, view_type)->String:
 func _on_sb_addr_value_changed(_value: float) -> void:
 	perf.pointers.prime();
 
-var always_update_locals = false;
+var always_update_locals:bool = false;
 
-@onready var n_locals_view = $V/TabContainer/local_view/V/H/ob_view;
+@onready var n_locals_view:OptionButton = $V/TabContainer/local_view/V/H/ob_view;
 
 class DbgLocal:
 	var pos:int;
@@ -550,32 +560,32 @@ class DbgLocal:
 			#{"pos":cmd_offs, "type":local_type, 
 			#"ip":cur_ip, "access":access_type});
 
-var local_is_lbl = false;
+var local_is_lbl:bool = false;
 var locals:Array[DbgLocal] = [];
-var locals_func = "";
-var locals_ebp = 0;
+var locals_func:String = "";
+var locals_ebp:int = 0;
 
 func update_locals()->void:
 	if not perf.locals.run(0): return;
 	
 	n_indicator.color = Color.GREEN;
 	n_locals.clear();
-	var cur_func = get_cur_func_name();
-	var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
+	var cur_func:String = get_cur_func_name();
+	var cur_ebp:int = cpu.regs[cpu.ISA.REG_EBP];
 	if always_update_locals:
 		if cur_ebp != locals_ebp:
 			locals = find_locals();
 			locals_func = cur_func;
 			locals_ebp = cur_ebp;
 	
-	var col_main = Color(0.74, 0.666, 0.0, 1.0);
-	var col_acc = col_main.darkened(0.5);
+	var col_main:Color = Color(0.74, 0.666, 0.0, 1.0);
+	var col_acc:Color = col_main.darkened(0.5);
 	
-	var view_type = n_locals_view.get_item_text(n_locals_view.get_selected_id());
+	var view_type:String = n_locals_view.get_item_text(n_locals_view.get_selected_id());
 	if view_type == "storage pos":
 		n_locals.max_columns = 3;
 		format_intro_line(cur_func);
-		var grouped_locals = group_locals(locals, "by_pos");
+		var grouped_locals:Array = group_locals(locals, "by_pos");
 		# BLUEPRINT
 		# <stuff @ pos> value ...
 		# <access> 		...  <ip>
@@ -586,7 +596,7 @@ func update_locals()->void:
 		n_locals.add_item("val");
 		n_locals.add_item("ip");
 		for group in grouped_locals:
-			var local =group[0];
+			var local:DbgLocal = group[0];
 			format_local_main_word(local, col_main);
 			format_local_val_word(local, col_main);
 			G.complete_line(n_locals);
@@ -742,7 +752,8 @@ func find_locals()->Array[DbgLocal]:
 		cur_ip += cmd_size;
 	return found_locals;
 
-func group_locals(in_locals:Array[DbgLocal], mode:String)->Array[DbgLocal]:
+## Outputs either Array[DbgLocal] or Array[Array[DbgLocal]]
+func group_locals(in_locals:Array[DbgLocal], mode:String)->Array: 	
 	var new_locals:Array[DbgLocal] = [];
 	if mode == "by_ip":
 		new_locals = in_locals.duplicate();
@@ -750,9 +761,9 @@ func group_locals(in_locals:Array[DbgLocal], mode:String)->Array[DbgLocal]:
 			return a.ip < b.ip;
 		)
 	elif mode == "by_pos":
-		var pos_dict = {};
+		var pos_dict:Dictionary[int,Array] = {};
 		for local in in_locals:
-			var key = local.pos;
+			var key:int = local.pos;
 			if key not in pos_dict: pos_dict[key] = [];
 			pos_dict[key].append(local);
 		for key in pos_dict:
@@ -762,17 +773,17 @@ func group_locals(in_locals:Array[DbgLocal], mode:String)->Array[DbgLocal]:
 			)
 	return new_locals;
 
-const cmd_size = 8;
+const cmd_size:int = 8;
 # returns the ip of the next "ret" instruction
 func find_ret(cur_ip)->int:
 	for i in range(100):
-		var pos = i*cmd_size+cur_ip;
+		var pos:int = i*cmd_size+cur_ip;
 		if get_cmd(pos).decode_u8(0) == 0x05:
 			return pos;
 	return 0;
 	
 func get_cmd(pos)->PackedByteArray:
-	var arr = [];
+	var arr:Array[int] = [];
 	for j in range(cmd_size):
 		arr.append(bus.readCell(pos+j));
 	print("got cmd: %s" % str(arr));
@@ -790,7 +801,7 @@ func _on_ob_view_item_selected(_index: int) -> void:
 
 func _on_btn_unstep_pressed() -> void:
 	if highlight_mode == HighlightMode.HIGH_LEVEL:
-		var old_loc = cur_loc;
+		var old_loc:LocationRange = cur_loc;
 		for i in range(step_limit):
 			if cur_loc != old_loc: break;
 			unstep();

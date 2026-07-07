@@ -12,7 +12,7 @@ func _init(dict=null):
 			set(key, dict[key]);
 
 func duplicate()->Token:
-	var tok2 = Token.new();
+	var tok2:Token = Token.new();
 	G.duplicate_shallow(self, tok2);
 	return tok2;
 

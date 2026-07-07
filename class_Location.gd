@@ -17,7 +17,7 @@ func _init(dict=null):
 	counter += 1;
 
 func duplicate()->Location:
-	var loc2 = Location.new();
+	var loc2:Location = Location.new();
 	G.duplicate_deep(self, loc2);
 	return loc2;
 
@@ -38,7 +38,7 @@ func to_string_short()->String:
 	return "%d:%d" % [line_idx, col];
 
 func to_string_full(b_friendly=null)->String:
-	var line_str = line;
+	var line_str:String = line;
 	if not b_friendly:
 		line_str = G.escape_string(line);
 	return "@%s:%d:%d:[%s]" % [filename, line_idx, col, line_str];
@@ -50,23 +50,23 @@ static func from_string(S:String)->Location:
 	#const rx_full = "\\@[^:]*\\:[^:]*\\:[^:]*\\:\\[[^:]*\\]";
 	const rx_any =  "(\\@([^:]*)\\:)?([^:]*)\\:([^:]*)(\\:\\[([^:]*)\\])?";
 	# groups           1 2          3        4      5      6
-	var compile_res = regex.compile(rx_any);
+	var compile_res:Error = regex.compile(rx_any);
 	assert(compile_res == OK);
 	var res:RegExMatch = regex.search(S);
 	assert(res, "unable to deserialize location: %s" % S);
 	if res:
 		#print("-------- REGEX ----");
 		#print(res.strings);
-		var new_filename = "";
+		var new_filename:String = "";
 		if res.get_string(1) != "":
 			new_filename = res.get_string(2);
-		var new_line_idx = int(res.get_string(3));
-		var new_col = int(res.get_string(4));
-		var new_line = "";
+		var new_line_idx:int = int(res.get_string(3));
+		var new_col:int = int(res.get_string(4));
+		var new_line:String = "";
 		if res.get_string(5) != "":
 			new_line = res.get_string(6);
 			new_line = G.unescape_string(new_line);
-		var loc = Location.new({"filename":new_filename, "line":new_line, "line_idx":new_line_idx, "col":new_col});
+		var loc:Location = Location.new({"filename":new_filename, "line":new_line, "line_idx":new_line_idx, "col":new_col});
 		return loc;
 	else:
 		return Location.new();

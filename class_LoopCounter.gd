@@ -1,7 +1,7 @@
 extends RefCounted
 class_name LoopCounter;
-var n_loops=0;
-var max_loops=0;
+var n_loops:int=0;
+var max_loops:int=0;
 
 func _init(new_max_loops:int=999):
 	max_loops = new_max_loops;

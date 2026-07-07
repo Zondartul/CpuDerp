@@ -53,10 +53,10 @@ var cur_line = "";
 var cur_line_idx = 0;
 var expr_stack:Array[IR_Value] = [];
 var control_flow_stack = []; #for break and continue
-var sym_table = null;
-var dbg_undefined_funcs_at_fixup = 0
-var dbg_undefined_funcs_at_symtable = 0
-var type_stack = [];
+var sym_table:SymTable;
+var dbg_undefined_funcs_at_fixup:int = 0
+var dbg_undefined_funcs_at_symtable:int = 0
+var type_stack:Array[Type] = [];
 
 #------------------------------------------------------------
 
@@ -67,11 +67,11 @@ func reset()->void:
 	expr_stack = [];
 	control_flow_stack = [];
 
-func analyze(input, task:Task)->Node:
+func analyze(input:Dictionary, task:Task)->Node:
 	reset();
 	task.work_units_total = 4;
 	task.work_units_complete = 0;
-	var ast = input.ast;
+	var ast:AST = input.ast;
 	erep.proxy = self;
 	error_code = "";
 	IR.clear_IR();
@@ -122,7 +122,7 @@ func prepare_sym_table()->void:
 	var scp_global = IR.IR.scopes[scp_global_key];
 	var cb_global_key = IR.IR.code_blocks.keys()[0];
 	var cb_global = IR.IR.code_blocks[cb_global_key];
-	var global_handle = sym_table_append_scope("global", scp_global_key, scp_global, cb_global);
+	var global_handle:IR_func = sym_table_append_scope("global", scp_global_key, scp_global, cb_global);
 	sym_table.global = global_handle;
 	for fun in scp_global.funcs:
 		if not fun.code in IR.IR.code_blocks:

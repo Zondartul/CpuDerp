@@ -2,9 +2,9 @@ extends Node
 class_name ErrorReporter;
 
 @export var Editor:Node;
-var proxy;
-var context;
-var task;
+var proxy:Node;
+var context:Variant;
+var task:Task;
 signal sig_highlight_line(line_idx);
 #func _init(new_proxy, new_context=null):
 #	proxy = new_proxy;
@@ -42,8 +42,8 @@ func point_out_error(msg:String, line_text:String, line_idx:int, char_idx:int)->
 	Editor._on_cprint(line_text);
 	Editor._on_cprint(" ".repeat(char_idx)+"^");
 	Editor._on_cprint(msg);
-	var loc = Location.new({"line_idx":line_idx, "col":char_idx});
-	var locr = LocationRange.new({"begin":loc, "end":loc});
+	var loc:Location = Location.new({"line_idx":line_idx, "col":char_idx});
+	var locr:LocationRange = LocationRange.new({"begin":loc, "end":loc});
 	sig_highlight_line.emit(locr);
 	
 
@@ -51,7 +51,7 @@ func point_out_error_iter(msg:String, iter:Iter)->void:
 	#var char_idx = iter.tokens[iter.pos]["col"]; #iter[0][iter[1]]["col"];#iter_count_chars(iter);
 	#point_out_error(msg, cur_line, cur_line_idx, char_idx)
 	if(iter.pos >= len(iter.tokens)): iter.pos = len(iter.tokens)-1;
-	var tok = iter.tokens[iter.pos];
+	var tok:Token = iter.tokens[iter.pos];
 	tok.loc.begin.line = proxy.cur_line; tok.loc.begin.line_idx = proxy.cur_line_idx;
 	point_out_error_tok(msg, iter.tokens[iter.pos]);
 

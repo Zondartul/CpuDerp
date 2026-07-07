@@ -19,10 +19,10 @@ func _init(dict=null):
 		G.dictionary_init(self, dict);
 
 func get_full_name()->String:
-	var S = name;
+	var S:String = name;
 	if len(of):
 		S += "[";
-		var first = true;
+		var first:bool = true;
 		for ch in of:
 			if first: first = false; 
 			else: S += ", ";
@@ -33,7 +33,7 @@ func get_full_name()->String:
 static func from_string(S:String):
 	if (S == null) or (S == "NULL"): return null;
 	var T:Type = Type.new();
-	var parse = list_and_brace_separator(S, "[", "]", ",");
+	var parse:Array[String] = list_and_brace_separator(S, "[", "]", ",");
 	assert(parse != null);
 	T = from_string_helper(parse);
 	return T;
@@ -41,19 +41,21 @@ static func from_string(S:String):
 static func from_string_helper(parse:Array):
 	if parse == null: return null;
 	if len(parse) == 0: return null;
-	var T = Type.new();
+	var T:Type = Type.new();
 	T.name = (parse[0] as String).strip_edges(true,true);
 	if len(parse) >= 2:
 		for ch in parse[1]:
-			var T2 = from_string_helper(ch);
-			assert(T2 != null);
+			var T2:Type = from_string_helper(ch);
+			assert(G.has(T2));
 			T.of.append(T2);
 	return T;
 
-static func list_and_brace_separator(text:String, brace_open:String, brace_close:String, delim:String):
-	var parse = [];
-	var word = "";
-	var brace_count = 0;
+static func list_and_brace_separator(
+	text:String, brace_open:String, 
+	brace_close:String, delim:String)->Array[String]:
+	var parse:Array[String] = [];
+	var word:String = "";
+	var brace_count:int = 0;
 	for ch in text:
 		if ch == brace_open:
 			if(brace_count == 0):
@@ -73,11 +75,13 @@ static func list_and_brace_separator(text:String, brace_open:String, brace_close
 	if word != "": parse.append(word);
 	return parse;
 	
-static func labs_reduce_list(text:String, brace_open:String, brace_close:String, delim:String):
-	var parse = [];
-	var words = [];
-	var word = "";
-	var brace_count = 0;
+static func labs_reduce_list(
+	text:String, brace_open:String, 
+	brace_close:String, delim:String)->Array[String]:
+	var parse:Array[String] = [];
+	var words:Array[String] = [];
+	var word:String = "";
+	var brace_count:int = 0;
 	for ch in text:
 		if ch == brace_open:
 			brace_count += 1;
@@ -95,7 +99,7 @@ static func labs_reduce_list(text:String, brace_open:String, brace_close:String,
 			word += ch;
 	if word != "": words.append(word);
 	for word_to_parse in words:
-		var sub_parse = list_and_brace_separator(word_to_parse, brace_open, brace_close, delim);
+		var sub_parse:Array[String] = list_and_brace_separator(word_to_parse, brace_open, brace_close, delim);
 		assert(sub_parse != null);
 		parse.append(sub_parse);
 	return parse;
