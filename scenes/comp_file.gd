@@ -13,19 +13,19 @@ extends Node
 # --------------------------------
 
 
-const scene_editorfile = preload("res://editor/editor_file.tscn");
+const scene_editorfile:PackedScene = preload("res://editor/editor_file.tscn");
 
 #@onready var n_efiles = $V/EFiles
-var n_efiles;
-var is_setup = false;
-@onready var dialog_save = $fd_save
-@onready var dialog_load = $fd_load
-@onready var dialog_discard = $cd_save_discard
-var cur_efile = null;
-var default_file_dir = "";
-var efiles:Array[Node] = [];
-var close_file_list = [];
-var op_cancelled = false;
+var n_efiles:int;
+var is_setup:bool = false;
+@onready var dialog_save:FileDialog = $fd_save
+@onready var dialog_load:FileDialog = $fd_load
+@onready var dialog_discard:Node = $cd_save_discard
+var cur_efile:EditorFile = null;
+var default_file_dir:String = "";
+var efiles:Array[EditorFile] = [];
+var close_file_list:Array[EditorFile] = [];
+var op_cancelled:bool = false;
 signal file_selected(path);
 signal cur_efile_changed(efile);
 
@@ -77,7 +77,7 @@ func get_efile(ef_name)->Variant:
 	return null
 
 func switch_to_file(filename)->void:
-	var efile = get_efile(filename);
+	var efile:EditorFile = get_efile(filename);
 	if(efile): set_cur_efile(efile);
 
 func set_cur_efile(efile)->void:		

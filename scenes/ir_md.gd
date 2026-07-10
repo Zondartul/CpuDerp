@@ -192,21 +192,6 @@ func get_var(var_name:String)->IR_Var:
 	assert(false, "var not found");
 	return null;
 
-func get_func(fun_name:String)->IR_func:
-	var seek_scope:Scope = cur_scope;
-	var lc = LoopCounter.new();
-	while true:
-		lc.step();
-		for fun in seek_scope.funcs:
-			if fun.user_name == fun_name:
-				return fun;
-		if seek_scope.parent and seek_scope.parent != "none":
-			seek_scope = IR.scopes[seek_scope.parent];
-		else:
-			break;
-	assert(false, "func not found");
-	return null;
-
 func serialize_full()->String:
 	var sIR = {};
 	G.duplicate_deep(IR, sIR); #IR.duplicate();

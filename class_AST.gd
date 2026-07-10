@@ -46,7 +46,7 @@ func compute_text()->String:
 	if children.is_empty():
 		return text;
 	else:
-		var S = "";
+		var S:String = "";
 		for ch in children:
 			if S != "": S += " ";
 			S += ch.compute_text();

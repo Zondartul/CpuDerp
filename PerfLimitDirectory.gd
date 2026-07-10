@@ -4,10 +4,10 @@ class_name PerfLimitDirectory
 const class_PerfLimiter = preload("res://PerfLimiter.gd");
 var perfs:Dictionary = {};
 
-func _init(new_perfs=null):
+func _init(new_perfs:Variant=null):
 	if new_perfs:
 		for perf_name in new_perfs:
-			var perf_freq = new_perfs[perf_name];
+			var perf_freq:int = new_perfs[perf_name];
 			perfs[perf_name] = PerfLimiter.new(perf_freq);
 		if "all" in perfs:
 			for perf_name in perfs:

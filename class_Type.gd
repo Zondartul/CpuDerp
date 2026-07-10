@@ -67,7 +67,7 @@ static func list_and_brace_separator(
 			brace_count -= 1;
 			if(brace_count == 0):
 				## last brace of this text, reduce the list
-				var sub_list = labs_reduce_list(word, brace_open, brace_close, delim);
+				var sub_list:Array[String] = labs_reduce_list(word, brace_open, brace_close, delim);
 				parse.append(sub_list);
 				word = "";
 		else:

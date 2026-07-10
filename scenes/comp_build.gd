@@ -5,11 +5,11 @@ extends Node
 @onready var n_threads = $comp_threads
 @export var n_VM:Node;
 @export var win_tokens:Node;
-var cur_efile;
-var Memory;
-var Editor;
-var view_Memory;
-var cur_lang = "";
+var cur_efile:EditorFile;
+var Memory:Node;
+var Editor:Node;
+var view_Memory:Node;
+var cur_lang:String = "";
 
 
 # Called when the node enters the scene tree for the first time.

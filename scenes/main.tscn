@@ -329,9 +329,8 @@ erep = NodePath("../../../comp_erep")
 script = ExtResource("13_yq6so")
 erep = NodePath("../../../comp_erep")
 
-[node name="analyzer_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md" unique_id=187976258 node_paths=PackedStringArray("IR", "erep", "Editor")]
+[node name="analyzer_md" type="Node" parent="Panel/TabContainer/Editor/comp_build/comp_compile_md" unique_id=187976258 node_paths=PackedStringArray("erep", "Editor")]
 script = ExtResource("13_2wyq8")
-IR = NodePath("../IR_md")
 erep = NodePath("../../../comp_erep")
 Editor = NodePath("../../..")
 
@@ -470,10 +469,6 @@ script = ExtResource("19_a20q3")
 [connection signal="sig_cprint" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor" method="_on_cprint"]
 [connection signal="sig_parse_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor/comp_build/comp_compile_md" method="_on_parser_md_sig_parse_ready"]
 [connection signal="sig_user_error" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/parser_md" to="Panel/TabContainer/Editor" method="_on_user_error"]
-[connection signal="locations_ready" from="Panel/TabContainer/Editor/comp_build/comp_compile_md/codegen_md" to="Panel/TabContainer/Editor/window_debug/debug_panel" method="_on_locations_ready"]
-[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor" method="_on_comp_file_cur_efile_changed"]
-[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_highlight" method="_on_comp_file_cur_efile_changed"]
-[connection signal="cur_efile_changed" from="Panel/TabContainer/Editor/comp_file" to="Panel/TabContainer/Editor/comp_build" method="_on_comp_file_cur_efile_changed"]
 [connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_save" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_save_file_selected"]
 [connection signal="file_selected" from="Panel/TabContainer/Editor/comp_file/fd_load" to="Panel/TabContainer/Editor/comp_file" method="_on_fd_load_file_selected"]
 [connection signal="sig_highlight_line" from="Panel/TabContainer/Editor/comp_erep" to="Panel/TabContainer/Editor" method="_on_highlight_line"]

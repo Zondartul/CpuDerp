@@ -11,17 +11,17 @@ extends Node
 # reads and writes may have side-effects and need not function as memory.
 
 
-var ranges = [];
-var sizes = [];
-var total_size = 0;
-var debug_bus_read = false;
-var debug_bus_write = false;
+var ranges:Array[int] = [];
+var sizes:Array[int] = [];
+var total_size:int = 0;
+var debug_bus_read:bool = false;
+var debug_bus_write:bool = false;
 
 func _ready():
-	var maxmem = 0;
+	var maxmem:int = 0;
 	for ch in get_children():
 		ranges.append(maxmem);
-		var size = ch.getSize();
+		var size:int = ch.getSize();
 		sizes.append(size);
 		maxmem += size;
 	total_size = maxmem;
@@ -38,12 +38,12 @@ func readCell(cell:int)->int:
 	if((cell < 0) || (cell >= total_size)): 
 		if debug_bus_read: print("bus: read("+str(cell)+") <out of bounds> -> 0");
 		return 0;
-	var dev_idx = ranges.bsearch(cell, false)-1;
+	var dev_idx:int = ranges.bsearch(cell, false)-1;
 	assert(dev_idx >= 0);
 	assert(dev_idx < ranges.size());
-	var local_cell = cell - ranges[dev_idx];
-	var dev = get_child(dev_idx);
-	var val = dev.readCell(local_cell);
+	var local_cell:int = cell - ranges[dev_idx];
+	var dev:Node = get_child(dev_idx);
+	var val:int = dev.readCell(local_cell);
 	if debug_bus_read: print("bus: read("+str(cell)+") (dev "+str(dev_idx)+": "+str(local_cell)+") -> "+str(val));
 	return val;
 
@@ -51,10 +51,10 @@ func writeCell(cell:int, val:int)->void:
 	if((cell < 0) || (cell >= total_size)): 
 		if debug_bus_write: print("bus: write("+str(cell)+") <out of bounds>");
 		return;
-	var dev_idx = ranges.bsearch(cell, false)-1;
+	var dev_idx:int = ranges.bsearch(cell, false)-1;
 	assert(dev_idx >= 0);
 	assert(dev_idx <  ranges.size());
-	var local_cell = cell - ranges[dev_idx];
-	var dev = get_child(dev_idx);
+	var local_cell:int = cell - ranges[dev_idx];
+	var dev:Node = get_child(dev_idx);
 	dev.writeCell(local_cell, val);
 	if debug_bus_write: print("bus: write("+str(cell)+") (dev "+str(dev_idx)+": "+str(local_cell)+") <- "+str(val));

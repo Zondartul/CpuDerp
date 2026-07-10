@@ -86,17 +86,17 @@ class StackItem:
 
 var stack_items:Array[StackItem] = [];
 var slider_base_addr:int = 0;
-var cur_sym_table = null;
-var symtable_label_ips = [];
-var symtable_label_names = [];
+var cur_sym_table:SymTable = null;
+var symtable_label_ips:Array[int] = [];
+var symtable_label_names:Array[String] = [];
 enum HighlightMode {NONE, ASM, HIGH_LEVEL};
-var highlight_mode = HighlightMode.HIGH_LEVEL;
+var highlight_mode:int = HighlightMode.HIGH_LEVEL;
 var loc_map:LocationMap;
 var cur_loc:LocationRange: set=set_cur_loc;
 var cur_loc_line:String;
-var n_locations = 0;
+var n_locations:int = 0;
 var all_locs_here:Array[LocationRange];
-var all_locs_here_str = "";
+var all_locs_here_str:String = "";
 
 signal set_highlight(loc:LocationRange);#(from_line, from_col, to_line, to_col);
 # Called when the node enters the scene tree for the first time.
@@ -136,9 +136,9 @@ func update_registers()->void:
 	if not perf.regs.run(0): return;
 	
 	for i in range(regnames.size()):
-		var val = cpu.regs[i];
-		val = format_val(val);
-		n_regview.set_item_text(i*2+1, val);
+		var val:int = cpu.regs[i];
+		var val_s:String = format_val(val);
+		n_regview.set_item_text(i*2+1, val_s);
 
 var op_ips:Array[int] = [];
 var op_locations:Array[LocationRange];
@@ -149,7 +149,7 @@ func cache_op_locations()->void:
 	for op in op_locations:
 		op_ips.append(op.ip);
 
-var last_highlighted_line = -1;
+var last_highlighted_line:int = -1;
 func update_ip_highlight()->void:
 	if not win.visible: return;
 	if not perf.ip.run(0): return;
@@ -164,17 +164,17 @@ func update_ip_highlight()->void:
 func get_loc_asm()->LocationRange:
 	if assembler and assembler.op_locations.size():
 		cache_op_locations();
-		var ip = cpu.regs[cpu.ISA.REG_IP];
-		var idx = op_ips.bsearch(ip, false)-1;
+		var ip:int = cpu.regs[cpu.ISA.REG_IP];
+		var idx:int = op_ips.bsearch(ip, false)-1;
 		if(idx >= 0):
-			var op = op_locations[idx];
+			var op:LocationRange = op_locations[idx];
 			if op.line_idx != last_highlighted_line:
 				last_highlighted_line = op.line_idx;
 				editor.switch_to_file(op.filename)
 				#set_highlight.emit(op.line, op.begin, op.line, op.end);
-				var loc1 = Location.new({"filename":op.filename, "line":op.line, "line_idx":op.line_idx, "col":op.begin});
-				var loc2 = Location.new({"filename":op.filename, "line":op.line, "line_idx":op.line_idx, "col":op.end});
-				var loc = LocationRange.new({"begin":loc1, "end":loc2});
+				var loc1:Location = Location.new({"filename":op.filename, "line":op.line, "line_idx":op.line_idx, "col":op.begin});
+				var loc2:Location = Location.new({"filename":op.filename, "line":op.line, "line_idx":op.line_idx, "col":op.end});
+				var loc:LocationRange = LocationRange.new({"begin":loc1, "end":loc2});
 				return loc;
 			return cur_loc;
 	return LocationRange.new();
@@ -192,26 +192,26 @@ func get_loc_hl()->LocationRange:
 			#return loc;
 	var ELM:Array[ELM_entry] = ExpandedLocationMap;
 	if ELM:
-		var ip = cpu.regs[cpu.ISA.REG_IP];
-		var cmd_idx = ip/cmd_size
+		var ip:int = cpu.regs[cpu.ISA.REG_IP];
+		var cmd_idx:int = ip/cmd_size
 		if cmd_idx < len(ELM):
 			#if cmd_idx in ELM:
-			var entry = ELM[cmd_idx];
-			var subentry = entry.hl;
+			var entry:ELM_entry = ELM[cmd_idx];
+			var subentry:ELM_sub_entry = entry.hl;
 			all_locs_here = [];
 			all_locs_here_str = "%d locs here\n" % len(subentry.all_ranges);
 			for i in range(len(subentry.all_ranges)):
 				var ip_range:IP_range = subentry.all_ranges[i];
 				all_locs_here.append(ip_range.loc);
 				all_locs_here_str += ("%d: " % i) + ip_range.loc.begin.to_string_full(true) + "\n";
-			var smallest_ip = subentry.smallest_ip;
-			var loc = smallest_ip.loc;
+			var smallest_ip:IP_range = subentry.smallest_ip;
+			var loc:LocationRange = smallest_ip.loc;
 			return loc;
 			#return ELM[cmd_idx].hl.smallest_ip.loc;
 	return LocationRange.new();
 
 func dbg_locs_to_str(loc_arr:Array[LocationRange])->String:
-	var S = "";
+	var S:String = "";
 	for loc in loc_arr:
 		S += "%s [%s]\n" % [str(loc), loc.begin.line];
 	return S;
@@ -232,13 +232,13 @@ func update_cpu()->void:
 	update_HL_locals();
 	
 func read32(adr)->int:
-	var buff = PackedByteArray([0,0,0,0]);
+	var buff:PackedByteArray = PackedByteArray([0,0,0,0]);
 	for i in range(4): buff[i] = bus.readCell(adr+i);
 	return buff.decode_u32(0);
 
 #reverse
 func read32r(adr)->int:
-	var buff = PackedByteArray([0,0,0,0]);
+	var buff:PackedByteArray = PackedByteArray([0,0,0,0]);
 	for i in range(4): buff[3-i] = bus.readCell(adr+i);
 	return buff.decode_u32(0);
 	
@@ -249,9 +249,9 @@ func custom_search(k_has, k_want)->void:
 # we need to do a binary search among the values of a dictionary,
 # for that we need them sorted, so we make an inverse dictionary,
 # so that we can then get the key.
-var label_inv_dict = {};
-var label_ips = [];
-var label_names = [];
+var label_inv_dict:Dictionary[int,String] = {};
+var label_ips:Array[int] = [];
+var label_names:Array[String] = [];
 
 func update_labels()->void:
 	label_inv_dict = {};
@@ -273,13 +273,13 @@ func update_labels_from_sym_table()->void:
 	symtable_label_ips.clear();
 	symtable_label_names.clear();
 	for key in cur_sym_table.funcs:
-		var fun = cur_sym_table.funcs[key];
+		var fun:IR_func = cur_sym_table.funcs[key];
 		if fun.lbl.from not in assembler.final_labels: continue;
 		if fun.lbl.to not in assembler.final_labels: continue;
 		#assert_materialized(fun.lbl.from);
 		#assert_materialized(fun.lbl.to);
-		var ip_from = assembler.final_labels[fun.lbl.from];
-		var ip_to = assembler.final_labels[fun.lbl.to];
+		var ip_from:int = assembler.final_labels[fun.lbl.from];
+		var ip_to:int = assembler.final_labels[fun.lbl.to];
 		symtable_label_ips.append(ip_from);
 		symtable_label_names.append(fun.ir_name);
 		symtable_label_ips.append(ip_to);
@@ -290,14 +290,14 @@ func decode_ip(ip)->String:
 		return "(no data)";
 	else:
 		update_labels();
-		var res = null;
+		var res:String = "";
 		if cur_sym_table:
 			update_labels_from_sym_table();
-			var idx = symtable_label_ips.bsearch(ip, false)-1;
+			var idx:int = symtable_label_ips.bsearch(ip, false)-1;
 			if idx != -1: res = symtable_label_names[idx];
 			if (idx % 2) == 1: res = "(null)"
-		if res == null:
-			var idx = label_ips.bsearch(ip, false)-1;
+		if res == "":
+			var idx:int = label_ips.bsearch(ip, false)-1;
 			if idx != -1: res = label_names[idx];
 		if res: return res;
 		else: return "(null)";
@@ -315,7 +315,7 @@ func update_stack()->void:
 	var cur_ip:int = cpu.regs[cpu.ISA.REG_IP];
 	stack_items.clear();
 	for i in range(10):
-		var cur_func = decode_ip(cur_ip);
+		var cur_func:String = decode_ip(cur_ip);
 		n_stackview.add_item(format_val(cur_ip));
 		n_stackview.add_item(format_val(cur_ebp));
 		n_stackview.add_item(cur_func);
@@ -379,11 +379,11 @@ func _on_btn_run_to_line_pressed()->void:
 	var cur_line:int = editor.get_cur_line_idx();
 	var best_oploc:LocationRange = op_locations[0];
 	for i in range(len(op_locations)):
-		var oploc = op_locations[i];
+		var oploc:LocationRange = op_locations[i];
 		if (oploc.line <= cur_line) and (oploc.line > best_oploc.line):
 			best_oploc = oploc;
-	var target_ip = best_oploc.ip;
-	var lc = LoopCounter.new(step_limit);
+	var target_ip:int = best_oploc.ip;
+	var lc:LoopCounter = LoopCounter.new(step_limit);
 	while(cpu.regs[cpu.ISA.REG_IP] != target_ip):
 		lc.step();
 		cpu.step();
@@ -395,16 +395,16 @@ func _on_cb_hex_toggled(toggled_on: bool) -> void:
 
 
 func get_pointer_tooltip(addr, val)->String:
-	var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
+	var cur_ebp:int = cpu.regs[cpu.ISA.REG_EBP];
 	return "byte %02X (%d) at address %02X (%d)\n(EBP + %d)" % [val, val, addr, addr, (addr-cur_ebp)];
 
 func init_sliders()->void:
 	slider_base_addr = int(n_sb_addr.value);
 	for i in range(-8,8):
-		var addr = slider_base_addr+i;
-		var val = bus.readCell(addr);
-		var text = "%02X" % val;
-		var item = slider_mid.add_item(text);
+		var addr:int = slider_base_addr+i;
+		var val:int = bus.readCell(addr);
+		var text:String = "%02X" % val;
+		var item:int = slider_mid.add_item(text);
 		slider_mid.set_item_tooltip(item, get_pointer_tooltip(addr, val));
 	#for i in range(-8,8):
 		#var addr = slider_base_addr+i;
@@ -422,21 +422,21 @@ func update_pointers()->void:
 
 func update_mid()->void:
 	slider_base_addr = n_sb_addr.value;
-	var idx = 0;
+	var idx:int = 0;
 	for i in range(-8,8):
-		var addr = slider_base_addr+i;
-		var val = bus.readCell(addr);
-		var text1 = "%02X" % val;
+		var addr:int = slider_base_addr+i;
+		var val:int = bus.readCell(addr);
+		var text1:String = "%02X" % val;
 		#var text1 = str(addr);
 		slider_mid.set_item_text(idx, text1);
 		slider_mid.set_item_tooltip(idx, get_pointer_tooltip(addr, val));
-		var item_col = calc_highlight_color(addr);
+		var item_col:Color = calc_highlight_color(addr);
 		slider_mid.set_item_custom_bg_color(idx, item_col);
 		idx += 1;
 
 func calc_highlight_color(addr)->Color:
-	var item1_col = Color.BLACK;
-	var item2_col = Color.BLACK;
+	var item1_col:Color = Color.BLACK;
+	var item2_col:Color = Color.BLACK;
 	for item in stack_items:
 		if addr == item.ip:
 			item2_col = Color(0.35, 0.0, 0.0, 1.0);
@@ -527,10 +527,11 @@ func get_slider_text(pos, view_type)->String:
 	var arr:Array[int] = [];
 	for i in range(view_size):
 		arr.append(bus.readCell(pos+i));
-	var data = PackedByteArray(arr);
-	var num = 0;
+	var data:PackedByteArray = PackedByteArray(arr);
+	var num:int = 0;
+	var S:String = ""
 	match view_type:
-		"char": num = data.get_string_from_ascii();
+		"char": S = data.get_string_from_ascii();
 		"sint8": num = data.decode_s8(0);
 		"uint8": num = data.decode_u8(0);
 		"sint32": num = data.decode_s32(0);
@@ -538,7 +539,8 @@ func get_slider_text(pos, view_type)->String:
 		"float32": num = data.decode_float(0);
 		"double": num = data.decode_double(0);
 		_: push_error("debug_panel: unknown view type");
-	return str(num);
+	if S == "": S = str(num);
+	return S;
 
 func _on_sb_addr_value_changed(_value: float) -> void:
 	perf.pointers.prime();
@@ -609,14 +611,14 @@ func update_locals()->void:
 	elif view_type == "access ip":
 		n_locals.max_columns = 4;
 		format_intro_line(cur_func);
-		var grouped_locals = group_locals(locals, "by_ip");
+		var grouped_locals:Array = group_locals(locals, "by_ip");
 		n_locals.add_item("ip");
 		n_locals.add_item("type");
 		n_locals.add_item("access");
 		n_locals.add_item("val");
-		var cur_ip = cpu.regs[cpu.ISA.REG_IP];
+		var cur_ip:int = cpu.regs[cpu.ISA.REG_IP];
 		for local in grouped_locals:
-			var col = col_main;
+			var col:Color = col_main;
 			if local.ip < cur_ip: col = col_acc;
 			format_local_ip_word(local, col);
 			format_local_main_word(local, col);
@@ -624,10 +626,10 @@ func update_locals()->void:
 			format_local_val_word(local, col);
 
 func format_local_main_word(local, col)->void:
-	var text = "";
+	var text:String = "";
 	if local.type in ["lbl", "imm"]:
 		if local.pos in label_inv_dict:
-			var lbl_name = label_inv_dict[local.pos];
+			var lbl_name:String = label_inv_dict[local.pos];
 			text += "%s" % lbl_name;
 			local_is_lbl = true;
 		else:
@@ -639,7 +641,7 @@ func format_local_main_word(local, col)->void:
 	else:
 		text += "error @ %d" % local.pos;
 	#text += " @ %d" % local.ip;
-	var idx = n_locals.add_item(text);
+	var idx:int = n_locals.add_item(text);
 	n_locals.set_item_custom_fg_color(idx, col);
 
 func format_intro_line(cur_func:String)->void:
@@ -651,60 +653,62 @@ func format_intro_line(cur_func:String)->void:
 	G.complete_line(n_locals);
 
 func format_local_val_word(local, col)->void:
-	var val = 0;
-	var EBP = locals_ebp;
+	var val:int = 0;
+	var S:String = "";
+	var EBP:int = locals_ebp;
 	if local.type == "stack":
 		val = read32(EBP+local.pos);
 	elif local_is_lbl:
-		val = "%d -> %d" % [local.pos, read32(local.pos)];
+		S = "%d -> %d" % [local.pos, read32(local.pos)];
 	elif local.type in ["lbl", "imm"]:
 		val = local.pos;
 	else:
 		val = -404;
-	var idx = n_locals.add_item(str(val));
+	if S == "": S = str(val);
+	var idx:int = n_locals.add_item(S);
 	n_locals.set_item_custom_fg_color(idx, col);
 
 func format_local_access_word(local, col)->void:
-	var idx = n_locals.add_item(local.access);
+	var idx:int = n_locals.add_item(local.access);
 	n_locals.set_item_custom_fg_color(idx, col);
 
 func format_local_ip_word(local, col)->void:
-	var idx = n_locals.add_item(str(local.ip));
+	var idx:int = n_locals.add_item(str(local.ip));
 	n_locals.set_item_custom_fg_color(idx, col);
 
 func get_cur_func_name()->String:
-	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
-	var cur_func = decode_ip(cur_ip);
+	var cur_ip:int = cpu.regs[cpu.ISA.REG_IP];
+	var cur_func:String = decode_ip(cur_ip);
 	return cur_func;
 
 func find_locals()->Array[DbgLocal]:
 	var found_locals:Array[DbgLocal] = [];
-	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
-	var next_ret = find_ret(cur_ip);
+	var cur_ip:int = cpu.regs[cpu.ISA.REG_IP];
+	var next_ret:int = find_ret(cur_ip);
 	print("next_ret = %d" % next_ret);
 	if not next_ret: return locals;
-	var lc = LoopCounter.new();
+	var lc:LoopCounter = LoopCounter.new();
 	while(cur_ip < next_ret):
 		lc.step();
-		var cmd = get_cmd(cur_ip);
-		var rcmd = cmd.duplicate();
+		var cmd:PackedByteArray = get_cmd(cur_ip);
+		var rcmd:PackedByteArray = cmd.duplicate();
 		rcmd.reverse();
 		#var cmd_op = rcmd.decode_u32(4);
-		var cmd_offs = cmd.decode_s32(3);
+		var cmd_offs:int = cmd.decode_s32(3);
 		#var local_pos = 0;
-		var access_type = "error";
-		var local_type = "error";
-		var is_valid = false;
-		var decoded = cpu.decode_pure(cmd);
-		if not decoded: break;
+		var access_type:String = "error";
+		var local_type:String = "error";
+		var is_valid:bool = false;
+		var decoded:Dictionary = cpu.decode_pure(cmd);
+		if decoded.is_empty: break;
 		const access_types = {
 			0x09: ["w", "r"],
 			0x0A: ["push", "push"],
 			0x06: ["cmp", "cmp"],
 		};
 		if decoded.op_num in [0x09, 0x0A, 0x06]: # MOV, PUSH, CMP
-			var acc_w = access_types[decoded.op_num][0];
-			var acc_r = access_types[decoded.op_num][1];
+			var acc_w:String = access_types[decoded.op_num][0];
+			var acc_r:String = access_types[decoded.op_num][1];
 			if decoded.reg1_im:
 				if decoded.reg1_num == 0:
 					if decoded.flags.deref1: #none
@@ -787,7 +791,7 @@ func get_cmd(pos)->PackedByteArray:
 	for j in range(cmd_size):
 		arr.append(bus.readCell(pos+j));
 	print("got cmd: %s" % str(arr));
-	var cmd = PackedByteArray(arr);
+	var cmd:PackedByteArray = PackedByteArray(arr);
 	return cmd;
 #ADD UNCOMPUTE BUTTON step back\
 
@@ -814,9 +818,37 @@ func _on_btn_unstep_pressed() -> void:
 func _on_cpu_vm_mem_accessed(addr: Variant, val: Variant, is_write: Variant) -> void:
 	save_mem_access(addr,val,is_write);
 
-const max_cpu_history = 1000;
-var cpu_history = [];
-var cpu_n_steps = 0;
+
+class CpuState:
+	var regs:Array;
+	func _init(_regs:Array):
+		regs = _regs;
+
+class MemAccess:
+	var addr:int;
+	var old:int;
+	var new:int;
+	func _init(_addr:int,_old:int,_new:int):
+		addr=_addr;
+		old=_old;
+		new=_new;
+
+class CpuEvent:
+	var type:String;
+	var state:CpuState;
+	var access:MemAccess;
+	func _init(arg):
+		if arg is CpuState:
+			type="cpu";
+			state=arg;
+		elif arg is MemAccess:
+			type="mem";
+			access=arg;
+		else: assert(false);
+
+const max_cpu_history:int = 1000;
+var cpu_history:Array[CpuEvent] = [];
+var cpu_n_steps:int = 0;
 
 func reset_cpu_history()->void:
 	cpu_history.clear();
@@ -825,10 +857,10 @@ func reset_cpu_history()->void:
 
 func save_cpu_state()->void:
 	#print("--- + Step + ---");
-	var state = {"regs":cpu.regs.duplicate()};
-	var event = {"type":"cpu", "state":state};
+	var state:CpuState = CpuState.new(cpu.regs.duplicate()); #{"regs":cpu.regs.duplicate()};
+	var event:CpuEvent = CpuEvent.new(state); #{"type":"cpu", "state":state};
 	if len(cpu_history) >= max_cpu_history: 
-		var old_event = cpu_history.pop_front();
+		var old_event:CpuEvent = cpu_history.pop_front();
 		if(old_event.type == "cpu"):
 			cpu_n_steps -= 1;
 	cpu_history.push_back(event);
@@ -836,10 +868,11 @@ func save_cpu_state()->void:
 
 func save_mem_access(addr, val, is_write)->void:
 	if not is_write: return;
-	var access = {"addr":addr, "old":bus.readCell(addr), "new":val};
-	var event = {"type":"mem", "access":access};
+	var old:int = bus.ReadCell(addr);
+	var access:MemAccess = MemAccess.new(addr,old,val); #{"addr":addr, "old":bus.readCell(addr), "new":val};
+	var event:CpuEvent = CpuEvent.new(access);#{"type":"mem", "access":access};
 	if len(cpu_history) >= max_cpu_history: 
-		var old_event = cpu_history.pop_front();
+		var old_event:CpuEvent = cpu_history.pop_front();
 		if(old_event.type == "cpu"):
 			cpu_n_steps -= 1;
 	cpu_history.push_back(event);
@@ -851,8 +884,8 @@ func unstep()->void:
 	if cpu_history.is_empty(): 
 		#print("<empty>"); 
 		return;
-	var event = cpu_history.pop_back();
-	var lc = LoopCounter.new();
+	var event:CpuEvent = cpu_history.pop_back();
+	var lc:LoopCounter = LoopCounter.new();
 	while(event.type == "mem"):
 		lc.step();
 		#print("<got mem>");
@@ -885,7 +918,7 @@ func unstep()->void:
 				#print("<pb 3>"); 
 				break;
 			event = cpu_history.pop_back();
-			var lc2 = LoopCounter.new();
+			var lc2:LoopCounter = LoopCounter.new();
 			while(event.type == "mem"):
 				lc2.step();
 				#print("<got mem>");
@@ -913,8 +946,8 @@ func undo_mem(event)->void:
 	print("undo mem %d -> %d" % [event.access.old, event.access.addr]);
 	
 func undo_cpu(event)->bool:
-	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
-	var old_ip = event.state.regs[cpu.ISA.REG_IP];
+	var cur_ip:int = cpu.regs[cpu.ISA.REG_IP];
+	var old_ip:int = event.state.regs[cpu.ISA.REG_IP];
 	event.state.regs[cpu.ISA.REG_CTRL] &= ~cpu.ISA.BIT_PWR;
 	cpu.regs = event.state.regs.duplicate();
 	if cur_ip == old_ip:
@@ -927,9 +960,9 @@ func print_cpu_hist(n_events)->void:
 	print("cpu history:");
 	for i in range(n_events):
 		if i >= len(cpu_history): return;
-		var idx = len(cpu_history)-i-1;
-		var event = cpu_history[idx];
-		var S = "%d: %s" % [idx, event.type];
+		var idx:int = len(cpu_history)-i-1;
+		var event:CpuEvent = cpu_history[idx];
+		var S:String = "%d: %s" % [idx, event.type];
 		if event.type == "cpu":
 			S += " %d" % event.state.regs[cpu.ISA.REG_IP];
 		print(S);
@@ -942,40 +975,44 @@ func update_HL_locals()->void:
 	if not cur_sym_table:
 		n_hl_locals.add_item("No symbol table");
 		return;
-	var cur_ebp = cpu.regs[cpu.ISA.REG_EBP];
-	var cur_ip = cpu.regs[cpu.ISA.REG_IP];
-	var cur_func_name = decode_ip(cur_ip);
+	var cur_ebp:int = cpu.regs[cpu.ISA.REG_EBP];
+	var cur_ip:int = cpu.regs[cpu.ISA.REG_IP];
+	var cur_func_name:String = decode_ip(cur_ip);
 	n_hl_locals.add_item(cur_func_name);
 	G.complete_line(n_hl_locals);
 	if cur_func_name == "(null)": cur_func_name = "global";
 	if cur_func_name not in cur_sym_table.funcs:
 		n_hl_locals.add_item("[No symbols for this function]");
 		return;
-	var fun_handle;
+	var fun_handle:IR_func;
 	if cur_func_name == "global":
 		fun_handle = cur_sym_table.global;
 	else:
 		fun_handle = cur_sym_table.funcs[cur_func_name];
-	var count = len(fun_handle.args) + len(fun_handle.vars);
+	var count:int = len(fun_handle.args) + len(fun_handle.vars);
 	n_hl_locals.add_item("%d symbols" % count); G.complete_line(n_hl_locals);
 	for cat in [fun_handle.args, fun_handle.vars]:
 		for val in cat:
 			n_hl_locals.add_item(val.user_name);
-			var value = read_hl_local(val, cur_ebp);
-			n_hl_locals.add_item(str(value));
+			var value:String = read_hl_local(val, cur_ebp);
+			n_hl_locals.add_item(value);
 
-func read_hl_local(val, cur_ebp)->Variant:
-	if "value" in val.pos: return val.pos.value;
-	match val.pos.type:
-		"global":pass;
-		"stack":
-			var adr = cur_ebp + val.pos.pos;
-			var data = read32(adr);
-			return data;
-		"immediate": pass;
-		"temporary": pass;
-		_: assert(false, "unknown hl_local pos type [%s]" % str(val.pos.type));
-	return "<error>";
+func read_hl_local(val, cur_ebp)->String:
+	var S:String = "";
+	if "value" in val.pos: 
+		S = str(val.pos.value);
+	else:
+		match val.pos.type:
+			"global":pass;
+			"stack":
+				var adr:int = cur_ebp + val.pos.pos;
+				var data:int = read32(adr);
+				S = str(data);
+			"immediate": pass;
+			"temporary": pass;
+			_: assert(false, "unknown hl_local pos type [%s]" % str(val.pos.type));
+	#return "<error>";
+	return S;
 
 
 func _on_btn_highlight_hl_pressed() -> void: highlight_mode = HighlightMode.HIGH_LEVEL;
@@ -1078,30 +1115,30 @@ var ExpandedLocationMap:Array[ELM_entry]; ## <cmd_idx, entry>
 func expand_location_map()->void:
 	var ELM:Array[ELM_entry] = ExpandedLocationMap;
 	ELM.clear();
-	var max_ip = get_max_loc_map_key();
-	var n_cmd_idxes = (max_ip / cmd_size) + 1;
+	var max_ip:int = get_max_loc_map_key();
+	var n_cmd_idxes:int = (max_ip / cmd_size) + 1;
 	ELM.resize(n_cmd_idxes);
-	var open_locs = {}; ## <loc, ip_range>
+	var open_locs:Dictionary[LocationRange, IP_range] = {}; ## <loc, ip_range>
 	print("putting %d+%d locations into %d/%d ips" % [len(loc_map.begin.keys()), len(loc_map.end.keys()), len(ELM), cmd_size]);
-	var unvisited_keys_begin = loc_map.begin.keys();
-	var unvisited_keys_end = loc_map.begin.keys();
+	var unvisited_keys_begin:Array[int] = loc_map.begin.keys();
+	var unvisited_keys_end:Array[int] = loc_map.begin.keys();
 	for cmd_idx in range(n_cmd_idxes):
-		var ip = cmd_idx * cmd_size;
+		var ip:int = cmd_idx * cmd_size;
 		ELM[cmd_idx] = ELM_entry.new({"ip":ip});
 		unvisited_keys_begin.erase(ip);
 		if ip in loc_map.begin:
-			var loc_arr = loc_map.begin[ip];
+			var loc_arr:Array[LocationRange] = loc_map.begin[ip];
 			for loc in loc_arr:
 				if loc not in open_locs:
-					var ip_range = ELM_open_loc(ip, "hl", loc);
+					var ip_range:IP_range = ELM_open_loc(ip, "hl", loc);
 					open_locs[loc] = ip_range;
 		else:
 			for loc in open_locs:
-				var ip_range = open_locs[loc];
+				var ip_range:IP_range = open_locs[loc];
 				ELM_continue_loc(ip, "hl", ip_range);
 		unvisited_keys_end.erase(ip);
 		if ip in loc_map.end:
-			var loc_arr = loc_map.end[ip];
+			var loc_arr:Array[LocationRange] = loc_map.end[ip];
 			for loc in loc_arr:
 				ELM_close_loc(ip, open_locs[loc]);
 				open_locs.erase(loc);
@@ -1117,14 +1154,14 @@ func expand_location_map()->void:
 func ELM_open_loc(ip:int, sub_entry_key:String, loc:LocationRange)->IP_range:
 	#print("open loc [%s] at ip %d" % [loc.begin.line, ip]);
 	var ELM:Array[ELM_entry] = ExpandedLocationMap;
-	var cmd_idx = ip / cmd_size;
-	var entry = ELM[cmd_idx];
+	var cmd_idx:int = ip / cmd_size;
+	var entry:ELM_entry = ELM[cmd_idx];
 	assert(entry);
 	if entry[sub_entry_key] == null:
 		entry[sub_entry_key] = ELM_sub_entry.new();
-	var subentry = entry[sub_entry_key];
+	var subentry:ELM_sub_entry = entry[sub_entry_key];
 	var all_ranges:Array[IP_range] = subentry.all_ranges;
-	var ip_range = IP_range.new({"begin":ip, "end":-1, "loc":loc});
+	var ip_range:IP_range = IP_range.new({"begin":ip, "end":-1, "loc":loc});
 	all_ranges.append(ip_range);
 	return ip_range;
 
@@ -1134,12 +1171,12 @@ func ELM_close_loc(ip:int, ip_range:IP_range)->void:
 
 func ELM_continue_loc(ip:int, sub_entry_key:String, ip_range:IP_range)->void:
 	var ELM:Array[ELM_entry] = ExpandedLocationMap;
-	var cmd_idx = ip / cmd_size;
-	var entry = ELM[cmd_idx];
+	var cmd_idx:int = ip / cmd_size;
+	var entry:ELM_entry = ELM[cmd_idx];
 	assert(entry);
 	if entry[sub_entry_key] == null:
 		entry[sub_entry_key] = ELM_sub_entry.new();
-	var subentry = entry[sub_entry_key];
+	var subentry:ELM_sub_entry = entry[sub_entry_key];
 	var all_ranges:Array[IP_range] = subentry.all_ranges;
 	assert(ip_range not in all_ranges);
 	all_ranges.append(ip_range);
@@ -1161,9 +1198,9 @@ func ELM_sort_ranges(subentry:ELM_sub_entry)->void:
 	#return null
 
 func get_max_loc_map_key()->int:
-	var keys = loc_map.begin.keys().duplicate(); 
+	var keys:Array[int] = loc_map.begin.keys().duplicate(); 
 	keys.sort(); 
-	var max_key = keys.back();
+	var max_key:int = keys.back();
 	keys = loc_map.end.keys().duplicate();
 	keys.sort();
 	max_key = max(max_key, keys.back());

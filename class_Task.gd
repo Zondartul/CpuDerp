@@ -5,11 +5,11 @@ var work_units_total:int = 0: # used for progress bars
 	set(val): work_units_total = val; _ping();    
 var work_units_complete:int = 0:
 	set(val): work_units_complete = val; _ping();
-var done = false:
+var done:bool = false:
 	set(val): 
 		if(val): work_units_complete = work_units_total;
 		done = val; _ping();
-var happy_path = true: # if not happy_path, proceed to exit asap
+var happy_path:bool = true: # if not happy_path, proceed to exit asap
 	set(val): happy_path = val; _ping();
 var sub_tasks:Array[Task] = [];
 var parent:Task;

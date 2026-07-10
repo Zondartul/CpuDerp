@@ -3,10 +3,10 @@ extends Node
 # ------- syntax highlighting logic ------------
 
 var ddm_language;
-var is_setup = false;
-var languages = {};
-var cur_language;
-var cur_efile;
+var is_setup:bool = false;
+var languages:Dictionary[EditorFile,String] = {};
+var cur_language:String;
+var cur_efile:EditorFile;
 
 # Called when the node enters the scene tree for the first time.
 func _ready()->void:

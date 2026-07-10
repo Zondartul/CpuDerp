@@ -1,5 +1,4 @@
 extends Node
-
 # micro-regex:
 # ur_node:
 #  type: start, 	^ 
@@ -19,14 +18,42 @@ extends Node
 #  range_buff[255];
 #  precedence: int
 
+
 class RegexTok:
 	var type:String = "";
 	var children:Array[RegexTok] = [];
 	var char:String = "";
 	var range:Array[String] = [];
 	var precedence:int = 0;
-		
 
+class ParseIter:
+	var line:String;
+	var i:int;
+	func _init(_line:String,_i:int):
+		line=_line;
+		i=_i;
+
+class RegexMatch:
+	#{"id":null, "text":"", "pos":parser.i};
+	var id:int;
+	var text:String;
+	var pos:int;
+	func _init(_id:int,_text:String,_pos:int):
+		id=_id;
+		text=_text;
+		pos=_pos;
+		
+class RegexParser:
+	var line:String = "";
+	var i:int = 0;
+	#var settings:Dictionary = {};
+	var matches:Array[RegexMatch] = [];
+	var _compile:Callable;# = urp_compile;
+	var _match:Callable;# = urp_match;
+	func _init(f_compile:Callable, f_match:Callable):
+		_compile=f_compile;
+		_match=f_match;
+	
 func char_to_byte(S:String)->int: 
 	if S == "":
 		return 0; 
@@ -40,7 +67,7 @@ func byte_to_char(B:int)->String: return String.chr(B);
 func _tokenize_range(parse)->RegexTok:
 	var tok:RegexTok = RegexTok.new(); #_new_tok();
 	parse.i += 1; assert(parse.i < parse.line.length());
-	var C = parse.line[parse.i];
+	var C:String = parse.line[parse.i];
 	#----
 	if(C == "^"):
 		tok.type = "antirange";
@@ -50,19 +77,19 @@ func _tokenize_range(parse)->RegexTok:
 	else:
 		tok.type = "range";
 	#---
-	var lc = LoopCounter.new();
+	var lc:LoopCounter = LoopCounter.new();
 	while(parse.i < parse.line.length()):
 		lc.step();
 		if(C == "]"): break;
 		assert((parse.i+1) < parse.line.length());
-		var C2 = parse.line[parse.i+1];
+		var C2:String = parse.line[parse.i+1];
 		if(C == "\\"): #escaped char
 			tok.range.append(C2);
 			parse.i += 2;
 		elif(C2 == "-"): #range
 			assert((parse.i+2) < parse.line.length());
-			var C3 = parse.line[parse.i+2];
-			var new_range = range(char_to_byte(C), char_to_byte(C3)+1);
+			var C3:String = parse.line[parse.i+2];
+			var new_range:Array[int] = range(char_to_byte(C), char_to_byte(C3)+1);
 			if tok.type == "range":
 				for b in new_range: tok.range.append(byte_to_char(b));
 			else:
@@ -75,14 +102,14 @@ func _tokenize_range(parse)->RegexTok:
 	parse.i += 1;
 	return tok;
 # splits a regex format string into regex format tokens
-func _tokenize(parse)->Array[RegexTok]:
+func _tokenize(parse:ParseIter)->Array[RegexTok]:
 	var tokens:Array[RegexTok] = [];
-	var i = parse.i;
-	var lc = LoopCounter.new();
+	var i:int = parse.i;
+	var lc:LoopCounter = LoopCounter.new();
 	while(i < parse.line.length()):
 		lc.step();
 		var tok:RegexTok = RegexTok.new()#_new_tok();
-		var C = parse.line[i];
+		var C:String = parse.line[i];
 		if(C == "^"):	tok.type = "start"; 	tok.precedence = 1; i+=1;
 		elif(C == "$"):	tok.type = "end";		tok.precedence = 1; i+=1;
 		elif(C == "."): tok.type = "anychar";	tok.precedence = 1; i+=1;
@@ -97,61 +124,61 @@ func _tokenize(parse)->Array[RegexTok]:
 		tokens.append(tok);
 	return tokens;
 
-func _restack(rx_toks)->void:
-	var out_stack = [];
-	var in_stack = [];
+func _restack(rx_toks:Array[RegexTok])->void:
+	var out_stack:Array[RegexTok] = [];
+	var in_stack:Array[RegexTok] = [];
 	for tok in rx_toks:
 		if(tok.type == "capture_end"): #')'
-			var lc = LoopCounter.new();
+			var lc:LoopCounter = LoopCounter.new();
 			while true: #collect stuff in braces ()
 				lc.step();
-				assert(not out_stack.empty());
-				var tok2 = out_stack.pop();
+				assert(not out_stack.is_empty());
+				var tok2:RegexTok = out_stack.pop_back();
 				if(tok2.type == "capture_begin"): #'('
-					var capture_tok = _new_tok();
+					var capture_tok:RegexTok = RegexTok.new()#_new_tok();
 					capture_tok.type = "capture";
 					capture_tok.children = in_stack.duplicate();
 					break;
 				else:
-					in_stack.push(tok2);
+					in_stack.push_back(tok2);
 		else:
-			if out_stack.empty(): out_stack.push(tok);
+			if out_stack.is_empty(): out_stack.push_back(tok);
 			else:
 				# pick up all tokens of lower precedence
-				var lc = LoopCounter.new();
-				while not out_stack.empty():
+				var lc:LoopCounter = LoopCounter.new();
+				while not out_stack.is_empty():
 					lc.step();
 					if (out_stack.back().precedence < tok.precedence) and \
 					(out_stack.back().type != "capture_begin"):
-						var tok2 = out_stack.pop();
-						in_stack.push(tok2);
+						var tok2:RegexTok = out_stack.pop_back();
+						in_stack.push_back(tok2);
 					else:
 						break;
-				out_stack.push(tok);
+				out_stack.push_back(tok);
 				# put picked up tokens after this one
 				lc = LoopCounter.new();
-				while not in_stack.empty(): 
+				while not in_stack.is_empty(): 
 					lc.step();
-					out_stack.push(in_stack.pop());
+					out_stack.push_back(in_stack.pop_back());
 
 # analyzes the regex tokens to build a regex AST
 func _analyze(aparse)->RegexTok:
 	assert(aparse.i < aparse.size);
-	var tok_head = aparse.toks[aparse.i]; aparse.i += 1;
+	var tok_head:RegexTok = aparse.toks[aparse.i]; aparse.i += 1;
 	# 0-arg operators
 	if(tok_head.type == "start"):	assert(aparse.i == 1);
 	elif(tok_head.type == "end"):	assert(aparse.i+1 <= aparse.size());
 	elif(tok_head.type in ["anychar", "char", "capture", "sequence"]): pass;
 	# 1-arg operators
 	elif(tok_head.type in ["star", "plus", "question"]):
-		var opt = _analyze(aparse);
-		tok_head.children.push(opt);
+		var opt:RegexTok = _analyze(aparse);
+		tok_head.children.push_back(opt);
 	# 2-arg operators
 	elif(tok_head.type == "choice"):
-		var opt1 = _analyze(aparse);
-		var opt2 = _analyze(aparse);
-		tok_head.children.push(opt1);
-		tok_head.children.push(opt2);
+		var opt1:RegexTok = _analyze(aparse);
+		var opt2:RegexTok = _analyze(aparse);
+		tok_head.children.push_back(opt1);
+		tok_head.children.push_back(opt2);
 	else:
 		assert(false, "unimplemented regex operator");
 	
@@ -163,7 +190,7 @@ func _analyze(aparse)->RegexTok:
 		var ast_list:RegexTok = RegexTok.new(); #_new_tok();
 		ast_list.type = "sequence";
 		aparse.i += 1;
-		var ast_rest = _analyze(aparse);
+		var ast_rest:RegexTok = _analyze(aparse);
 		ast_list.children.append(ast_rest);
 		return ast_list;
 
@@ -180,7 +207,7 @@ func _analyze(aparse)->RegexTok:
 # changes f(f(A,B),C) to f(A,B,C)
 func _linearize(ast)->RegexTok:
 	if (not ast.children.empty()) and (ast.type in ["sequence", "choice"]):
-		var lin_children = [];
+		var lin_children:Array[RegexTok] = [];
 		for ch in ast.children:
 			if ch.type == ast.type:
 				for ch2 in ch.children:
@@ -188,16 +215,17 @@ func _linearize(ast)->RegexTok:
 			else:
 				lin_children.append(_linearize(ch));
 		ast.children = lin_children;
-	else:
-		return ast;
+	return ast;
+
+
 
 # compiles a regex format string into a regex operator AST
 func compile(regex:String)->RegexTok:
-	var parse = {"line":regex, "i":0};
-	var toks = _tokenize(parse);
-	toks = _restack(toks);
-	var anal_parse = {"toks":toks, "i":0, "size":toks.size()};
-	var ast = _analyze(toks);
+	var parse:ParseIter = ParseIter.new(regex,0); #{"line":regex, "i":0};
+	var toks:Array[RegexTok] = _tokenize(parse);
+	_restack(toks);
+	#var anal_parse = {"toks":toks, "i":0, "size":toks.size()};
+	var ast:RegexTok = _analyze(toks);
 	ast = _linearize(ast);
 	return ast;
 
@@ -212,31 +240,25 @@ func compile(regex:String)->RegexTok:
 # compile(sting)->void
 # match(ast)->bool
 
-class RegexParser:
-	var line:String = "";
-	var i:int = 0;
-	var settings:Dictionary = {};
-	var matches:Array = [];
-	var _compile:Callable = urp_compile;
-	var _match:Callable = urp_match;
+
 
 #func new_parser()->RegexParser: return RegexParser.new(); #{"line":"", "i":0, "settings":{},"matches":[],"compile":urp_compile,"match":urp_match};
-
-func urp_compile(this, format)->Variant: return compile(format);
+func new_parser()->RegexParser: return RegexParser.new(urp_compile, urp_match);
+func urp_compile(this:RegexParser, format)->Variant: return compile(format);
 
 # returns true if this ast matches.
 # if given a capture group number, puts it into the matches.
-func _submatch(this, ast, is_capture_group=false,text_out=null):
-	var parser = this;
-	var _match = {"id":null, "text":"", "pos":parser.i};
+func _submatch(this:RegexParser, ast, is_capture_group=false,text_out=null)->bool:
+	var parser:RegexParser = this;
+	var _match:RegexMatch = RegexMatch.new(0,"",parser.i);#{"id":null, "text":"", "pos":parser.i};
 	if(is_capture_group):
 		_match.id = parser.matches.size();
 		parser.matches.push_back(_match);
-	var last_pos = parser.i;
-	var text_cur = "";
-	var text_in = [""];
+	var last_pos:int = parser.i;
+	var text_cur:String = "";
+	var text_in:Array[String] = [""];
 	if text_out: text_out[0] = "";
-	var success = false;
+	var success:bool = false;
 	#  type: start, 	^ 
 	#		 end, 		$ 
 	#		 char,		a
@@ -251,9 +273,9 @@ func _submatch(this, ast, is_capture_group=false,text_out=null):
 	#		 capture_group ()
 	match ast.type:
 		"sequence":
-			var ok = true;
+			var ok:bool = true;
 			for ch in ast.children():
-				var res = _submatch(this, ch, false, text_in);
+				var res:bool = _submatch(this, ch, false, text_in);
 				if res: text_cur += text_in[0];
 				else: ok = false; break;
 			success = ok;
@@ -273,9 +295,9 @@ func _submatch(this, ast, is_capture_group=false,text_out=null):
 			parser.i += 1;
 		"choice":
 			assert(ast.children.size() >= 2);
-			var ok = false;
+			var ok:bool = false;
 			for ch in ast.children:
-				var res = _submatch(this, ch, false, text_in);
+				var res:bool = _submatch(this, ch, false, text_in);
 				if res: 
 					text_cur += text_in[0];
 					ok = true;
@@ -285,11 +307,11 @@ func _submatch(this, ast, is_capture_group=false,text_out=null):
 			success = ok;
 		"star":
 			assert(ast.children.size() == 1);
-			var ch = ast.children[0];
-			var lc = LoopCounter.new();
+			var ch:RegexTok = ast.children[0];
+			var lc:LoopCounter = LoopCounter.new();
 			while parser.i < parser.line.length():
 				lc.step();
-				var res = _submatch(this, ch, false, text_in);
+				var res:bool = _submatch(this, ch, false, text_in);
 				if res:	
 					text_cur += text_in[0];
 					last_pos = parser.i;
@@ -298,12 +320,12 @@ func _submatch(this, ast, is_capture_group=false,text_out=null):
 			success = true;
 		"plus":
 			assert(ast.children.size() == 1);
-			var ch = ast.children[0];
-			var ok = false;
-			var lc = LoopCounter.new();
+			var ch:RegexTok = ast.children[0];
+			var ok:bool = false;
+			var lc:LoopCounter = LoopCounter.new();
 			while parser.i < parser.line.length():
 				lc.step();
-				var res = _submatch(this, ch, false, text_in);
+				var res:bool = _submatch(this, ch, false, text_in);
 				if res:	
 					ok = true;
 					text_cur += text_in[0];
@@ -313,21 +335,22 @@ func _submatch(this, ast, is_capture_group=false,text_out=null):
 			success = ok;
 		"question":
 			assert(ast.children.size() == 1);
-			var ch = ast.children[0];
-			var res = _submatch(this, ch, false, text_in);
+			var ch:RegexTok = ast.children[0];
+			var res:bool = _submatch(this, ch, false, text_in);
 			if res: text_cur += text_in[0];
 			else: parser.i = last_pos;
 			success = true;
 		"range":
 			assert(ast.children.empty());
+	return success;
 
 func is_space(C:String)->bool: return (C in [" ", "\t", "\n", "\r"]);
 func is_anychar(C:String)->bool: return not (C in ["\n", "\r"]);
 	
-func urp_match(this, ast)->bool:
-	var parser = this;
+func urp_match(this:RegexParser, ast)->bool:
+	var parser:RegexParser = this;
 	parser.matches = [];
-	var res = _submatch(this, ast, true);
+	var res:bool = _submatch(this, ast, true);
 	if res:
 		return true;
 	else: 

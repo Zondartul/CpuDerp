@@ -122,9 +122,9 @@ func disasm_pure(cmd:PackedByteArray)->String:
 	no_side_effects = false;
 	return text;
 
-func decode_pure(cmd:PackedByteArray)->String:
+func decode_pure(cmd:PackedByteArray)->Dictionary:
 	no_side_effects = true;
-	var decoded = decodeCmd(cmd);
+	var decoded:Dictionary = decodeCmd(cmd);
 	no_side_effects = false;
 	return decoded;
 
