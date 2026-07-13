@@ -22,18 +22,18 @@ var cur_path:String = ""
 var code:Array[int] = [];
 var shadow:Array[int] = [];
 var write_pos:int = 0;
-var labels = {};
-var final_labels = {};
-var label_refs = {};
-var label_toks = {};
+var labels:Dictionary[String,int] = {};
+var final_labels:Dictionary[String,int] = {};
+var label_refs:Dictionary[int,String] = {};
+var label_toks:Dictionary[int,Token] = {};
 # error reporting
 var lines:PackedStringArray;
 var cur_line:String = "";
 var cur_line_idx:int = 0;
 var error_code:String; #:set = set_error;
 #debug info
-var op_locations = []
-var output_tokens = [];
+var op_locations:Array[Location] = []
+var output_tokens:Array[Token] = [];
 
 func reset()->void:
 	cur_filename = "";
@@ -83,7 +83,7 @@ func assemble(input:Dictionary, task:Task)->Chunk:
 	output_tokens.clear();
 	lines = source.split("\n",true);
 	#print(lines);
-	var cur_loc = Location.new({"filename":cur_filename, "line":"<assemble.default>", "line_idx":0, "col":0});
+	var cur_loc:Location = Location.new({"filename":cur_filename, "line":"<assemble.default>", "line_idx":0, "col":0});
 	task.work_units_total = lines.size();
 	for line in lines:
 		if line == "": cur_line_idx += 1; continue;
@@ -93,7 +93,7 @@ func assemble(input:Dictionary, task:Task)->Chunk:
 		cur_loc.col = 0;
 		line = preproc(line);
 		cur_line = line;
-		var tokens = tokenize(line, cur_loc);
+		var tokens:Array[Token] = tokenize(line, cur_loc);
 		output_tokens.append_array(tokens);
 		if output_tokens.size():
 			output_tokens.back().set_meta("token_viewer_newline",true);
@@ -106,11 +106,11 @@ func assemble(input:Dictionary, task:Task)->Chunk:
 	call_deferred("defer_tokens_ready", output_tokens); #tokens_ready.emit(output_tokens);
 	var chunk:Chunk = output_chunk();
 	chunk = link_internally(chunk);
-	var unlinked = len(chunk.refs);
+	var unlinked:int = len(chunk.refs);
 	if unlinked: 
 		for ref in chunk.refs:
-			var lbl_name = chunk.refs[ref];
-			var lbl_tok = chunk.label_toks[ref];
+			var lbl_name:String = chunk.refs[ref];
+			var lbl_tok:Token = chunk.label_toks[ref];
 			#var erep = ErrorReporter.new(self, lbl_tok);
 			erep.context = lbl_tok;
 			erep.error(E.ERR_13 % lbl_name);
@@ -149,7 +149,7 @@ func user_error(msg)->void:
 	#return -1;
 
 func output_chunk()->Chunk:
-	var chunk = Chunk.new(
+	var chunk:Chunk = Chunk.new(
 		{"code":code.duplicate(), 
 		"labels":labels.duplicate(), 
 		"refs":label_refs.duplicate(),
@@ -167,7 +167,7 @@ func output_chunk()->Chunk:
 ##  returns new code chunk
 ##  only unlinked references remain in the refs section
 func link_internally(in_chunk:Chunk)->Chunk:
-	var out_chunk = in_chunk.duplicate();
+	var out_chunk:Chunk = in_chunk.duplicate();
 	#var in_code = chunk.code;
 	#var in_labels = chunk.labels;
 	#var in_refs = chunk.refs;
@@ -175,9 +175,9 @@ func link_internally(in_chunk:Chunk)->Chunk:
 	#
 	#var code_out = in_code.duplicate();
 	#var shadow_out = chunk.shadow.duplicate();
-	var refs_remain = {};
+	var refs_remain:Dictionary[int,String] = {};
 	for ref in in_chunk.refs:
-		var lbl_name = in_chunk.refs[ref];
+		var lbl_name:String = in_chunk.refs[ref];
 		if lbl_name in in_chunk.labels:
 			var lbl_pos = in_chunk.labels[lbl_name];
 			var lbl_tok = in_chunk.label_toks[ref];
@@ -192,15 +192,15 @@ func link_internally(in_chunk:Chunk)->Chunk:
 ## modifies the code in-place to alter a command's offset to a given value.
 ##  ref: position of command (then the immediate value lies in bytes [ref+3...ref+7)
 ##  lbl_pos: the new value to insert
-func patch_ref(out_code:Array, ref:int, lbl_pos:int, out_shadow:Array, lbl_tok:Token)->void:
-	var old_code = code;
-	var old_wp = write_pos;
-	var old_shadow = shadow;
+func patch_ref(out_code:Array[int], ref:int, lbl_pos:int, out_shadow:Array[int], lbl_tok:Token)->void:
+	var old_code:Array[int] = code;
+	var old_wp:int = write_pos;
+	var old_shadow:Array[int] = shadow;
 	code = out_code;
 	shadow = out_shadow;
 	write_pos = ref; #ref+3;
-	var prev_mark = out_shadow[write_pos];
-	var shadow_flag = ISA.SHADOW_UNUSED;
+	var prev_mark:int = out_shadow[write_pos];
+	var shadow_flag:int = ISA.SHADOW_UNUSED;
 	match prev_mark:
 		ISA.SHADOW_DATA_UNRESOLVED: shadow_flag = ISA.SHADOW_DATA_RESOLVED;
 		ISA.SHADOW_CMD_UNRESOLVED: shadow_flag = ISA.SHADOW_CMD_RESOLVED;
@@ -279,8 +279,8 @@ func remove_comments(line:String)->String:
 	#if(idx != -1):
 	#	line = line.substr(0, idx);
 	# need to handle strings as well
-	var is_string = false;
-	var idx = 0;
+	var is_string:bool = false;
+	var idx:int = 0;
 	for ch in line:
 		if is_string:
 			if ch == "\"": is_string = false;
@@ -292,15 +292,15 @@ func remove_comments(line:String)->String:
 
 # removes space characters from the beginning and the end of a string
 func trim_spaces(line:String)->String:
-	var idx_first = first_non_space(line)
-	var idx_last = last_non_space(line)
-	var nsp_len = idx_last - idx_first+1;
+	var idx_first:int = first_non_space(line)
+	var idx_last:int = last_non_space(line)
+	var nsp_len:int = idx_last - idx_first+1;
 	line = line.substr(idx_first, nsp_len);
 	return line;
 
 # returns the index of the first character in a string that is not some space character
 func first_non_space(line:String)->int:
-	var idx = 0;
+	var idx:int = 0;
 	for ch in line:
 		if ch in " \n\r\t":
 			idx = idx+1;
@@ -310,7 +310,7 @@ func first_non_space(line:String)->int:
 
 # returns the index of the last character in a string that is not some space character
 func last_non_space(line:String)->int:
-	var idx = first_non_space(line.reverse())
+	var idx:int = first_non_space(line.reverse())
 	if idx == -1: return -1;
 	else: return line.length() - idx - 1;
 #------------------------------------------------------------
@@ -318,33 +318,33 @@ func last_non_space(line:String)->int:
 #------------ Tokenization ----------------------------------
 func tokenize(line:String, cur_loc:Location)->Array[Token]:
 	var tokens:Array[Token] = [];
-	var tok_class = "";
-	var cur_tok = "";
+	var tok_class:String = "";
+	var cur_tok:String = "";
 	for ch in line:
-		var new_tok_class = tok_ch_class(ch);
+		var new_tok_class:String = tok_ch_class(ch);
 		if should_split_on_transition(new_tok_class, tok_class):
 			if tok_class == "STRING" and new_tok_class == "STRING":
 				new_tok_class = "ENDSTRING";
 				cur_tok = cur_tok.substr(1); #remove the leading \"
 			if cur_tok != "":
-				var t_loc = to_tok_loc(cur_loc, cur_tok);
+				var t_loc:LocationRange = to_tok_loc(cur_loc, cur_tok);
 				tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "loc":t_loc}));
 				cur_tok = "";
 			tok_class = new_tok_class;
 		cur_tok += ch;
 		cur_loc.col += 1;
 	if cur_tok != "":
-		var t_loc = to_tok_loc(cur_loc, cur_tok);
+		var t_loc:LocationRange = to_tok_loc(cur_loc, cur_tok);
 		tokens.append(Token.new({"tok_class":tok_class, "text":cur_tok, "loc":t_loc}));
 		cur_tok = "";
 	tokens = tokens.filter(filter_tokens);
 	return tokens;
 
 func to_tok_loc(cur_loc:Location, cur_tok:String)->LocationRange:
-	var t_loc = cur_loc.duplicate();
+	var t_loc:Location = cur_loc.duplicate();
 	t_loc.col -= 1;
-	t_loc = LocationRange.from_loc_len(t_loc, len(cur_tok));
-	return t_loc;
+	var t_locr:LocationRange = LocationRange.from_loc_len(t_loc, len(cur_tok));
+	return t_locr;
 
 func should_split_on_transition(new_tok_class:String, old_tok_class:String)->bool:
 	#if (new_tok_class != tok_class) or (tok_class == "PUNCT"):
@@ -395,10 +395,10 @@ func tok_ch_class(ch:String)->String:
 #------------------ Analysis & codegen -----------------------
 
 func process(tokens:Array[Token])->bool:
-	var iter = Iter.new(tokens, 0);
+	var iter:Iter = Iter.new(tokens, 0);
 	#var erep:ErrorReporter = ErrorReporter.new(self, iter);
 	erep.context = iter;
-	var lc = LoopCounter.new(10000);
+	var lc:LoopCounter = LoopCounter.new(10000);
 	while iter.pos != len(iter.tokens):
 		lc.step();
 		if parse_label(iter) \
@@ -415,10 +415,10 @@ func process(tokens:Array[Token])->bool:
 	return true;
 
 func parse_label(iter:Iter)->bool:
-	var toks = [];
+	var toks:Array[Token] = [];
 	if (   match_tokens(iter, ["\\:", "WORD", "\\:"], toks)
 		or match_tokens(iter, ["WORD", "\\:"], toks)		):
-		var lbl_name = toks[0]["text"];
+		var lbl_name:String = toks[0]["text"];
 		if lbl_name == ":": lbl_name = toks[1]["text"];
 		if lbl_name in labels:
 			user_error("Label already defined: "+lbl_name);
@@ -429,13 +429,13 @@ func parse_label(iter:Iter)->bool:
 	else: return false;
 
 func parse_db(iter:Iter)->bool:
-	var old_iter = iter.duplicate();
+	var old_iter:Iter = iter.duplicate();
 	if match_tokens(iter, ["\\db"]):
 		var items:Array[Token] = [];
-		var lc = LoopCounter.new();
+		var lc:LoopCounter = LoopCounter.new();
 		while iter.pos != len(iter.tokens):
 			lc.step();
-			var toks = []
+			var toks:Array[Token] = []
 			if match_tokens(iter, ["STRING"],toks) \
 			or match_tokens(iter, ["NUMBER"],toks) \
 			or (match_tokens(iter, ["WORD"],toks) and is_label(toks[0]["text"])):
@@ -454,18 +454,18 @@ func parse_db(iter:Iter)->bool:
 	else: return false;
 
 func parse_alloc(iter:Iter)->bool:
-	var old_iter = iter.duplicate();
+	var old_iter:Iter = iter.duplicate();
 	if match_tokens(iter, ["\\alloc"]):
-		var toks = [];
+		var toks:Array[Token] = [];
 		if match_tokens(iter, ["NUMBER"],toks):
 			match_tokens(iter, ["\\;"]); #optional semicolon
-			var size = int(toks[0]["text"])
+			var size:int = int(toks[0]["text"])
 			if size <= 0:
 				erep.error(E.ERR_10 % size);
 				return false;
 			record_op_position(old_iter, iter);
 			# Advance write_pos by the specified size, padding to maintain alignment
-			var old_write_pos = write_pos;
+			var old_write_pos:int = write_pos;
 			write_pos += size;
 			# Pad to maintain command size alignment if needed
 			while(write_pos % cmd_size):
@@ -486,22 +486,22 @@ func parse_alloc(iter:Iter)->bool:
 
 
 func record_op_position(old_iter:Iter, iter:Iter)->void:
-	var tok_first = old_iter.tokens[old_iter.pos];
-	var tok_last = iter.tokens[iter.pos-1];
-	var begin_col = tok_first.loc.begin.col;
-	var end_col = tok_last.loc.end.col;#tok_last.loc.from.col+len(tok_last.text);
-	var op = {"ip":write_pos,"filename":cur_filename, "line":cur_line, "line_idx":cur_line_idx, "begin":begin_col, "end":end_col};
+	var tok_first:Token = old_iter.tokens[old_iter.pos];
+	var tok_last:Token = iter.tokens[iter.pos-1];
+	var begin_col:int = tok_first.loc.begin.col;
+	var end_col:int = tok_last.loc.end.col;#tok_last.loc.from.col+len(tok_last.text);
+	var op = Location.new({"ip":write_pos,"filename":cur_filename, "line":cur_line, "line_idx":cur_line_idx, "begin":begin_col, "end":end_col});
 	op_locations.append(op);
 
 func parse_command(iter:Iter)->bool:
-	var old_iter = iter.duplicate();
-	var toks = [];
+	var old_iter:Iter = iter.duplicate();
+	var toks:Array[Token] = [];
 	if match_tokens(iter, ["WORD"],toks):
-		var op_name = str(toks[0].text).to_upper();
+		var op_name:String = str(toks[0].text).to_upper();
 		var flags:Cmd_flags = Cmd_flags.new()
-		var op_code = 0;
+		var op_code:int = 0;
 		if op_name in ISA.spec_ops:
-			var spec_op = ISA.spec_ops[op_name];
+			var spec_op:Dictionary = ISA.spec_ops[op_name];
 			op_code = spec_op["op_code"];
 			flags.spec_flags = spec_op["flags"];
 		else:
@@ -524,7 +524,7 @@ func parse_command(iter:Iter)->bool:
 		# if syntax error: parse_arg pushes an error.
 		flags.set_arg1(arg1);
 		flags.set_arg2(arg2, erep);
-		var shadow_flags = {"unresolved":(arg1.is_unresolved or arg2.is_unresolved)};
+		var shadow_flags:ShadowFlags = ShadowFlags.new({"unresolved":(arg1.is_unresolved or arg2.is_unresolved)});
 		record_op_position(old_iter, iter);
 		emit_opcode(op_code, flags, arg1.reg_idx, arg2.reg_idx, arg1.offset+arg2.offset, shadow_flags);
 		#print("Parsed ["+op_name+"("+str(int(arg1.is_present) + int(arg2.is_present))+")]")
@@ -545,8 +545,8 @@ func print_tokens(tokens:Array[Token])->void:
 ## 	returns null of they don't or if EOF
 ## 	pattern is either "class" or "\\text"
 func peek_tokens(iter:Iter, ref_toks:Array[String],out=null)->bool:
-	var i = iter.pos;
-	var res = []
+	var i:int = iter.pos;
+	var res:Array[Token] = []
 	for rt:String in ref_toks:
 		if i >= len(iter.tokens): return false;
 		var it = iter.tokens[i];
@@ -598,12 +598,12 @@ func parse_arg(iter)->Cmd_arg:
 	var toks_word:Array[Token]; 
 	if match_tokens(iter, ["WORD"], toks_word):
 		arg.is_present = true;
-		var word = toks_word[0]["text"]; 
-		var reg = get_reg(word);
+		var word:String = toks_word[0]["text"]; 
+		var reg:ResGetReg = get_reg(word);
 		var flag = get_flag(word);
 		if G.has(reg):
-			arg.reg_idx = reg["idx"];
-			arg.reg_name = reg["name"];
+			arg.reg_idx = reg.idx;
+			arg.reg_name = reg.name;
 		elif flag != null:
 			arg.is_imm = true;
 			arg.offset = flag;
@@ -662,13 +662,19 @@ func parse_arg(iter)->Cmd_arg:
 		arg.is_deref = true;
 	return arg;
 
-func get_reg(rname:String)->Dictionary:
+class ResGetReg:
+	var idx:int;
+	var name:String;
+	func _init(_idx:int, _name:String):
+		idx=_idx;name=_name;
+
+func get_reg(rname:String)->ResGetReg:
 	rname = rname.to_upper();
 	var idx = 0;
 	if rname in ISA.regnames:
 		idx = ISA.regnames.find(rname);
-		return {"idx":idx, "name":rname};
-	else: return {};
+		return ResGetReg.new(idx,rname);#{"idx":idx, "name":rname};
+	else: return null;
 	
 func get_flag(fname:String)->int:
 	fname = fname.to_upper();
@@ -677,15 +683,19 @@ func get_flag(fname:String)->int:
 	assert(false, "flag name not in ctrl_flag_masks");
 	return 0;
 #------------- CODE GEN -----------
+class ShadowFlags:
+	var unresolved:bool;
+	func _init(cfg=null):
+		if cfg is Dictionary:
+			G.dictionary_init(self,cfg);
 
-
-func emit_opcode(cmd:int, flags:Cmd_flags, reg1:int=0, reg2:int=0, imm_u32:int=0, shadow_flags={})->void:
+func emit_opcode(cmd:int, flags:Cmd_flags, reg1:int=0, reg2:int=0, imm_u32:int=0, shadow_flags:ShadowFlags=ShadowFlags.new())->void:
 	assert(write_pos % cmd_size == 0);
 	emit8(cmd, ISA.SHADOW_CMD_HEAD);
 	emit8(flags.to_byte(), ISA.SHADOW_CMD_TAIL);
 	emit8((reg1 & 0b1111) | ((reg2 & 0b1111) << 4), ISA.SHADOW_CMD_TAIL);
 	var tail_flag = ISA.SHADOW_CMD_TAIL;
-	if "unresolved" in shadow_flags and shadow_flags.unresolved: tail_flag = ISA.SHADOW_CMD_UNRESOLVED;
+	if shadow_flags.unresolved: tail_flag = ISA.SHADOW_CMD_UNRESOLVED;
 	emit32(imm_u32, tail_flag);
 	emit8(0xFF, ISA.SHADOW_CMD_TAIL); # pad
 

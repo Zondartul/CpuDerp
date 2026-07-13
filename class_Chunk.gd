@@ -3,9 +3,9 @@ class_name Chunk
 
 var code:Array[int];
 var shadow:Array[int];
-var labels:Dictionary;
-var refs:Dictionary;
-var label_toks:Dictionary;
+var labels:Dictionary[String,int];
+var refs:Dictionary[int,String];
+var label_toks:Dictionary[int,Token];
 var error:bool;
 
 func _init(dict=null):
