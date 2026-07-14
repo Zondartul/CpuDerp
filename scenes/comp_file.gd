@@ -70,7 +70,7 @@ func has_efile(ef_name)->bool:
 	if get_efile(ef_name): return true;
 	else: return false;
 
-func get_efile(ef_name)->Variant:
+func get_efile(ef_name)->EditorFile:
 	for ef in efiles:
 		if(ef.file_name == ef_name):
 			return ef;
@@ -87,7 +87,7 @@ func set_cur_efile(efile)->void:
 	cur_efile_changed.emit(efile);
 
 func update_efile_tab(efile)->void:
-	var title = efile.file_name;
+	var title:String = efile.file_name;
 	if(efile.is_dirty): title += "(*)";
 	n_efiles.set_tab_title(efile.tab_idx, title);
 
@@ -118,15 +118,15 @@ func async_close_file()->void:
 
 func async_remove_efile(ef_name)->bool:
 	print("remove_efile("+ef_name+")");
-	var efile = get_efile(ef_name);
+	var efile:EditorFile = get_efile(ef_name);
 	if(efile.is_dirty): 
 		set_cur_efile(efile);
 		dialog_discard.ask(ef_name);
-		var result = await dialog_discard.has_result;
+		var result:String = await dialog_discard.has_result;
 		#await dialog_discard.popup_hide;
 		if(result == "save"):
 			print("save, then remove");
-			var res = await async_save_file();
+			var res:bool = await async_save_file();
 			if not res: print("remove file fail"); return false;
 			remove_efile_actual(efile);
 			return true;
@@ -142,13 +142,13 @@ func async_remove_efile(ef_name)->bool:
 		remove_efile_actual(efile);
 		return true;
 	
-func async_new_file(new_name)->bool:
+func async_new_file(new_name:String)->bool:
 	#print("new file");
-	var efile = get_efile(new_name);
+	var efile:EditorFile = get_efile(new_name);
 	if efile:
 		#print("new: already have that file")
 		cur_efile = efile;
-		var res = await async_remove_efile(new_name);
+		var res:bool = await async_remove_efile(new_name);
 		if not res: print("new_file fail"); return false;
 	else:
 		#print("new: file not yet open");
@@ -168,7 +168,7 @@ func async_save_file()->bool:
 		else:
 			print("save file fail"); return false;
 	else:
-		var res = await async_save_file_as();
+		var res:bool = await async_save_file_as();
 		if not res: print("save file fail"); return false;
 		return true;
 
@@ -176,20 +176,20 @@ func async_save_file_as()->bool:
 	print("Save file as");
 	assert(cur_efile != null);
 	dialog_save.popup();
-	var path = await file_selected;
+	var path:String = await file_selected;
 	cur_efile.path = path;
-	var fname = path_to_filename(path);
+	var fname:String = path_to_filename(path);
 	rename_efile(cur_efile, fname);
-	var res = cur_efile.file_save();
+	var res:bool = cur_efile.file_save();
 	if not res: print("save file as fail"); return false;
 	return true;
 
 func async_load_file()->void:
 	#print("Load file");
 	dialog_load.popup();
-	var path = await file_selected;
-	var fname = path_to_filename(path);
-	var res = await async_new_file(fname);	
+	var path:String = await file_selected;
+	var fname:String = path_to_filename(path);
+	var res:bool = await async_new_file(fname);	
 	if not res: print("async_load: fail"); return;
 	cur_efile.path = path;
 	cur_efile.name = fname;
@@ -206,8 +206,8 @@ func _on_file_index_pressed(index)->void:
 	if index == 4: await async_close_file();
 
 func identify_lang(fname:String)->String:
-	var ext = fname.get_extension();
-	var res = "";
+	var ext:String = fname.get_extension();
+	var res:String = "";
 	match ext:
 		"zd": res = "zderp";
 		"md": res = "miniderp";

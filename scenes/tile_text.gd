@@ -1,18 +1,19 @@
 extends Control
+class_name TileText;
 
-const scene_tile = preload("res://scenes/tile_text_tile.tscn")
-const char_w = 9;
-const char_h = 16;
-const height = 512;
-const width = 512;
-const default_colFG = Color(81/255.0,235/255.0,0);
-const default_colBG = Color(16/255.0,16/255.0,16/255.0);
-var tiles;
-var tile_texts;
-var n_tiles_x;
-var n_tiles_y;
-var default_posX = 0;
-var default_posY = 0;
+const scene_tile:PackedScene = preload("res://scenes/tile_text_tile.tscn")
+const char_w:int = 9;
+const char_h:int = 16;
+const height:int = 512;
+const width:int = 512;
+const default_colFG:Color = Color(81/255.0,235/255.0,0);
+const default_colBG:Color = Color(16/255.0,16/255.0,16/255.0);
+var tiles:Array[Array];
+var tile_texts:Array[Array];
+var n_tiles_x:int;
+var n_tiles_y:int;
+var default_posX:int = 0;
+var default_posY:int = 0;
 
 
 # Called when the node enters the scene tree for the first time.
@@ -55,7 +56,7 @@ func _advance_default_pos(v:Vector2i)->void:
 
 func setString(S:String, posX = null, posY = null, colFG = null, colBG = null)->void:
 	if not _is_valid_pos(Vector2i(posX, posY)): return;
-	var coords = _sanitize_coords(posX, posY);
+	var coords:Vector2i = _sanitize_coords(posX, posY);
 	#if coords == null: return;
 	if colFG == null: colFG = default_colFG;
 	if colBG == null: colBG = default_colBG;
@@ -65,8 +66,9 @@ func setString(S:String, posX = null, posY = null, colFG = null, colBG = null)->
 		setChar(c,null,null,colFG,colBG);
 
 func setChar(C:String, posX = null, posY = null, colFG = null, colBG = null)->void:
-	var coords = _sanitize_coords(posX, posY);
-	if coords == null: return;
+	var coords:Vector2i = _sanitize_coords(posX, posY);
+	if not _is_valid_pos(coords): return;
+	#if coords == null: return;
 	if colFG == null: colFG = default_colFG;
 	if colBG == null: colBG = default_colBG;
 	
@@ -82,16 +84,16 @@ func _init_tiles()->void:
 	n_tiles_x = width/char_w; #note: // is not available in GDScript
 	@warning_ignore("integer_division")
 	n_tiles_y = height/char_h;
-	var offset = Vector2i(width % char_w, height % char_h) / 2;
+	var offset:Vector2i = Vector2i(width % char_w, height % char_h) / 2;
 	#print("num tiles: ("+str(n_tiles_x)+", "+str(n_tiles_y)+")");
 	for ix in range(n_tiles_x):
-		var row = []
-		var texts_row = []
+		var row:Array[Node] = []
+		var texts_row:Array[Node] = []
 		for iy in range(n_tiles_y):
-			var x = char_w*ix;
-			var y = char_h*iy;
-			var tile = scene_tile.instantiate();
-			var tile_text = tile.get_node("tile_text");
+			var x:int = char_w*ix;
+			var y:int = char_h*iy;
+			var tile:Node = scene_tile.instantiate();
+			var tile_text:Node = tile.get_node("tile_text");
 			tile_text.text = "";
 			tile.position = Vector2(x,y) + Vector2(offset);
 			add_child(tile);
@@ -112,16 +114,16 @@ class CSTileData:
 
 func getTileData(pos:Vector2i)->CSTileData:
 	if not _is_valid_pos(pos): return CSTileData.none;
-	var coords = _sanitize_coords(pos.x, pos.y);
+	var coords:Vector2i = _sanitize_coords(pos.x, pos.y);
 	#if coords == null: return null;
-	var C = tile_texts[coords.x][coords.y].text;
-	var colFG = tile_texts[coords.x][coords.y].get_theme_color("font_color");
-	var colBG = tiles[coords.x][coords.y].color;
+	var C:String = tile_texts[coords.x][coords.y].text;
+	var colFG:Color = tile_texts[coords.x][coords.y].get_theme_color("font_color");
+	var colBG:Color = tiles[coords.x][coords.y].color;
 	return CSTileData.new(C,colFG,colBG);
 
 func setTileData(pos:Vector2i, tile_data)->void:
 	if not _is_valid_pos(pos): return;
-	var coords = _sanitize_coords(pos.x, pos.y);
+	var coords:Vector2i = _sanitize_coords(pos.x, pos.y);
 	#if coords == null: return;
 	#print("setTileData(coords = "+str(coords)+", data = "+str(tile_data)+")");
 	tile_texts[coords.x][coords.y].text = tile_data.c;

@@ -1,9 +1,9 @@
 extends Node
 
-var Bus;
-var GPU;
-var KB;
-var is_setup = false;
+var Bus:Node;
+var GPU:Node;
+var KB:Node;
+var is_setup:bool = false;
 
 
 # Called when the node enters the scene tree for the first time.
@@ -32,12 +32,12 @@ func _find_on_bus(dev_name)->Node:
 	return null;
 
 #---------- GPU driver ----------
-const textbuffer_offset = 2000;
-const n_params = 7;
-const n_tiles_x = 56;
-const n_tiles_y = 36;
+const textbuffer_offset:int = 2000;
+const n_params:int = 7;
+const n_tiles_x:int = 56;
+const n_tiles_y:int = 36;
 
-var print_pos = Vector2i(0,0);
+var print_pos:Vector2i = Vector2i(0,0);
 
 func _nl()->void:
 	print_pos.x = 0;
@@ -66,7 +66,7 @@ func _int_to_char(N:int)->String:
 
 
 func _printChar(C:String, pos:Vector2i, colFG=null, colBG=null)->void:
-	var adr = textbuffer_offset + (pos.x+pos.y*n_tiles_x)*n_params;
+	var adr:int = textbuffer_offset + (pos.x+pos.y*n_tiles_x)*n_params;
 	GPU.writeCell(adr+0, _char_to_int(C));
 	if(colFG != null):
 		GPU.writeCell(adr+1, int(colFG.r*255));
@@ -82,14 +82,14 @@ func has_kb()->int:
 	return (KB.readCell(0) != 0);
 
 func get_kb()->String:
-	var key = _int_to_char(KB.readCell(1));
+	var key:String = _int_to_char(KB.readCell(1));
 	KB.writeCell(0,1);
 	return key;
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta)->void:
+func _process(delta:float)->void:
 	if not is_setup: return;
 	if not has_kb(): return;
 	else:
-		var C = get_kb();
+		var C:String = get_kb();
 		_print(C);

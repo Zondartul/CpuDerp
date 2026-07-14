@@ -10,10 +10,10 @@ const col_normal = Color.YELLOW;
 const col_good = Color.GREEN;
 const col_bad = Color.RED;
 
-var results = [];
-var n_results = 0;
-var result_idx = 0;
-var query_len = 0;
+var results:Array[G.RowCol] = [];
+var n_results:int = 0;
+var result_idx:int = 0;
+var query_len:int = 0;
 signal sig_highlight_line(line_idx, col, len);
 
 func setup()->void:
@@ -42,7 +42,7 @@ func search(text)->void:
 	query_len = len(text);
 	if comp_file.cur_efile:
 		var ftext:String = comp_file.cur_efile.get_text();
-		var positions = G.str_find_all_instances(text, ftext);
+		var positions:Array[int] = G.str_find_all_instances(text, ftext);
 		results = G.str_to_row_col_arr(positions, ftext);
 		n_results = len(results);
 	result_idx = 0;
@@ -70,7 +70,7 @@ func jump_to_result(idx)->void:
 	idx = idx % n_results; #clamp(idx, 0, n_results-1);
 	result_idx = idx;
 	update_lbl_res();
-	sig_highlight_line.emit(results[idx][0], results[idx][1], query_len);
+	sig_highlight_line.emit(results[idx].row, results[idx].col, query_len);
 
 func _on_btn_close_search_pressed() -> void:
 	hide();

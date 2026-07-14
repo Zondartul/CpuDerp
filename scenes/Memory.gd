@@ -1,8 +1,8 @@
 extends Control
 
-@onready var map = $BoxContainer/mem_map;
-@onready var memview = $BoxContainer/TextEdit;
-const ISA = preload("res://lang_zvm.gd");
+@onready var map:ItemList = $BoxContainer/mem_map;
+@onready var memview:TextEdit = $BoxContainer/TextEdit;
+static var ISA:ISA_ZVM = G.isa_zvm #preload("res://lang_zvm.gd");
 
 class MemHandle:
 	var pos:int;
@@ -20,15 +20,16 @@ class MemHandle:
 		
 # memory handles are buttons on the memory map
 var mem_handles:Array[MemHandle] = [];
-var handle_map = {};
-var Memory;
-var cpu_vm;
-var is_setup = false;
+var handle_map:Dictionary[int,MemHandle] = {};
+var Memory:Node;
+var cpu_vm:Node;
+var is_setup:bool = false;
 #var mvhl:CodeHighlighter = CodeHighlighter.new();
-var perf_limiter = {"freq":1, "credit":0.0, "updates":{"mem":true, "color":true, "disasm":true}};
+## Todo: replace perf_limiter dict with real PerfLimiter/PLDirectory
+var perf_limiter:Dictionary = {"freq":1, "credit":0.0, "updates":{"mem":true, "color":true, "disasm":true}};
 func run_perf_limiter(delta:float)->bool:
 	perf_limiter.credit += delta;
-	var cost = 1.0/float(perf_limiter.freq);
+	var cost:float = 1.0/float(perf_limiter.freq);
 	if perf_limiter.credit >= cost:
 		perf_limiter.credit -= cost;
 		return true;
@@ -54,7 +55,7 @@ func clear()->void:
 	mem_handles = [];
 	handle_map = {};
 
-const step = 8;
+const step:int = 8;
 func align_addr(addr)->int: return addr - addr % step;
 func align_size(s)->int: return max(step, s + step-1 - ((s+step-1) % step));
 
@@ -62,23 +63,23 @@ func align_size(s)->int: return max(step, s + step-1 - ((s+step-1) % step));
 func add_memory_region(m_pos, m_size, m_name)->MemHandle:
 	m_pos = align_addr(m_pos);
 	m_size = align_size(m_size);
-	var text = m_name + "\n"+str(m_size);
-	var idx = map.add_item(text)
+	var text:String = m_name + "\n"+str(m_size);
+	var idx:int = map.add_item(text)
 	var handle_info:MemHandle = MemHandle.new(m_pos,m_size,m_name,idx);#{"pos":m_pos, "size":m_size, "name":m_name, "item_no":idx};
 	handle_map[idx] = handle_info;
 	mem_handles.append(handle_info);
 	return handle_info;
 
 func update_memory_handle_text(idx)->void:
-	var handle = handle_map[idx]
-	var text = handle.name + "\n" + str(handle.size);
+	var handle:MemHandle = handle_map[idx]
+	var text:String = handle.name + "\n" + str(handle.size);
 	map.set_item_text(idx, text);
 	
-var color_fixups = [];
-var shadow_at = 0;
+#var color_fixups = [];
+var shadow_at:int = 0;
 
 func _process(delta)->void:
-	var lc = LoopCounter.new();
+	var lc:LoopCounter = LoopCounter.new();
 	while run_perf_limiter(delta):
 		lc.step();
 		update_mem_view();
@@ -86,35 +87,35 @@ func _process(delta)->void:
 func update_mem_view()->void:
 	if not perf_limiter.updates.mem: return;
 	perf_limiter.updates.mem = false;
-	color_fixups = [];
-	var selected = map.get_selected_items();
+	#color_fixups = [];
+	var selected:PackedInt32Array = map.get_selected_items();
 	if not len(selected): memview.clear(); return;
-	var handle_idx = selected[0];
-	var handle = handle_map[handle_idx];
-	var text = "";
-	var start = handle["pos"];
-	var end = start + handle["size"];
+	var handle_idx:int = selected[0];
+	var handle:MemHandle = handle_map[handle_idx];
+	var text:String = "";
+	var start:int = handle.pos;#["pos"];
+	var end:int = start + handle.size;#["size"];
 	shadow_at = end;
 	#var end_adj = end + (step-end%step); we maybe will need to think about unaligned end of region
-	var mode = "hex";
-	var n_addr_decimals = len(str(end));
+	var mode:String = "hex";
+	var n_addr_decimals:int = len(str(end));
 	
 	# lets grab the ip and highlight the line
-	var ip = cpu_vm.regs[ISA.REG_IP];
+	var ip:int = cpu_vm.regs[ISA.REG_IP];
 	
 	for i in range(start, end, step):
-		var line_text = "";
+		var line_text:String = "";
 		if i == ip: line_text += "[bgcolor="+Color.DARK_BLUE.to_html(false)+"]";
 		line_text += str(i).pad_zeros(n_addr_decimals)+": ";
 		for j in range(i,i+step):
-			var val = read_cell(j);
-			var shadow_byte = read_cell(shadow_at+j);
+			var val:int = read_cell(j);
+			var shadow_byte:int = read_cell(shadow_at+j);
 			var col:Color = Color.WHITE;
 			if shadow_byte in shadow_colors:
 				col = shadow_colors[shadow_byte];
 			#color_fixups.append({"pos":line_text.length(), "line":i, "col":col});
 			line_text += "[color="+col.to_html(false)+"]"
-			var val_text = "";
+			var val_text:String = "";
 			if(mode == "normal"): val_text = str(val);
 			if(mode == "hex"): val_text = to_hex(val);
 			line_text += val_text + " ";
@@ -140,7 +141,7 @@ func _on_mem_map_item_selected(_index)->void:
 	update_mem_view();
 
 func to_hex(num:int)->String:
-	const hex_alph = "0123456789ABCDEF";
+	const hex_alph:String = "0123456789ABCDEF";
 	if(num < 0) or (num > 255): return "XX";
 	@warning_ignore("integer_division")
 	return hex_alph[num/16] + hex_alph[num % 16];
@@ -152,12 +153,12 @@ func interp_text(from, to)->String:
 	for i in range(from,to):
 		bytes.append(read_cell(i));
 		sbytes.append(read_cell(shadow_at+i));
-	var text = "";
+	var text:String = "";
 	# try to disassemble
 	if is_all_empty(bytes): 
 		text = interp_as_text(bytes);
 	elif is_shadow_cmd(sbytes):
-		var diss = cpu_vm.disasm_pure(bytes);
+		var diss:String = cpu_vm.disasm_pure(bytes);
 		if diss: 
 			text = to_bb(Color.GREEN, diss);
 		else:
@@ -172,10 +173,10 @@ func interp_numbers(from, to)->String:
 	var bytes:PackedByteArray = PackedByteArray();
 	for i in range(from,to):
 		bytes.append(read_cell(i));
-	var text = ""
-	var I = 0;
+	var text:String = ""
+	var I:int = 0;
 	while(I+4 <= bytes.size()):
-		var num = bytes.decode_u32(I);
+		var num:int = bytes.decode_u32(I);
 		text += "%d " % num;
 		I += 4;
 	return text;
@@ -184,10 +185,10 @@ func to_bb(col:Color, text)->String:
 	return "[color=" + col.to_html(false)+"]" + text + "[/color]";
 
 func interp_as_text(bytes)->String:
-	var text = "";
+	var text:String = "";
 	# if not disassembled, conver to chars
 	for i in range(bytes.size()):
-		var c = ".";
+		var c:String = ".";
 		var b:int = bytes[i]
 		if (b >= 32) and (b <= 127):
 			c = String.chr(b);
@@ -199,7 +200,7 @@ func is_all_empty(bytes)->bool:
 		if b != 0: return false;
 	return true;
 
-const shadow_colors = {
+const shadow_colors:Dictionary[int,Color] = {
 	ISA.SHADOW_UNUSED: Color.GRAY,
 	ISA.SHADOW_DATA: Color.YELLOW,
 	ISA.SHADOW_CMD_HEAD: Color.GREEN,
@@ -249,10 +250,10 @@ func _on_cpu_vm_cpu_step_done(_cpu)->void:
 
 
 func _on_cpu_vm_mem_accessed(addr: Variant, _val: Variant, _is_write: Variant) -> void:
-	var region = get_mem_region(addr);
+	var region:MemHandle = get_mem_region(addr);
 	if region.valid:
-		var next_up = get_mem_region(addr+1);
-		var next_down = get_mem_region(addr-1);
+		var next_up:MemHandle = get_mem_region(addr+1);
+		var next_down:MemHandle = get_mem_region(addr-1);
 		if next_up.valid and next_down.valid:
 			merge_mem_region(next_up, next_down);
 			print("mem region: merged")
@@ -263,7 +264,7 @@ func _on_cpu_vm_mem_accessed(addr: Variant, _val: Variant, _is_write: Variant) -
 			extend_mem_region(next_down, addr);
 			print("mem region: ext down")
 		else:
-			var new_reg = add_memory_region(addr, 1, "unk");
+			var new_reg:MemHandle = add_memory_region(addr, 1, "unk");
 			print("mem region: new")
 			next_up = get_mem_region(new_reg.pos+new_reg.size);
 			next_down = get_mem_region(new_reg.pos-1);
@@ -288,7 +289,7 @@ func get_mem_region(addr)->MemHandle:
 
 func extend_mem_region(handle, addr)->void:
 	if handle.pos > addr: 
-		var diff = handle.pos - addr;
+		var diff:int = handle.pos - addr;
 		handle.pos = align_addr(addr);
 		handle.size = align_size(handle.size+diff);
 	elif handle.pos + handle.size < addr:
@@ -296,8 +297,8 @@ func extend_mem_region(handle, addr)->void:
 	update_memory_handle_text(handle.item_no);
 	
 func merge_mem_region(handle1, handle2)->void:
-	var min_start = min(handle1.pos, handle2.pos);
-	var max_end = max(handle1.pos+handle1.size, handle2.pos+handle2.size);
+	var min_start:int = min(handle1.pos, handle2.pos);
+	var max_end:int = max(handle1.pos+handle1.size, handle2.pos+handle2.size);
 	remove_mem_region(handle2);
 	handle1.pos = align_addr(min_start);
 	handle1.size = align_size(max_end - min_start + 1);

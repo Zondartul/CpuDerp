@@ -1,28 +1,28 @@
 extends Node
 class_name CPU_vm
-var Bus;
+var Bus:Node;
 #var GPU;
 #var KB;
-var is_setup = false;
-var debug_vm = false;
-var freq = 1;
-var errcode = 0;
+var is_setup:bool = false;
+var debug_vm:bool = false;
+var freq:int = 1;
+var errcode:int = 0;
 signal cpu_step_done(cpu);
 signal mem_accessed(addr, val, is_write);
 # for instruction set, preload the language
-const ISA = preload("res://lang_zvm.gd")
+static var ISA:ISA_ZVM = G.isa_zvm;
 
 # error codes
-const ERR_NONE = 0;
+const ERR_NONE:int = 0;
 # input's fault:
-const ERR_EXEC_DATA = 1;
-const ERR_STACK_OVERFLOW = 2;
-const ERR_STACK_UNDERFLOW = 3;
-const ERR_BAD_OP = 4; # malformed machine code instruction
-const ERR_INPUT = 5; # generic input wrongness
+const ERR_EXEC_DATA:int = 1;
+const ERR_STACK_OVERFLOW:int = 2;
+const ERR_STACK_UNDERFLOW:int = 3;
+const ERR_BAD_OP:int = 4; # malformed machine code instruction
+const ERR_INPUT:int = 5; # generic input wrongness
 # cpu's fault:
-const ERR_SANITY = 6; # sanity check assert, this probably never happens
-const ERR_INTERNAL = 7; # generic our-fault error
+const ERR_SANITY:int = 6; # sanity check assert, this probably never happens
+const ERR_INTERNAL:int = 7; # generic our-fault error
 
 
 var regs:PackedInt32Array;
@@ -30,7 +30,7 @@ var regs:PackedInt32Array;
 # bytes	0		1		2		3	4	5	6	7 
 #	  [cmd]	[ flags ][reg1|reg2][immediate u32][pad]
 # idea: use pad as checksum. if checksum doesn't match, it's data.
-const cmd_size = 8;
+const cmd_size:int = 8;
 var no_side_effects:bool = false; #set to true to use utility functions as pure
 
 
@@ -43,11 +43,11 @@ func cpu_error(code:int, msg:String)->void:
 	halt();
 
 func cpu_assert(cond, code:int, msg:String)->bool:
-	var b = bool(cond);
+	var b:bool = bool(cond);
 	if (not b) and not no_side_effects: cpu_error(code, msg);
 	return b;
 
-func set_on(on)->void:
+func set_on(on:bool)->void:
 	if on:
 		regs[ISA.REG_CTRL] |= ISA.BIT_PWR;
 		if(debug_vm):print("cpu turned on");
@@ -89,11 +89,12 @@ func getBit(Byte:int, bit:int)->int:
 func clearBit(Byte, bit)->int: return setBit(Byte, bit, 0);
 
 func fetchByte()->int:
-	var byte = read8(regs[ISA.REG_IP]); #Bus.readCell(regs[REG_IP]);
+	var byte:int = read8(regs[ISA.REG_IP]); #Bus.readCell(regs[REG_IP]);
 	regs[ISA.REG_IP] = to_U32(regs[ISA.REG_IP]+1);
 	return byte;
 
-var bus_setting = [];
+## What does this do?
+var bus_setting:Array[bool] = [];
 func dbg_push_bus_dbg()->void:
 	bus_setting.push_back(Bus.debug_bus_read);
 	#bus_setting.push_back(Bus.debug_bus_write);
@@ -107,85 +108,101 @@ func dbg_suppress_bus_dbg()->void:
 func fetchCmd()->PackedByteArray:
 	dbg_push_bus_dbg();
 	dbg_suppress_bus_dbg();
-	var cmd = [];
+	var cmd:Array[int] = [];
 	for i in range(8): cmd.append(fetchByte())
 	dbg_pop_bus_dbg();
 	return PackedByteArray(cmd);
 
 func disasm_pure(cmd:PackedByteArray)->String:
 	no_side_effects = true;
-	var decoded = decodeCmd(cmd);
+	var decoded:ISA_ZVM.Cmd = decodeCmd(cmd);
 	if not decoded: 
 		no_side_effects = false;
 		return "";
-	var text = debug_disasm_cmd(decoded);
+	var text:String = debug_disasm_cmd(decoded);
 	no_side_effects = false;
 	return text;
 
-func decode_pure(cmd:PackedByteArray)->Dictionary:
+func decode_pure(cmd:PackedByteArray)->ISA_ZVM.Cmd:
 	no_side_effects = true;
-	var decoded:Dictionary = decodeCmd(cmd);
+	var decoded:ISA_ZVM.Cmd = decodeCmd(cmd);
 	no_side_effects = false;
 	return decoded;
 
-
-func decodeCmd(cmd:PackedByteArray)->Dictionary:
+## Todo: split into "decodeCmd" and "validateCmd"
+func decodeCmd(cmd:PackedByteArray)->ISA_ZVM.Cmd:
 	var op:int = cmd[0];
 	var flags:int = cmd[1];
 	var regsel:int = cmd[2];
 	var im:int = cmd.decode_u32(3); #offset = byte 3
-	var reg1 = regsel & 0b1111;
-	var reg2 = (regsel>>4) & 0b1111;
+	var reg1:int = regsel & 0b1111;
+	var reg2:int = (regsel>>4) & 0b1111;
 	var deref_reg1:bool = flags & (0b1 << 0);
 	var deref_reg2:bool = flags & (0b1 << 1);
 	var reg1_im:bool = flags & (0b1 << 2);
 	var reg2_im:bool = not reg1_im;
-	var is_32bit = flags & (0b1 << 3);
-	var spec_flags = (flags >> 4) & 0b111;
+	var is_32bit:bool = flags & (0b1 << 3);
+	var spec_flags:int = (flags >> 4) & 0b111;
 	
 	if not (cpu_assert(op in range(ISA.opcodes.size()), ERR_EXEC_DATA,"trying to execute data")
 	and cpu_assert(reg1 in range(ISA.regnames.size()), ERR_BAD_OP, "dest-register index out of bounds ("+str(reg1)+")") 
 	and cpu_assert(reg2 in range(ISA.regnames.size()), ERR_BAD_OP, "src-register index out of bounds ("+str(reg2)+")")):
-		return {};#false;
+		return null;#false;
 	
-	var regname1 = ISA.regnames[reg1];
-	var regname2 = ISA.regnames[reg2];
-	var opname = ISA.opcodes[op];
+	var regname1:String = ISA.regnames[reg1];
+	var regname2:String = ISA.regnames[reg2];
+	var opname:String = ISA.opcodes[op];
 	
-	var decoded = {
-		"op_num": op,
-		"op_str": opname,
-		"flags":{"deref1":deref_reg1, "deref2":deref_reg2,"special":spec_flags},
-		"reg1_num": reg1,
-		"reg1_str": regname1,
-		"reg1_im" : reg1_im,
-		"reg2_num": reg2,
-		"reg2_str": regname2,
-		"reg2_im" : reg2_im,
-		"im": im,
-		"is_32bit": is_32bit,
-	};
+	#var decoded = {
+		#"op_num": op,
+		#"op_str": opname,
+		#"flags":{"deref1":deref_reg1, "deref2":deref_reg2,"special":spec_flags},
+		#"reg1_num": reg1,
+		#"reg1_str": regname1,
+		#"reg1_im" : reg1_im,
+		#"reg2_num": reg2,
+		#"reg2_str": regname2,
+		#"reg2_im" : reg2_im,
+		#"im": im,
+		#"is_32bit": is_32bit,
+	#};
+	var decoded:ISA_ZVM.Cmd = ISA_ZVM.Cmd.new(
+		op, #op_num
+		opname, #op_str
+		ISA_ZVM.CmdFlags.new(
+			deref_reg1, #deref1
+			deref_reg2, #deref2
+			spec_flags), #special
+		reg1, #reg1_num
+		regname1, #reg1_str
+		reg1_im, #reg1_im
+		reg2, #reg2_num
+		regname2, #reg2_str
+		reg2_im, #reg2_im
+		im, #im
+		is_32bit, #is_32bit
+	);
 	#print("cmd decode: "+str(decoded));
 	if(reg1_im and im):if(debug_vm):print("------------ im @ 1");
 	if(reg2_im and im):if(debug_vm):print("------------ im @ 2");
 	if(debug_vm):print("Decoded command: [ "+debug_disasm_cmd(decoded)+" ]");
 	return decoded;
 
-func decode_op_variant(decoded:Dictionary)->String:
-	var op_name = decoded.op_str;
+func decode_op_variant(decoded:ISA_ZVM.Cmd)->String:
+	var op_name:String = decoded.op_str;
 	if op_name in ISA.spec_ops:
-		var spec_op = ISA.spec_ops[op_name];
-		var op_code = spec_op["op_code"];
+		var spec_op:Dictionary = ISA.spec_ops[op_name];
+		var op_code:int = spec_op["op_code"];
 		for op2_name in ISA.spec_ops:
-			var spec_op2 = ISA.spec_ops[op2_name];
+			var spec_op2:Dictionary = ISA.spec_ops[op2_name];
 			if (spec_op2["op_code"] == op_code) and (spec_op2["flags"] == decoded.flags.special):
 				op_name = op2_name; 
 				break;
 	return op_name;
 
-func debug_disasm_cmd(decoded:Dictionary)->String:
-	var S = "";
-	var op_name = decode_op_variant(decoded);
+func debug_disasm_cmd(decoded:ISA_ZVM.Cmd)->String:
+	var S:String = "";
+	var op_name:String = decode_op_variant(decoded);
 	S += op_name;
 	if(decoded.is_32bit): S += ".32";
 	
@@ -255,12 +272,12 @@ func check_jmp_cond(cmd)->bool:
 	if cmd.flags.special == 0: 
 		if(debug_vm):print("(jmp cond 0 - uncoditional)");
 		return true;
-	var need_l = cmd.flags.special & (0b1 << 0);
-	var need_e = cmd.flags.special & (0b1 << 1);
-	var need_g = cmd.flags.special & (0b1 << 2);
-	var has_l = regs[ISA.REG_CTRL] & ISA.BIT_CMP_L;
-	var has_e = regs[ISA.REG_CTRL] & ISA.BIT_CMP_Z;
-	var has_g = regs[ISA.REG_CTRL] & ISA.BIT_CMP_G;
+	var need_l:int = cmd.flags.special & (0b1 << 0);
+	var need_e:int = cmd.flags.special & (0b1 << 1);
+	var need_g:int = cmd.flags.special & (0b1 << 2);
+	var has_l:int = regs[ISA.REG_CTRL] & ISA.BIT_CMP_L;
+	var has_e:int = regs[ISA.REG_CTRL] & ISA.BIT_CMP_Z;
+	var has_g:int = regs[ISA.REG_CTRL] & ISA.BIT_CMP_G;
 	if(debug_vm):print("(jmp cond: need_l "+str(need_l)+", need_e "+str(need_e)+", need_g "+str(need_g)+")");
 	if(debug_vm):print("has_l "+str(has_l)+", has_e "+str(has_e)+", has_g "+str(has_g));
 	
@@ -293,7 +310,7 @@ func fetch_dest(cmd)->int:
 	return dst_val; 
 
 func store_dest(cmd, val)->void:
-	var dest_adr = 0;
+	var dest_adr:int = 0;
 	if(cmd.flags.deref1):
 		if(cmd.reg1_num): dest_adr = to_U32(dest_adr+regs[cmd.reg1_num]);
 		if(cmd.reg1_im): dest_adr = to_U32(dest_adr+cmd.im);
@@ -320,22 +337,22 @@ func push(val)->void: push32(val);
 func pop()->int: return pop32();
 
 func push32(val)->void:
-	var buff = PackedByteArray([0,0,0,0]);
+	var buff:PackedByteArray = PackedByteArray([0,0,0,0]);
 	buff.encode_u32(0,val);
 	#for n in buff: push8(n);
 	for i in range(4):
 		push8(buff[3-i]);
 
 func pop32()->int:
-	var buff = PackedByteArray([0,0,0,0]);
+	var buff:PackedByteArray = PackedByteArray([0,0,0,0]);
 	for i in range(buff.size()): 
 		#buff[buff.size()-1-i] = pop8();
 		buff[i] = pop8();
-	var n = buff.decode_u32(0);
+	var n:int = buff.decode_u32(0);
 	return n;
 
 func read8(adr)->int: 
-	var val = Bus.readCell(adr);
+	var val:int = Bus.readCell(adr);
 	mem_accessed.emit(adr, val, false);
 	return val;
 func write8(adr, val)->void: 
@@ -344,13 +361,13 @@ func write8(adr, val)->void:
 	mem_accessed.emit(adr, val, true);
 	Bus.writeCell(adr, val);
 func read32(adr)->int:
-	var buff = PackedByteArray([0,0,0,0]);
+	var buff:PackedByteArray = PackedByteArray([0,0,0,0]);
 	for i in range(buff.size()):
 		buff[i] = read8(adr+i);
-	var val = buff.decode_u32(0);
+	var val:int = buff.decode_u32(0);
 	return val;
 func write32(adr, val)->void:
-	var buff = PackedByteArray([0,0,0,0]);
+	var buff:PackedByteArray = PackedByteArray([0,0,0,0]);
 	buff.encode_u32(0, val);
 	for i in range(buff.size()):
 		write8(adr+i, buff[i]);
@@ -368,7 +385,7 @@ func pop8()->int:
 		return 0;
 	else:
 		regs[ISA.REG_ESP] += 1;
-		var val = Bus.readCell(regs[ISA.REG_ESP]);
+		var val:int = Bus.readCell(regs[ISA.REG_ESP]);
 		return val;
 
 func push_all()->void: for i in range(1, regs.size()): push(regs[i]);
@@ -393,21 +410,21 @@ func cmd_halt(_cmd)->void:
 	halt();
 func cmd_reset(_cmd)->void: reset();
 func cmd_jmp(cmd)->void: 
-	var dest = fetch_dest(cmd); 
-	var cond = check_jmp_cond(cmd);
+	var dest:int = fetch_dest(cmd); 
+	var cond:int = check_jmp_cond(cmd);
 	if(cond): 
 		regs[ISA.REG_IP] = dest;
 	if(debug_vm):print("[JMP to "+str(dest)+", cond "+str(cond)+"]")
 func cmd_call(cmd)->void: 
-	var dest = fetch_dest(cmd);
+	var dest:int = fetch_dest(cmd);
 	if(check_jmp_cond(cmd)): _call(dest);
 func cmd_ret(_cmd)->void: _ret();
 func cmd_cmp(cmd)->void:
-	var A = fetch_dest(cmd);
-	var B = fetch_src(cmd);
-	var is_L = int(A < B);
-	var is_E = int(A == B);
-	var is_G = int(A > B);
+	var A:int = fetch_dest(cmd);
+	var B:int = fetch_src(cmd);
+	var is_L:int = int(A < B);
+	var is_E:int = int(A == B);
+	var is_G:int = int(A > B);
 	if(debug_vm):print("cmd cmp("+str(A)+" v "+str(B)+"): l"+str(is_L)+" e"+str(is_E)+" g"+str(is_G));
 	
 	regs[ISA.REG_CTRL] &= ~(ISA.BIT_CMP_L | ISA.BIT_CMP_Z | ISA.BIT_CMP_G);
@@ -416,7 +433,7 @@ func cmd_cmp(cmd)->void:
 	if is_G: regs[ISA.REG_CTRL] |= ISA.BIT_CMP_G;
 	
 func cmd_int(cmd)->void:
-	var int_num = fetch_src(cmd);
+	var int_num:int = fetch_src(cmd);
 	if( not (regs[ISA.REG_CTRL] & ISA.BIT_IE)): return; #interrupts disabled
 	if(regs[ISA.REG_CTRL] & ISA.BIT_IRS): return; # already in interrupt
 	regs[ISA.REG_IRQ] = int_num; # interrupt will be serviced next step
@@ -425,16 +442,16 @@ func cmd_intret(_cmd)->void:
 	_ret();
 	pop_all();
 func cmd_mov(cmd)->void:
-	var src = fetch_src(cmd);
+	var src:int = fetch_src(cmd);
 	store_dest(cmd, src);
 func cmd_push(cmd)->void:
-	var dest = fetch_dest(cmd);
+	var dest:int = fetch_dest(cmd);
 	if(cmd.is_32bit):
 		push32(dest);
 	else:
 		push8(dest);
 func cmd_pop(cmd)->void:
-	var val = 0;
+	var val:int = 0;
 	if(cmd.is_32bit):
 		val = pop32();
 	else:
@@ -442,9 +459,9 @@ func cmd_pop(cmd)->void:
 	store_dest(cmd, val);
 
 func ALU_op(cmd, op)->void:
-	var A = fetch_dest(cmd);
-	var B = fetch_src(cmd);
-	var C = int(op.call(A,B)) & (2**32-1);
+	var A:int = fetch_dest(cmd);
+	var B:int = fetch_src(cmd);
+	var C:int = int(op.call(A,B)) & (2**32-1);
 	store_dest(cmd, C);
 
 func op_add(A, B)->int: return A+B;
@@ -501,7 +518,7 @@ func basic_shift(val:int, n:int)->int:
 	return val;
 
 func getEndBit(val, n)->int:
-	var bit = 0;
+	var bit:int = 0;
 	if n > 0:
 		bit = getBit(val, 31);
 	else:
@@ -516,9 +533,9 @@ func setStartBit(val, n, bit)->int:
 	return val;
 
 func cmd_shift(cmd)->void:
-	var src = fetch_src(cmd);
-	var dest = fetch_dest(cmd);
-	var dest_initial = dest;
+	var src:int = fetch_src(cmd);
+	var dest:int = fetch_dest(cmd);
+	var dest_initial:int = dest;
 	if src:
 		#var end_bit_idx = 0;
 		#var start_bit_idx = 31;
@@ -528,12 +545,12 @@ func cmd_shift(cmd)->void:
 		elif(cmd.flags.special == 1): #barrel-shift
 			if(debug_vm):print(".. barrel shift");
 			for i in range(abs(src)%32):
-				var bit = getEndBit(dest, src);
+				var bit:int = getEndBit(dest, src);
 				dest = basic_shift(dest, sign(src));
 				dest = setStartBit(dest, src, bit);
 		elif(cmd.flags.special == 2): #carry-shift (arithmetic shift)
 			if(debug_vm):print(".. carry shift (arithmetic)")
-			var sign_bit = getBit(dest, 31);
+			var sign_bit:int = getBit(dest, 31);
 			if src > 0: # shift left, fill bottom with zeroes
 				dest = basic_shift(dest, src);
 			else: # shift right, fill top with sign bit
@@ -556,7 +573,7 @@ func cmd_bget(cmd)->void:ALU_op(cmd, op_bget);
 func cmd_bclear(cmd)->void:ALU_op(cmd, op_bclear);
 func cmd_nop(_cmd)->void:pass;
 
-var cmd_handlers = {
+var cmd_handlers:Dictionary[String,Callable] = {
 	"HALT":		cmd_halt,  # 0
 	"RESET":	cmd_reset, # 1
 	#---- control ---
@@ -599,12 +616,12 @@ var cmd_handlers = {
 	"NOP":		cmd_nop, #32
 };
 
-func run_single_command(cmd:Dictionary)->void:
+func run_single_command(cmd:ISA_ZVM.Cmd)->void:
 	if not cpu_assert(cmd.op_str in cmd_handlers, ERR_BAD_OP, "unrecognized command"): return;
 	#print("cmd ["+cmd.op_str+"]");
 	cmd_handlers[cmd.op_str].call(cmd);
 
-const IVT_entry_size = 1;
+const IVT_entry_size:int = 1;
 # interrupt vector table entries:
 # 0 - interrupt handler IP (address to jump to)
 # --- no other params for now
@@ -614,7 +631,7 @@ func service_interrupt()->void:
 	# flag it that we are currently servicing an interrupt
 	# and therefore there is no need to jump into other interrupts
 	regs[ISA.REG_CTRL] |= ISA.BIT_IRS;
-	var int_num = regs[ISA.REG_IRQ];
+	var int_num:int = regs[ISA.REG_IRQ];
 	#built-in interrupts:
 	# int 0 - halt
 	# int 1 - reset
@@ -622,17 +639,17 @@ func service_interrupt()->void:
 	if(int_num == 1): reset(); return;
 	#user interrupts:
 	if(regs[ISA.REG_IRQ] >= regs[ISA.REG_IVS]): error_interrupt_oor(); # interrupt index out of range
-	var IV_addr = regs[ISA.REG_IVT] + int_num * IVT_entry_size;
+	var IV_addr:int = regs[ISA.REG_IVT] + int_num * IVT_entry_size;
 	push_all();
-	call(IV_addr);
+	_call(IV_addr);
 	
 	
 func step()->void:
 	if(regs[ISA.REG_IRQ] and not (regs[ISA.REG_CTRL] & ISA.BIT_IRS)):
 		service_interrupt();
-	var cmd = fetchCmd();
-	var decode = decodeCmd(cmd);
-	if decode.is_empty(): return;
+	var cmd:PackedByteArray = fetchCmd();
+	var decode:ISA_ZVM.Cmd = decodeCmd(cmd);
+	if decode == null: return;
 	run_single_command(decode);
 	#if(regs[ISA.REG_CTRL] & ISA.BIT_STEP):
 	#	regs[ISA.REG_CTRL] &= ~ISA.BIT_PWR;
@@ -650,12 +667,12 @@ func _ready()->void:
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 
-var tick_debt = 0.0;
+var tick_debt:float = 0.0;
 
-func _process(delta)->void:
+func _process(delta:float)->void:
 	if not (regs[ISA.REG_CTRL] & ISA.BIT_PWR): return;
 	tick_debt += freq*delta;
-	var lc = LoopCounter.new(freq+1);
+	var lc:LoopCounter = LoopCounter.new(freq+1);
 	while tick_debt >= 1.0:
 		lc.step();
 		if(regs[ISA.REG_CTRL] & ISA.BIT_PWR):

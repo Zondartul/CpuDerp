@@ -1,17 +1,18 @@
 extends Node
+class_name WordBoundaryTokenizer
 # this tokenizer was grabbed from comp_asm_zd
 
 #------------ Tokenization ----------------------------------
 func tokenize(line:String)->Array[Token]:
 	var tokens:Array[Token] = [];
-	var tok_class = "";
-	var cur_tok = "";
+	var tok_class:String = "";
+	var cur_tok:String = "";
 	#var col = 0;
-	var tok_loc = LocationRange.new({"begin":Location.new(),"end":Location.new()});
+	var tok_loc:LocationRange = LocationRange.new({"begin":Location.new(),"end":Location.new()});
 	for col in range(len(line)):#for ch in line:
-		var ch = line[col];
+		var ch:String = line[col];
 		tok_loc_next_char(tok_loc, col);
-		var new_tok_class = tok_ch_class(ch);
+		var new_tok_class:String = tok_ch_class(ch);
 		if should_split_on_transition(new_tok_class, tok_class):
 			if tok_class == "STRING" and new_tok_class == "STRING":
 				new_tok_class = "ENDSTRING";
@@ -56,10 +57,10 @@ func should_split_on_transition(new_tok_class:String, old_tok_class:String)->boo
 #	if tok["class"] in ["SPACE", "ENDSTRING"]: return false;
 #	return true;
 
-const ch_space = " \t\r\n";
-var ch_punct = ".,:[]+;";
-const ch_alphabet = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_";
-const ch_digits = "1234567890";
+const ch_space:String = " \t\r\n";
+var ch_punct:String = ".,:[]+;";
+const ch_alphabet:String = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_";
+const ch_digits:String = "1234567890";
 
 func tok_is_space(ch:String)->bool: return ch in ch_space;
 func tok_is_punct(ch:String)->bool: return ch in ch_punct;

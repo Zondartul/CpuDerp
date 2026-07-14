@@ -2,10 +2,10 @@ extends Node
 
 # ------- syntax highlighting logic ------------
 
-var ddm_language;
+var ddm_language:OptionButton;
 var is_setup:bool = false;
-var languages:Dictionary[EditorFile,String] = {};
-var cur_language:String;
+var languages:Dictionary[int,Language] = {};
+var cur_language:Language;
 var cur_efile:EditorFile;
 
 # Called when the node enters the scene tree for the first time.
@@ -20,28 +20,28 @@ func setup(dict:Dictionary)->void:
 	for ch in get_children():
 		add_lang(ch);
 
-func _on_ddm_language_index_pressed(index)->void:
+func _on_ddm_language_index_pressed(index:int)->void:
 	#set_lang(languages[index]);
-	var obj = languages[index];
+	var obj:Language = languages[index];
 	set_lang_name(obj.lang_name);
 
-func set_lang_name(lname)->void:
+func set_lang_name(lname:String)->void:
 	cur_efile.language = lname;
 	set_lang(get_lang_by_name(lname));
 
-func get_lang_by_name(lname)->Node:
+func get_lang_by_name(lname:String)->Node:
 	for key in languages:
-		var obj = languages[key];
+		var obj:Language = languages[key];
 		if obj.lang_name == lname:
 			return obj;
 	return null;
 
 func add_lang(obj:Node)->void:
-	var idx = ddm_language.item_count;	
+	var idx:int = ddm_language.item_count;	
 	ddm_language.add_item(obj.lang_name, idx);
 	languages[idx] = obj;
 
-func set_lang(obj)->void:
+func set_lang(obj:Language)->void:
 	cur_language = obj;
 	if cur_efile and cur_language:
 		cur_efile.set_syntax(cur_language.get_syntax());

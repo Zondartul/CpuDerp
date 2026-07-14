@@ -12,7 +12,7 @@ func readCell(cell:int)->int:
 	if((cell < 0) || (cell >= memory.size())): 
 		#print("ram: read("+str(cell)+") <out of bounds> -> 0");
 		return 0;
-	var val = memory[cell];
+	var val:int = memory[cell];
 	#print("ram: read("+str(cell)+") -> "+str(val));
 	return val;
 

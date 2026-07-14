@@ -30,14 +30,14 @@ const repl_dict = {
 func set_tokens(tokens)->void:
 	clear();
 	show();
-	var prev_line_idx = [null];
+	var prev_line_idx:Array[int] = [-1];
 	for token in tokens:
-		var line_idx = G.maybe_prop(token, "token_viewer_line");
+		var line_idx:int = G.maybe_prop(token, "token_viewer_line");
 		if val_changed(line_idx, prev_line_idx):
 			add_newline();
-		var tooltip = array_to_str(token);
-		var color = G.maybe_prop(token, "token_viewer_color", Color.WHITE);
-		var text = token.text;
+		var tooltip:String = array_to_str(token);
+		var color:Color = G.maybe_prop(token, "token_viewer_color", Color.WHITE);
+		var text:String = token.text;
 		if text in repl_dict: text = repl_dict[text];
 		add_item(text, color, tooltip);
 		if "token_viewer_newline" in token:
@@ -46,8 +46,8 @@ func set_tokens(tokens)->void:
 
 # returns true if the value changed and saves the new value
 func val_changed(new_val, prev_val:Array)->bool:
-	var res = false;
-	if prev_val[0] != null:
+	var res:bool = false;
+	if prev_val[0] != -1:
 		if new_val != prev_val[0]:
 			res = true;
 	prev_val[0] = new_val;

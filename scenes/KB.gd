@@ -1,8 +1,8 @@
 extends Node
 
-var buffer = [0];
-var has_capture = false;
-var last_captured = 0;
+var buffer:Array[int] = [0];
+var has_capture:bool = false;
+var last_captured:int = 0;
 signal sig_keypress(character, byte);
 
 # Called when the node enters the scene tree for the first time.
@@ -29,9 +29,9 @@ func _input(event)->void:
 			#var C = event.get_unicode();
 			#if(C == 0): C = event.keycode;
 			var character:String = get_special_ASCII(event);
-			var buff = character.to_utf8_buffer()
+			var buff:PackedByteArray = character.to_utf8_buffer()
 			#var number = character.to_ascii_buffer()[0]
-			var number = 0;
+			var number:int = 0;
 			if buff.size() == 1:
 				number = buff[0];
 			else:
@@ -42,14 +42,16 @@ func _input(event)->void:
 			sig_keypress.emit(character, number);
 
 func get_special_ASCII(event)->String:
+	var res:String="";
 	match event.keycode:
-		KEY_ENTER:		return "\n"  # ASCII 10
-		KEY_BACKSPACE:	return "\b"  # ASCII 8
-		KEY_TAB:        return "\t"  # ASCII 9
-		KEY_ESCAPE:     return char(27) # ASCII 27
-		KEY_DELETE:     return char(127)  # ASCII 127 (DEL)
-		KEY_SPACE:      return " "  # ASCII 32
-		_: return char(event.get_unicode())
+		KEY_ENTER:		res = "\n"  # ASCII 10
+		KEY_BACKSPACE:	res = "\b"  # ASCII 8
+		KEY_TAB:        res = "\t"  # ASCII 9
+		KEY_ESCAPE:     res = char(27) # ASCII 27
+		KEY_DELETE:     res = char(127)  # ASCII 127 (DEL)
+		KEY_SPACE:      res = " "  # ASCII 32
+		_: res = char(event.get_unicode())
+	return res;
 
 func getSize()->int: return 64;
 
@@ -62,7 +64,7 @@ func writeCell(cell:int, val:int)->void:
 	if(cell != 0): return;
 	#print("KB:writeCell("+str(cell)+", "+str(val)+")")
 	if(cell == 0):
-		var lc = LoopCounter.new();
+		var lc:LoopCounter = LoopCounter.new();
 		while val and buffer[0]:
 			lc.step();
 			assert(buffer.size() >= 2);

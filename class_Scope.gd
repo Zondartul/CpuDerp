@@ -28,3 +28,19 @@ func get_func(fun_name:String)->IR_func:
 			break;
 	assert(false, "func not found");
 	return null;
+
+
+func get_var(var_name:String)->IR_Var:
+	var seek_scope:Scope = self;
+	var lc:LoopCounter = LoopCounter.new();
+	while true:
+		lc.step();
+		for variable in seek_scope.vars:
+			if variable.user_name == var_name:
+				return variable;
+		if seek_scope.parent != null:
+			seek_scope = seek_scope.parent; #IR.scopes[seek_scope.parent];
+		else:
+			break;
+	assert(false, "var not found");
+	return null;

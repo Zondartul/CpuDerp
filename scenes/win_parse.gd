@@ -1,8 +1,8 @@
 extends Window
 
 #@onready var container = $SC/BC;
-@onready var tree = $SC/Tree
-var root;
+@onready var tree:Tre = $SC/Tree
+var root:TreeItem;
 
 func set_stack(stack)->void:
 	clear();
@@ -16,7 +16,7 @@ func clear()->void:
 	#	ch.queue_free();
 
 func add_ast(ast:AST, node:TreeItem)->void:
-	var leaf = tree.create_item(node);
+	var leaf:TreeItem = tree.create_item(node);
 	leaf.set_text(0, token_to_str(ast));
 	if "children" in ast:
 		for ch in ast.children:
@@ -27,7 +27,7 @@ func token_to_str(tok:AST)->String:
 	#text += item.tok_class;
 	#if "text" in item and item.text != "":
 	#	text += ": "+item.text;
-	var text;
+	var text:String;
 	if tok.text != "": text = "%s: %s" % [tok.tok_class, tok.text];
 	else: text = tok.tok_class;
 	return text;

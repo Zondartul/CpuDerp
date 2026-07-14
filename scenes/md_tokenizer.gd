@@ -2,21 +2,21 @@ extends Node
 
 @export var erep:ErrorReporter;
 
-const script_tokenizer = preload("res://scenes/word_boundary_tokenizer.gd")
-const lang = preload("res://scenes/lang_md.gd")
+const script_tokenizer:GDScript = preload("res://scenes/word_boundary_tokenizer.gd")
+static var lang:Language = preload("res://scenes/lang_md.gd").new()
 signal tokens_ready;
 signal sig_user_error(msg:String);
 
 #constants
-const assign_ops = ["=", "+=", "-=", "*=", "/=", "%="];
+const assign_ops:Array[String] = ["=", "+=", "-=", "*=", "/=", "%="];
 
-const recombinations = [
+const recombinations:Array[Array] = [
 	["#", "/*"], ["+", "+"], ["-", "-"], ["+", "="], ["-", "="],
 	["!", "="], ["=", "="], ["-", ">"],
 	["/WORD", "/NUMBER"], ["/NUMBER", ".", "/NUMBER"],
 ];
 
-const token_colors = {
+const token_colors:Dictionary[String,Color] = {
 	"PREPROC":Color(0.91, 0.576, 0.109, 1.0),
 	"KEYWORD":Color(0.974, 0.22, 0.365, 1.0),
 	"IDENT":Color(0.693, 0.469, 0.946, 1.0),
@@ -28,13 +28,13 @@ const token_colors = {
 };
 
 #state
-var tokenizer;
-var cur_filename;
-var cur_path;
-var cur_line = "";
-var cur_line_idx = 0;
-var error_code = "";
-var output_tokens = [];
+var tokenizer:WordBoundaryTokenizer;
+var cur_filename:String;
+var cur_path:String;
+var cur_line:String = "";
+var cur_line_idx:int = 0;
+var error_code:String = "";
+var output_tokens:Array[Token] = [];
 
 
 func reset()->void:
@@ -113,10 +113,10 @@ func basic_tokenize(text:String)->Array[Token]:
 # ---------- Basic preprocess ---------------------------------
 
 func process_includes(text:String)->String:
-	var I = text.find("#include")
+	var I:int = text.find("#include")
 	while(I != -1):
-		var next_word = get_word_at(text, I+len("#include"));
-		var file_text = include_file(next_word);
+		var next_word:String = get_word_at(text, I+len("#include"));
+		var file_text:String = include_file(next_word);
 		text = text.erase(I, text.find("\n",I)) # remove this line
 		text = text.insert(I, file_text);
 		I = text.find("#include", I);
@@ -125,7 +125,7 @@ func process_includes(text:String)->String:
 func get_word_at(text:String, I:int)->String:
 	while(text[I] in " \t"): I+=1; # skip spaces
 	if text[I] == "\n": erep.error(E.ERR_34); return ""; # #include syntax error
-	var word = "";
+	var word:String = "";
 	while(text[I] not in " \t\n\r"): word += text[I]; I+=1;
 	return word;
 
@@ -134,9 +134,9 @@ func include_file(filepath:String)->String:
 		push_error("can't process includes, cur_path is not set");
 		assert(false);
 	print("Looking for include file [%s]" % filepath);
-	var base_dir = cur_path.rstrip("/\\"); #remove trailing slash
+	var base_dir:String = cur_path.rstrip("/\\"); #remove trailing slash
 	filepath = filepath.strip_edges().lstrip("\"").rstrip("\"").lstrip("/\\")
-	var canon_path = base_dir.path_join(filepath)
+	var canon_path:String = base_dir.path_join(filepath)
 	if FileAccess.file_exists(canon_path):
 		var fp:FileAccess = FileAccess.open(canon_path, FileAccess.READ)
 		return fp.get_as_text();
@@ -152,9 +152,9 @@ func preproc(line:String)->String:
 
 ## removes comments from the line. Comments start with the # character and last until end of string.
 func remove_comments(line:String)->String:
-	var is_string = false;
-	var idx = 0;
-	var prev_ch = "";
+	var is_string:bool = false;
+	var idx:int = 0;
+	var prev_ch:String = "";
 	for ch in line:
 		if is_string:
 			if ch == "\"": is_string = false;
@@ -173,10 +173,10 @@ func remove_comments(line:String)->String:
 
 
 func recombine_tokens(tokens:Array[Token])->Array[Token]:
-	var i = 0;
+	var i:int = 0;
 	var prev_toks:Array[Token] = [];
-	var prev_count = 2;
-	var lc = LoopCounter.new(len(tokens)+1);
+	var prev_count:int = 2;
+	var lc:LoopCounter = LoopCounter.new(len(tokens)+1);
 	while(i < len(tokens)):
 		lc.step();
 		var tok:Token = tokens[i];
@@ -195,8 +195,8 @@ func recombine_tokens(tokens:Array[Token])->Array[Token]:
 ## returns true if the tokens match a pattern
 func recombine_pattern_match(toks:Array[Token], pattern:Array[String])->bool:
 	for i in range(len(pattern)):
-		var p = pattern[G.rev_idx(pattern, i)];
-		var t = G.maybe_idx(toks, G.rev_idx(toks,i));
+		var p:String = pattern[G.rev_idx(pattern, i)];
+		var t:Token = G.maybe_idx(toks, G.rev_idx(toks,i));
 		if not t: return false;
 		if p == "/*": continue;
 		if p == "/WORD" and t.tok_class == "WORD": continue;
@@ -207,7 +207,7 @@ func recombine_pattern_match(toks:Array[Token], pattern:Array[String])->bool:
 
 ## replaces in-place tokens idx-len ... idx with a single token.
 func recombine_n(toks:Array[Token], idx:int, length:int)->void:
-	var from = idx-length+1;
+	var from:int = idx-length+1;
 	for i in range(length-1):
 		toks[from].text += toks[from+1].text;
 		toks[from].loc.end = toks[from+1].loc.end;
@@ -236,21 +236,21 @@ func reclassify_tokens(tokens:Array[Token])->void:
 func resolve_char_tokens(tokens:Array[Token])->void:
 	for tok:Token in tokens:
 		if tok.tok_class == "CHAR":
-			var unescaped = tok.text.c_unescape();
-			var buff = unescaped.to_ascii_buffer();
-			var num = 0;
+			var unescaped:String = tok.text.c_unescape();
+			var buff:PackedByteArray = unescaped.to_ascii_buffer();
+			var num:int = 0;
 			if (buff.size() == 1):
 				num = buff[0];
 			else: 
 				erep.error(E.ERR_33 % tok.text); # bad char literal
 				break;
-			var old_text = tok.text;
+			var old_text:String = tok.text;
 			tok.text = str(num);
 			#print("md_tokenizer: char token resolved [%s]->[%s]" % [old_text, tok.text]);
 
 ## removes unneded tokens
 func filter_tokens(tokens:Array[Token])->Array[Token]:
-	var filtered = ["SPACE", "ENDSTRING", "ENDCHAR"];
+	var filtered:Array[String] = ["SPACE", "ENDSTRING", "ENDCHAR"];
 	return tokens.filter(func(tok:Token): return tok.tok_class not in filtered);
 
 func colorize_tokens(toks:Array)->void:

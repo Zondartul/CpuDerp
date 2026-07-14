@@ -1,4 +1,5 @@
 extends Node
+class_name AssemblerZD
 # assembles zvm assemly into machine code
 # signals
 signal sig_cprint; # cprint(msg:String, col=null) - print a message to console
@@ -74,7 +75,7 @@ func clear()->void:
 	#cur_line_idx = 0;
 	#error_code = "";
 
-func assemble(input:Dictionary, task:Task)->Chunk:
+func assemble(input:BuildInput, task:Task)->Chunk:
 	erep.proxy = self;
 	erep.task = task;
 	clear();
@@ -179,8 +180,8 @@ func link_internally(in_chunk:Chunk)->Chunk:
 	for ref in in_chunk.refs:
 		var lbl_name:String = in_chunk.refs[ref];
 		if lbl_name in in_chunk.labels:
-			var lbl_pos = in_chunk.labels[lbl_name];
-			var lbl_tok = in_chunk.label_toks[ref];
+			var lbl_pos:int = in_chunk.labels[lbl_name];
+			var lbl_tok:Token = in_chunk.label_toks[ref];
 			patch_ref(out_chunk.code, ref, lbl_pos, out_chunk.shadow, lbl_tok);
 		else:
 			refs_remain[ref] = lbl_name;
@@ -490,7 +491,7 @@ func record_op_position(old_iter:Iter, iter:Iter)->void:
 	var tok_last:Token = iter.tokens[iter.pos-1];
 	var begin_col:int = tok_first.loc.begin.col;
 	var end_col:int = tok_last.loc.end.col;#tok_last.loc.from.col+len(tok_last.text);
-	var op = Location.new({"ip":write_pos,"filename":cur_filename, "line":cur_line, "line_idx":cur_line_idx, "begin":begin_col, "end":end_col});
+	var op:Location = Location.new({"ip":write_pos,"filename":cur_filename, "line":cur_line, "line_idx":cur_line_idx, "begin":begin_col, "end":end_col});
 	op_locations.append(op);
 
 func parse_command(iter:Iter)->bool:
@@ -549,7 +550,7 @@ func peek_tokens(iter:Iter, ref_toks:Array[String],out=null)->bool:
 	var res:Array[Token] = []
 	for rt:String in ref_toks:
 		if i >= len(iter.tokens): return false;
-		var it = iter.tokens[i];
+		var it:Iter = iter.tokens[i];
 		assert(len(rt)>0);
 		if (rt[0] == "\\") and (it.text == rt.substr(1))\
 		or (rt[0] != "\\") and (it.tok_class == rt):
@@ -600,7 +601,7 @@ func parse_arg(iter)->Cmd_arg:
 		arg.is_present = true;
 		var word:String = toks_word[0]["text"]; 
 		var reg:ResGetReg = get_reg(word);
-		var flag = get_flag(word);
+		var flag:int = get_flag(word);
 		if G.has(reg):
 			arg.reg_idx = reg.idx;
 			arg.reg_name = reg.name;
@@ -608,7 +609,7 @@ func parse_arg(iter)->Cmd_arg:
 			arg.is_imm = true;
 			arg.offset = flag;
 		else: #is label
-			var lbl_name = word;
+			var lbl_name:String = word;
 			arg.reg_name = lbl_name;
 			arg.is_imm = true;
 			arg.is_unresolved = true;
@@ -620,19 +621,19 @@ func parse_arg(iter)->Cmd_arg:
 		var toks_num:Array[Token];
 		if match_tokens(iter, ["NUMBER"], toks_num):
 			arg.is_present = true;
-			var word = toks_num[0]["text"];
-			var num = str(word).to_int()
+			var word:String = toks_num[0]["text"];
+			var num:int = str(word).to_int()
 			arg.is_imm = true;
 			arg.offset = num;
 		
 	#+123 - offset
 	var pos_offs:Array[Token];
 	var neg_offs:Array[Token];
-	var has_pos_offs = match_tokens(iter, ["\\+", "NUMBER"], pos_offs);
-	var has_neg_offs = match_tokens(iter, ["\\-", "NUMBER"], neg_offs);
+	var has_pos_offs:bool = match_tokens(iter, ["\\+", "NUMBER"], pos_offs);
+	var has_neg_offs:bool = match_tokens(iter, ["\\-", "NUMBER"], neg_offs);
 	assert(not (has_pos_offs and has_neg_offs));
 	if has_pos_offs or has_neg_offs:
-		var num = 0;
+		var num:int = 0;
 		if has_pos_offs: num = str(pos_offs[1]["text"]).to_int();
 		if has_neg_offs: num = - str(neg_offs[1]["text"]).to_int();
 		if arg.is_imm: 
@@ -644,11 +645,11 @@ func parse_arg(iter)->Cmd_arg:
 	#[123] - array access
 	var pos_arr:Array[Token];
 	var neg_arr:Array[Token];
-	var has_pos_arr = match_tokens(iter, ["\\[", "NUMBER", "\\]"], pos_arr);
-	var has_neg_arr = match_tokens(iter, ["\\[", "\\-", "NUMBER", "\\]"], neg_arr);
+	var has_pos_arr:int = match_tokens(iter, ["\\[", "NUMBER", "\\]"], pos_arr);
+	var has_neg_arr:int = match_tokens(iter, ["\\[", "\\-", "NUMBER", "\\]"], neg_arr);
 	assert(not (has_pos_arr and has_neg_arr));
 	if has_pos_arr or has_neg_arr:
-		var num = 0;
+		var num:int = 0;
 		if has_pos_arr: num = str(pos_arr[1]["text"]).to_int();
 		if has_neg_arr: num = - str(neg_arr[2]["text"]).to_int();
 		if arg.is_imm: 
@@ -670,7 +671,7 @@ class ResGetReg:
 
 func get_reg(rname:String)->ResGetReg:
 	rname = rname.to_upper();
-	var idx = 0;
+	var idx:int = 0;
 	if rname in ISA.regnames:
 		idx = ISA.regnames.find(rname);
 		return ResGetReg.new(idx,rname);#{"idx":idx, "name":rname};
@@ -694,7 +695,7 @@ func emit_opcode(cmd:int, flags:Cmd_flags, reg1:int=0, reg2:int=0, imm_u32:int=0
 	emit8(cmd, ISA.SHADOW_CMD_HEAD);
 	emit8(flags.to_byte(), ISA.SHADOW_CMD_TAIL);
 	emit8((reg1 & 0b1111) | ((reg2 & 0b1111) << 4), ISA.SHADOW_CMD_TAIL);
-	var tail_flag = ISA.SHADOW_CMD_TAIL;
+	var tail_flag:int = ISA.SHADOW_CMD_TAIL;
 	if shadow_flags.unresolved: tail_flag = ISA.SHADOW_CMD_UNRESOLVED;
 	emit32(imm_u32, tail_flag);
 	emit8(0xFF, ISA.SHADOW_CMD_TAIL); # pad
@@ -728,13 +729,13 @@ func emit_db_items(items:Array[Token])->void: #maybe we could use the .32 specif
 		erep.context = item;
 		match item.tok_class:
 			"NUMBER": # a 32-bit number
-				var num = str(item["text"]).to_int();
+				var num:int = str(item["text"]).to_int();
 				emit32(num, ISA.SHADOW_DATA);
 			"WORD": # it's a label
 				emit32(0, ISA.SHADOW_DATA_UNRESOLVED);
 				label_refs[write_pos] = item["text"];
 			"STRING": # a bunch of text
-				var text = str(item["text"]).to_ascii_buffer()
+				var text:PackedByteArray = str(item["text"]).to_ascii_buffer()
 				for ch in text:
 					if USE_WIDE_STRINGS:
 						emit32(ch, ISA.SHADOW_DATA);
@@ -750,7 +751,7 @@ func emit_db_items(items:Array[Token])->void: #maybe we could use the .32 specif
 	#if (write_pos % cmd_size): # if not aligned
 	#	write_pos += (cmd_size - (write_pos % cmd_size)); # pad until alignement is reached
 	
-	var lc = LoopCounter.new();
+	var lc:LoopCounter = LoopCounter.new();
 	while(write_pos % cmd_size):
 		lc.step();
 		emit8(0, ISA.SHADOW_PADDING);

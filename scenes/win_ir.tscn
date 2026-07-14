@@ -1,15 +1,15 @@
-[gd_scene load_steps=2 format=3 uid="uid://bgb5s3xu12cb0"]
+[gd_scene format=3 uid="uid://bgb5s3xu12cb0"]
 
 [ext_resource type="Script" uid="uid://bh7u8ljghujk8" path="res://scenes/win_ir.gd" id="1_b2ehr"]
 
-[node name="win_IR" type="Window"]
+[node name="win_IR" type="Window" unique_id=1799414247]
 oversampling_override = 1.0
 title = "Analysis (IR)"
 initial_position = 2
 size = Vector2i(450, 300)
 script = ExtResource("1_b2ehr")
 
-[node name="TC" type="TabContainer" parent="."]
+[node name="TC" type="TabContainer" parent="." unique_id=899815115]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -17,14 +17,14 @@ grow_horizontal = 2
 grow_vertical = 2
 current_tab = 0
 
-[node name="Tree" type="Tree" parent="TC"]
+[node name="Tree" type="Tree" parent="TC" unique_id=804502994]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 columns = 2
 metadata/_tab_index = 0
 
-[node name="File" type="RichTextLabel" parent="TC"]
+[node name="File" type="RichTextLabel" parent="TC" unique_id=91461380]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 1

@@ -1,9 +1,9 @@
 extends Control
 
-var VM;
-var memory;
+var VM:Node;
+var memory:Node;
 var console:RichTextLabel;
-var is_setup = false;
+var is_setup:bool = false;
 
 func _ready()->void:
 	$V/MenuBar/Settings.set_item_submenu_node(0,$V/MenuBar/Settings/Language);
@@ -13,7 +13,7 @@ func setup(dict:Dictionary)->void:
 	assert("VM" in dict);
 	assert("memory" in dict);
 	assert("console" in dict);
-	var dict2 = dict.duplicate();
+	var dict2:Dictionary = dict.duplicate();
 	VM = dict.VM;
 	memory = dict.memory;
 	console = dict.console;

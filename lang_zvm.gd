@@ -1,4 +1,5 @@
 extends Node
+class_name ISA_ZVM;
 # constants and definitions for the language: ZonVM assembly
 # ----------------- instruction set -----------------
 const regnames = [
@@ -171,3 +172,34 @@ const SHADOW_TO_STRING = {
 	SHADOW_FRAME_TEMP: "FRAME_TEMP",
 	SHADOW_FRAME_PADDING: "FRAME_PADDING",
 };
+
+## decoded command "flags" byte
+class CmdFlags:
+	var deref1:bool; ## should arg1 be dereferenced?
+	var deref2:bool; ## should arg2 be dereferenced?
+	var special:int; ## command-specific flags (e.g. jump mask)
+	func _init(_deref1:bool,_deref2:bool,_special:int):
+		deref1=_deref1;deref2=_deref2;special=_special;
+
+## decoded representation of a command (sparse)
+class Cmd:
+	var op_num:int; ## operation code (command number)
+	var op_str:String; ## human-readible representation of the opcode
+	var flags:CmdFlags; ## decoded flags byte
+	var reg1_num:int; ## register 1 index
+	var reg1_str:String; ## reg1 human-readible name
+	var reg1_im:bool; ## should the immediate be added to reg1?
+	var reg2_num:int; ## register 2 index
+	var reg2_str:String; ## reg2 human-readible name
+	var reg2_im:bool; ## should the immediate be added to reg2?
+	var im:int; ## the immediate value or offset
+	var is_32bit:bool; ## should the command use the 32-bit data width?
+	func _init( # forego the dictionary for fast assignment
+		_op_num:int,_op_str:String,_flags:CmdFlags,
+		_reg1_num:int,_reg1_str:String,_reg1_im:bool,
+		_reg2_num:int,_reg2_str:String,_reg2_im:bool,
+		_im:int,_is_32bit:bool):
+		op_num=_op_num;op_str=_op_str;flags=_flags;
+		reg1_num=_reg1_num;reg1_str=_reg1_str;reg1_im=_reg1_im;
+		reg2_num=_reg2_num;reg2_str=_reg2_str;reg2_im=_reg2_im;
+		im=_im;is_32bit=_is_32bit;

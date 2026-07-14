@@ -4,9 +4,9 @@ extends Node
 const uYaml = preload("res://scenes/uYaml.gd");
 # state
 var IR:IRKind;
-var cur_scope = null;
-var cur_code_block = null;
-var val_idx = 0;
+var cur_scope:Scope;
+var cur_code_block:CodeBlock;
+var val_idx:int = 0;
 
 func reset()->void:
 	IR = IRKind.new();
@@ -20,17 +20,17 @@ func clear_IR()->void:
 	#	"code_blocks":{},
 	#	"scopes":{},
 	#};
-	var global_scope = new_scope("global", "none");
+	var global_scope:Scope = new_scope("global", "none");
 	cur_scope = global_scope;
-	var global_code_block = new_code_block();
+	var global_code_block:CodeBlock = new_code_block();
 	cur_code_block = global_code_block;#IR.code_blocks[0];
 
 func is_cur_scope_global()->bool:
 	return cur_scope.user_name == "global";
 
-func make_unique_IR_name(type, text=null)->String:
-	var val_name = type+"_"+str(val_idx);
-	if text: val_name += "__"+text;
+func make_unique_IR_name(type:String, text:Variant=null)->String:
+	var val_name:String = type+"_"+str(val_idx);
+	if text != null: val_name += "__"+text;
 	val_idx+=1;
 	return val_name;
 	
@@ -99,20 +99,20 @@ func make_unique_IR_name(type, text=null)->String:
 
 func emit_IR(cmd:Array, loc:LocationRange)->void:
 	#IR.commands.append(cmd);
-	var cmd_translated = [];
+	var cmd_translated:Array[String] = [];
 	assert(cmd[0] is String);
 	for i in range(len(cmd)):
 		cmd_translated.append_array(serialize_ir_arg(cmd[i]));
 	cmd_translated.append_array(serialize_ir_arg(loc));
 	cur_code_block.code.append(cmd_translated);
 
-func serialize_ir_arg(arg)->Array:
+func serialize_ir_arg(arg)->Array[String]:
 	if arg is String: return [arg];
 	elif arg is Dictionary:
 		assert(("ir_name" in arg) and (arg.ir_name is String));
 		return [arg.ir_name];
 	elif arg is Array:
-		var res = [];
+		var res:Array[String] = [];
 		res.append("[");
 		for sub_arg in arg:
 			res.append_array(serialize_ir_arg(sub_arg));
@@ -131,7 +131,7 @@ func save_variable(var_handle)->void:
 func save_function(fun_handle)->void:
 	cur_scope.funcs.append(fun_handle);
 
-func push_code_block(new_block=null)->CodeBlock:
+func push_code_block(new_block:CodeBlock=null)->CodeBlock:
 	var old_cb:CodeBlock = cur_code_block;
 	if not new_block: 
 		new_block = new_code_block();
@@ -139,13 +139,13 @@ func push_code_block(new_block=null)->CodeBlock:
 	cur_code_block = new_block;
 	return old_cb;
 
-func pop_code_block(old_block)->CodeBlock:
-	var popped_block = cur_code_block;
+func pop_code_block(old_block:CodeBlock)->CodeBlock:
+	var popped_block:CodeBlock = cur_code_block;
 	cur_code_block = old_block;
 	return popped_block;
 
 func new_code_block()->CodeBlock:
-	var cb = CodeBlock.new(
+	var cb:CodeBlock = CodeBlock.new(
 		{"ir_name":make_unique_IR_name("cb"), 
 		"code":[], 
 		"lbl_from":make_unique_IR_name("lbl_from"), 
@@ -161,7 +161,7 @@ func push_scope(scope=null)->Scope:
 	return old_sc;
 
 func pop_scope(old_scope:Scope)->Scope:
-	var popped_scope = cur_scope;
+	var popped_scope:Scope = cur_scope;
 	cur_scope = old_scope;
 	return popped_scope;
 	
@@ -177,32 +177,18 @@ func new_scope(scp_name:String="", scp_parent:String="")->Scope:
 	IR.scopes[scp.ir_name] = scp;
 	return scp;
 
-func get_var(var_name:String)->IR_Var:
-	var seek_scope:Scope = cur_scope;
-	var lc = LoopCounter.new();
-	while true:
-		lc.step();
-		for variable in seek_scope.vars:
-			if variable.user_name == var_name:
-				return variable;
-		if seek_scope.parent and seek_scope.parent != "none":
-			seek_scope = IR.scopes[seek_scope.parent];
-		else:
-			break;
-	assert(false, "var not found");
-	return null;
 
 func serialize_full()->String:
-	var sIR = {};
+	var sIR:Dictionary = {};
 	G.duplicate_deep(IR, sIR); #IR.duplicate();
 	for key in sIR.scopes:
-		var scope = sIR.scopes[key];
+		var scope:Scope = sIR.scopes[key];
 		serialize_vals(scope.vars);
 		if not len(scope.vars): scope.erase("vars");
 		serialize_vals(scope.funcs);
 		if not len(scope.funcs): scope.erase("funcs");
 	for key in sIR.code_blocks:
-		var cb = sIR.code_blocks[key];
+		var cb:CodeBlock = sIR.code_blocks[key];
 		if cb.code.is_empty(): cb.erase("code");
 	return uYaml.serialize(sIR);
 
@@ -217,7 +203,7 @@ func serialize_vals(arr)->void:
 				old_var.data_size = str(1);
 			for key2 in ["ir_name", "val_type", "user_name", "data_type", "data_size", "storage", "value", "scope", "code", "argc", "is_array", "array_size"]:
 				if (key2 in old_var) and (old_var[key2] != null):
-					var val = old_var[key2];
+					var val:Variant = old_var[key2];
 					if not (val is String): val = str(val)
 					val = G.escape_string(val);
 					new_var.append(val);
@@ -264,6 +250,6 @@ func serialize_vals(arr)->void:
 func to_file(filename)->void:
 	var fp:FileAccess = FileAccess.open(filename, FileAccess.ModeFlags.WRITE);
 	if not fp: push_error("can't write file: "+filename); return;
-	var text = serialize_full();
+	var text:String = serialize_full();
 	fp.store_line(text);
 	fp.close();

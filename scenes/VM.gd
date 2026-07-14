@@ -8,7 +8,7 @@ func _ready()->void:
 	pass # Replace with function body.
 
 func setup(dict:Dictionary)->void:
-	var dict2 = dict.duplicate();
+	var dict2:Dictionary = dict.duplicate();
 	dict2["bus"] = n_bus;
 	for ch in get_children():
 		if ch == n_bus:

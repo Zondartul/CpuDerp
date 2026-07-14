@@ -12,9 +12,9 @@ signal sig_user_error;
 signal open_file_request;
 signal sym_table_ready;
 #state
-var cur_filename: set=set_cur_filename;
-var cur_path: set=set_cur_path;
-var has_error = false;
+var cur_filename:String: set=set_cur_filename;
+var cur_path:String: set=set_cur_path;
+var has_error:bool = false;
 
 func reset()->void:
 	cur_filename = "";
@@ -22,27 +22,27 @@ func reset()->void:
 	has_error = false;
 	tokenizer.reset();
 
-func compile(input, task:Task)->Variant:
-	var t_tok = task.add_subtask("tokenize");
-	var t_parse = task.add_subtask("parse");
-	var t_anz = task.add_subtask("analyze");
-	var t_cg = task.add_subtask("codegen");
-	var t_lnk = task.add_subtask("link");
+func compile(input, task:Task)->bool:
+	var t_tok:Task = task.add_subtask("tokenize");
+	var t_parse:Task = task.add_subtask("parse");
+	var t_anz:Task = task.add_subtask("analyze");
+	var t_cg:Task = task.add_subtask("codegen");
+	var t_lnk:Task = task.add_subtask("link");
 	tokenizer.cur_path = cur_path;
 	input["tokens"] = tokenizer.tokenize(input, t_tok);	#if has_error: return false;
-	if not input.tokens or not task.happy_path: task.fail(); return;
+	if not input.tokens or not task.happy_path: task.fail(); return false;
 	
 	input["ast"] = parser.parse(input, t_parse);	#if has_error: return false;
-	if not input.ast or not task.happy_path: return;
+	if not input.ast or not task.happy_path: return false;
 	
 	input["IR"] = analyzer.analyze(input, t_anz); #if has_error: return false;
-	if not task.happy_path: return;
+	if not task.happy_path: return false;
 	
 	input.filename = "IR.txt";
 	input["assy"] = codegen.parse_file(input, t_cg); #if has_error: return false;
-	if not task.happy_path: return;
+	if not task.happy_path: return false;
 	codegen.fixup_symtable(analyzer.sym_table, t_lnk); #if has_error: return false;
-	if not task.happy_path: return;
+	if not task.happy_path: return false;
 	
 	call_deferred("defer_sym_table_ready", analyzer.sym_table); #sym_table_ready.emit(analyzer.sym_table);
 	#print(_assy);
@@ -58,7 +58,7 @@ func defer_sym_table_ready(arg)->void:
 	sym_table_ready.emit(arg);
 
 func save_file(text:String, filename:String)->void:
-	var fp = FileAccess.open(filename, FileAccess.WRITE);
+	var fp:FileAccess = FileAccess.open(filename, FileAccess.WRITE);
 	if not fp: push_error("Can't save file ["+filename+"]"); has_error = true; return;
 	fp.store_string(text);
 	fp.close();

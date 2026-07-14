@@ -1,22 +1,22 @@
 extends Control
 
-@onready var n_screen = $Panel/TabContainer/Screen/V/TextureRect
-@onready var n_VM = $VM;
-@onready var n_VM_memory = $VM/Bus/RAM_64k
-@onready var n_VM_KB = $VM/Bus/KB
-@onready var n_Editor = $Panel/TabContainer/Editor
-@onready var n_console = $Panel/TabContainer/Editor/V/H2/RTL_console
-@onready var n_CPU = $VM/CPU_vm
-@onready var n_led_error = $Panel/TabContainer/Screen/V/Control/GridContainer/cr_led_error
-@onready var n_led_status = $Panel/TabContainer/Screen/V/Control/GridContainer/cr_led_on
-@onready var n_Bus = $VM/Bus
-@onready var n_assembler = $Panel/TabContainer/Editor/comp_build/comp_asm_zd
-@onready var n_view_memory = $Panel/TabContainer/Memory
+@onready var n_screen:Node = $Panel/TabContainer/Screen/V/TextureRect
+@onready var n_VM:Node = $VM;
+@onready var n_VM_memory:Node = $VM/Bus/RAM_64k
+@onready var n_VM_KB:Node = $VM/Bus/KB
+@onready var n_Editor:Node = $Panel/TabContainer/Editor
+@onready var n_console:Node = $Panel/TabContainer/Editor/V/H2/RTL_console
+@onready var n_CPU:Node = $VM/CPU_vm
+@onready var n_led_error:Node = $Panel/TabContainer/Screen/V/Control/GridContainer/cr_led_error
+@onready var n_led_status:Node = $Panel/TabContainer/Screen/V/Control/GridContainer/cr_led_on
+@onready var n_Bus:Node = $VM/Bus
+@onready var n_assembler:Node = $Panel/TabContainer/Editor/comp_build/comp_asm_zd
+@onready var n_view_memory:Node = $Panel/TabContainer/Memory
 
-var has_kb_capture = false;
+var has_kb_capture:bool = false;
 # Called when the node enters the scene tree for the first time.
 func _ready()->void:
-	var dict = {
+	var dict:Dictionary = {
 		"screen":n_screen,
 		"VM":n_VM, 
 		"memory":n_VM_memory, 
@@ -65,7 +65,7 @@ func automate_compile_miniderp()->void:
 # activates the tab in a TabContainer
 func autotab(node:TabContainer, tab_name)->bool:
 	for i in range(node.get_tab_count()):
-		var title = node.get_tab_title(i)
+		var title:String = node.get_tab_title(i)
 		if title == tab_name:
 			node.current_tab = i;
 			return true;
@@ -77,16 +77,16 @@ func autofile(node:FileDialog, filename)->void:
 	node.hide();
 
 # clicks the buttons on a menu
-func automenu(node, selections:Array)->bool:
+func automenu(node, selections:Array[String])->bool:
 	if node is MenuBar:
 		for child in node.get_children():
 			if child.name == selections[0]:
-				var sel2 = selections.duplicate();
+				var sel2:Array[String] = selections.duplicate();
 				sel2.remove_at(0);
 				return automenu(child, sel2);
 	if node is PopupMenu:
 		for i in range(node.item_count):
-			var item_text = node.get_item_text(i);
+			var item_text:String = node.get_item_text(i);
 			if item_text == selections[0]:
 				assert(selections.size() == 1);
 				node.index_pressed.emit(i);
@@ -94,7 +94,7 @@ func automenu(node, selections:Array)->bool:
 	push_error("automation: can't find menu entry ["+selections[0]+"]")
 	return false;
 
-func autolist(node:ItemList, index)->bool:
+func autolist(node:ItemList, index:int)->bool:
 	if index < node.item_count:
 		node.select(index);
 		node.item_selected.emit(index);
@@ -169,5 +169,5 @@ func _on_comp_compile_md_open_file_request(filename) -> void:
 
 
 func _on_kb_sig_keypress(character:String, byte:int)->void:
-	var btn_kb = $Panel/TabContainer/Screen/V/Control/GridContainer/btnKeyboard
+	var btn_kb:Button = $Panel/TabContainer/Screen/V/Control/GridContainer/btnKeyboard
 	btn_kb.text = "Keyboard (%s, %d)" % [character.c_escape(), byte]

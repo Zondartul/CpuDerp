@@ -22,8 +22,17 @@ extends Node
 
 #--------- SERIALIZATION ------------------
 
+class StateOfSerialization:
+	var in_array:int;
+	var in_dict:int;
+	var err:Array[String];
+	var path:Array[String];
+	func _init(_in_array:int,_in_dict:int,_err:Array[String],_path:Array[String]):
+		in_array=_in_array;in_dict=_in_dict;err=_err;path=_path;
+
+
 static func serialize(obj)->String:
-	var state = {};
+	var state:StateOfSerialization = StateOfSerialization.new(0,0,[],[]);
 	if is_serializible(obj, state):
 		return serialize_helper(obj, 0);
 	else:
@@ -46,19 +55,19 @@ static func decode_ser_err(ser_err_code):
 		112:"not_a_string",
 		113:"not_a_string_or_array",
 	};
-	var text = "";
+	var text:String = "";
 	for code in ser_err_code:
 		text += msgs[code]+".";
 	return text;
 
 static func serialize_helper(obj, indent:int)->String:
-	var text = "";
-	var is_first = true;
+	var text:String = "";
+	var is_first:bool = true;
 	if obj is String:
 		text += obj;
 	if obj is Dictionary:
 		for key in obj:
-			var val = obj[key];
+			var val:Variant = obj[key];
 			if is_first: is_first = false; 
 			else: text += "\n";
 			text += " ".repeat(indent) + key + ": ";
@@ -88,18 +97,17 @@ static func is_one_liner(obj):
 		return true;
 	return false;
 
-
 # is_serializible(obj, state) - returns true if object can be serialized. 
 # provides diagnostic as to what's wrong.
-static func is_serializible(obj, state:Dictionary): 
-	state["in_array"] = 0;
-	state["in_dict"] = 0;
-	state["err"] = [];
-	state["path"] = [];
+static func is_serializible(obj, state:StateOfSerialization): 
+	#state.in_array = 0;
+	#state.in_dict = 0;
+	#state.err = [];
+	#state.path = [];
 	return is_serializible_helper(obj, state);
 
-static func is_serializible_helper(obj, state):
-	const spec_symbols = " :#\n";
+static func is_serializible_helper(obj, state:StateOfSerialization):
+	const spec_symbols:String = " :#\n";
 	if obj == null: state.err.append(109); return false; #no nulls
 	if obj is String:
 		if len(obj) == 0: state.err.append(101); return false; # no empty strings
@@ -111,7 +119,7 @@ static func is_serializible_helper(obj, state):
 		if state.in_array >= 2: state.err.append(110); return false;
 		if len(obj) == 0: state.err.append(103); return false;
 		state.in_array += 1;
-		var i = 0;
+		var i:int = 0;
 		for ch in obj:
 			state.path.push_back("["+str(i)+"]");
 			if not is_serializible_helper(ch, state): state.err.append(104); return false;
@@ -126,7 +134,7 @@ static func is_serializible_helper(obj, state):
 		for key in obj:
 			if not (key is String and is_serializible_helper(key,state)): state.err.append(106); return false;
 			state.path.push_back("."+key);
-			var val = obj[key];
+			var val:Variant = obj[key];
 			if not is_serializible_helper(val,state): state.err.append(107); return false;
 			state.path.pop_back();
 		state.in_dict -= 1;
@@ -140,35 +148,35 @@ static func is_serializible_helper(obj, state):
 #------- DESERIALIZATION ----------------------
 
 static func deserialize(text):
-	var obj = {};
+	var obj:Dictionary = {};
 	deserialize_helper(text, obj);
 	return obj;
 
-const AS_2D_APPEND = 2;
-const AS_1D_SET = 1;
+const AS_2D_APPEND:int = 2;
+const AS_1D_SET:int = 1;
 
 static func deserialize_helper(text, obj):
-	var lines = text.split("\n",false);
-	var path = [];
+	var lines:Array[String] = text.split("\n",false);
+	var path:Array[String] = [];
 	for line in lines:
 		if len(line) == 0: continue;
 		if line[0] == "#": continue;
-		var indent = find_first_not_of(line, " ");
+		var indent:int = find_first_not_of(line, " ");
 		path.resize(indent);
 		line = line.substr(indent);
-		var colon_pos = line.find(":");
+		var colon_pos:int = line.find(":");
 		if colon_pos == -1:
 			# array-like object
-			var words = line.split(" ", false);
+			var words:Array[String] = line.split(" ", false);
 			#print("parse arr: ["+str(words)+"]");
 			dict_path_insert(obj, path, words, AS_2D_APPEND);
 		else:
 			# key-value object
-			var key = line.substr(0, colon_pos);
-			var val = line.substr(colon_pos+1);
+			var key:String = line.substr(0, colon_pos);
+			var val:String = line.substr(colon_pos+1);
 			#print("parse kv: ["+key+"] : ["+val+"]");
 			path.append(key);
-			var words = val.split(" ",false);
+			var words:Array[String] = val.split(" ",false);
 			if len(words):
 				dict_path_insert(obj, path, words, AS_1D_SET);
 	#print("parsed dict: ");
@@ -178,9 +186,9 @@ static func dict_path_insert(obj:Dictionary, path:Array, words:Array, mode:int):
 	if len(path) == 1:
 		obj[path[0]] = words;
 	else:
-		var rhead = path.back();
-		var rtail = path.slice(0,-1);
-		var node = obj;
+		var rhead:String = path.back();
+		var rtail:Array[String] = path.slice(0,-1);
+		var node:Variant = obj;
 		for key in rtail:
 			if key not in node: node[key] = {};
 			node = node[key];
@@ -194,7 +202,7 @@ static func dict_path_insert(obj:Dictionary, path:Array, words:Array, mode:int):
 			node[rhead].append(words);
 
 static func find_first_not_of(text:String, needle:String):
-	var idx = 0;
+	var idx:int = 0;
 	for ch in text: 
 		if ch in needle:
 			idx += 1; 

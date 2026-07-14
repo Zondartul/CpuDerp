@@ -13,7 +13,7 @@ extends Node
 
 
 
-var token_rules = [
+var token_rules:Array[Array] = [
 	["[A-Z][a-zA-Z0-9_]*", "type"],
 	["[a-z][a-zA-Z0-9_]*", "ident"],
 	["(0-9)+(.[0-9]+)?", "number"],
@@ -25,4 +25,3 @@ var token_rules = [
 	["[ \t\n\r]","space"],
 	["//.*$", "comment"],
 ];
-

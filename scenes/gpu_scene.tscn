@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://ev46am1blkcl"]
+[gd_scene format=3 uid="uid://ev46am1blkcl"]
 
 [ext_resource type="Script" uid="uid://m4s7ceivsbp8" path="res://scenes/tile_text.gd" id="1_dxldo"]
 
@@ -6,14 +6,14 @@
 font_names = PackedStringArray("Courier New")
 subpixel_positioning = 0
 
-[node name="GPU_scene" type="Control"]
+[node name="GPU_scene" type="Control" unique_id=969975751]
 custom_minimum_size = Vector2(512, 512)
 layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="." unique_id=538192627]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -22,7 +22,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.0627451, 0.0627451, 0.0627451, 1)
 
-[node name="tile_text" type="Control" parent="."]
+[node name="tile_text" type="Control" parent="." unique_id=676916173]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -31,7 +31,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_dxldo")
 
-[node name="scr_text" type="Label" parent="."]
+[node name="scr_text" type="Label" parent="." unique_id=883233156]
 visible = false
 layout_mode = 1
 anchors_preset = 15

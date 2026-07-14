@@ -1,7 +1,8 @@
-extends Node
+extends Language
 # miniDerp language reference
 
-var lang_name = "miniderp";
+func _init():
+	lang_name = "miniderp";
 
 const keywords = ["var", "func", "if", "else", "elif", "continue", 
 				"break", "while", "return", "extern"];
@@ -141,22 +142,22 @@ const rules = [
 ];
 
 func get_syntax()->CodeHighlighter:
-	var syn = CodeHighlighter.new();
-	var col_orange = Color(1.0,0.5,0.0,	1);
-	var col_red = 	 Color(1.0,0.2,0.1,	1);
-	var col_gray = 	 Color(0.5,0.5,0.5,	1);
-	var col_yellow = Color(1.0,1.0,0.0,	1);
-	var col_purple = Color(0.8,0.4,0.7,	1);
-	var col_blue = 	 Color(0.143, 0.401, 1.0, 1.0);
-	var col_green =  Color(0.2,1.0,0.1,	1);
+	var syn:CodeHighlighter = CodeHighlighter.new();
+	var col_orange:Color 	= Color(1.0,0.5,0.0,	1);
+	var col_red:Color 		= Color(1.0,0.2,0.1,	1);
+	var col_gray:Color 		= Color(0.5,0.5,0.5,	1);
+	var col_yellow:Color 	= Color(1.0,1.0,0.0,	1);
+	var col_purple:Color 	= Color(0.8,0.4,0.7,	1);
+	var col_blue:Color 		= Color(0.143, 0.401, 1.0, 1.0);
+	var col_green:Color 	= Color(0.2,1.0,0.1,	1);
 	syn.member_variable_color = col_yellow;
 	syn.number_color = col_orange;
 	syn.symbol_color = col_yellow;
 	syn.function_color=col_blue;
-	var opcode_color = col_purple;
-	var comment_color =col_gray;
-	var string_color  =col_red;
-	var type_color    =col_green;
+	var opcode_color:Color  =col_purple;
+	var comment_color:Color =col_gray;
+	var string_color:Color  =col_red;
+	var type_color:Color    =col_green;
 	add_keywords(syn, keywords, opcode_color, true);
 	add_keywords(syn, types, type_color);
 	syn.add_color_region("//","",comment_color,true);
@@ -171,7 +172,7 @@ func add_keywords(syn, kws, col, any_case=false)->void:
 			syn.keyword_colors[kw.to_lower()] = col;
 
 static func get_all_punct()->String:
-	var s = "";
+	var s:String = "";
 	for list in [punct, ops]:
 		for entry in list:
 			s += entry;

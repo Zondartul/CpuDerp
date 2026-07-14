@@ -1,4 +1,5 @@
 extends Node
+class_name Build
 
 @onready var n_assembler = $comp_asm_zd
 @onready var n_compiler = $comp_compile_md
@@ -38,28 +39,44 @@ func _process(delta)->void:
 	update_task_progress();
 #	pass
 
+class BuildResult:
+	var code:Array[int];
+	var shadow:Array[int];
+	func _init(_code:Array[int],_shadow:Array[int]):
+		code=_code; shadow=_shadow;
+
+class BuildInput:
+	var text:String;
+	var filename:String;
+	func _init(cfg):
+		if cfg is Dictionary:
+			G.dictionary_init(self,cfg);
+
 func assemble_zderp(task:Task)->Variant:
 	n_assembler.cur_path = cur_efile.path;
-	var asm_input = {"text":cur_efile.get_text(), "filename":cur_efile.file_name};
-	var chunk = n_assembler.assemble(asm_input, task);
+	var asm_input:BuildInput = BuildInput.new(
+		{"text":cur_efile.get_text(), "filename":cur_efile.file_name});
+	var chunk:Chunk = n_assembler.assemble(asm_input, task);
 	if G.has(chunk):
-		assert("code" in chunk);
-		var res = {"code":chunk.code};
-		if "shadow" in chunk: res["shadow"] = chunk.shadow;
-		return res;
+		#assert("code" in chunk);
+		#var res = {"code":chunk.code};
+		#if "shadow" in chunk: res["shadow"] = chunk.shadow;
+		#return res;
+		BuildResult.new(chunk.code, chunk.shadow);
 	else: return null;
 	
 func compile_miniderp(task:Task)->Variant:
 	n_compiler.reset();
 	n_compiler.cur_path = cur_efile.path.get_base_dir();
-	var compiler_input = {"text":cur_efile.get_text(), "filename":cur_efile.file_name};
-	var success = n_compiler.compile(compiler_input, task);
+	var compiler_input:BuildInput = BuildInput.new(
+		{"text":cur_efile.get_text(), "filename":cur_efile.file_name});
+	var success:bool = n_compiler.compile(compiler_input, task);
 	if success:
-		return {"code":[], "shadow":[]};
+		return BuildResult.new([],[]); #{"code":[], "shadow":[]};
 	else:
 		return null;
 
-func compile(task:Task)->Variant:
+func compile(task:Task)->BuildResult:
 	if cur_efile:
 		if cur_lang == "zderp":
 			return assemble_zderp(task);
@@ -71,7 +88,7 @@ func upload(code)->void:
 	Memory.clear()
 	view_Memory.call_deferred("clear");
 	view_Memory.call_deferred("add_memory_region", 0,len(code),"code");
-	var idx = 0;
+	var idx:int = 0;
 	# make sure all cells are initialized
 	for i in range(len(code)):
 		if not code[i]: code[i] = 0
@@ -83,7 +100,7 @@ func upload(code)->void:
 
 func upload_shadow(bytes)->void:
 	view_Memory.call_deferred("add_memory_region", len(bytes), len(bytes),"shadow");
-	var idx = len(bytes);
+	var idx:int = len(bytes);
 	for i in range(len(bytes)):
 		if not bytes[i]: bytes[i] = 0
 	for byte in bytes:
@@ -92,14 +109,14 @@ func upload_shadow(bytes)->void:
 	print("shadow memory uploaded");
 
 func add_stack_region()->void:
-	var stack_end = 65536;
-	var stack_size = 1024;
-	var stack_pos = stack_end - stack_size;
+	var stack_end:int = 65536;
+	var stack_size:int = 1024;
+	var stack_pos:int = stack_end - stack_size;
 	view_Memory.call_deferred("add_memory_region", stack_pos, stack_size, "stack");
 
 func add_screen_region()->void:
-	var screen_start = 67536;
-	var screen_size = 64*64*7;
+	var screen_start:int = 67536;
+	var screen_size:int = 64*64*7;
 	view_Memory.call_deferred("add_memory_region", screen_start, screen_size, "screen");
 
 func _on_build_index_pressed(index)->void:
@@ -117,7 +134,7 @@ func compile_async(task:Task)->void:
 	Editor.call_deferred("clear_console"); #.clear_console();
 	
 	
-	var res = compile(task);
+	var res:BuildResult = compile(task);
 	if res: 
 		task.work_units_complete += 1;
 		Editor.call_deferred("print_console","Compiled successfully");
@@ -152,7 +169,7 @@ func _on_comp_file_cur_efile_changed(efile)->void:
 		n_compiler.cur_filename = "";
 
 func set_highlight(loc:LocationRange)->void:#(from_line, from_col, to_line, to_col):
-	var comp_file = (Editor as Control).get_node("comp_file");
+	var comp_file:Node = (Editor as Control).get_node("comp_file");
 	comp_file.highlight_line(loc);
 	## why are we doing this when comp_highlight and editor_file
 	##  both alerady have set_highlight?
@@ -184,11 +201,11 @@ func _on_language_index_pressed(index: int) -> void:
 func on_tokens_ready(tokens)->void:
 	win_tokens.set_tokens(tokens);
 
-var progress_timeout = 0;
+var progress_timeout:int = 0;
 func update_task_progress()->void:
-	var task = n_threads.get_first_task();
+	var task:Task = n_threads.get_first_task();
 	if task:
-		var text = task.get_progress_tree(0);
+		var text:String = task.get_progress_tree(0);
 		Editor.set_progress(text, true);
 		progress_timeout = 100;
 	else:

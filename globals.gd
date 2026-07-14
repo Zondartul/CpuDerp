@@ -26,6 +26,14 @@ const class_AssyBlock = preload("res://class_AssyBlock.gd");
 const class_LoopCounter = preload("res://class_LoopCounter.gd");
 const class_Task = preload("res://class_Task.gd");
 const class_EditorFile = preload("res://editor/editor_file.gd");
+const class_Build = preload("res://scenes/comp_build.gd");
+const class_WordBoundaryTokenizer = preload("res://scenes/word_boundary_tokenizer.gd");
+const class_AssemblerZD = preload("res://scenes/comp_asm_zd.gd");
+const class_Language = preload("res://class_language.gd");
+const class_ISA_ZVM = preload("res://lang_zvm.gd");
+const class_TileText = preload("res://scenes/tile_text.gd");
+static var isa_zvm:ISA_ZVM = ISA_ZVM.new();
+
 ## Creates an independent copy of the value
 func duplicate_val(obj)->Variant:
 	if (obj is Object):
@@ -144,7 +152,7 @@ func find_first_of(text:String, needles:String, from:int=0)->int:
 	return len(text);
 
 ## returns an array with the positions of all occurences of needle in haystack
-func str_find_all_instances(needle:String, haystack:String)->Array:
+func str_find_all_instances(needle:String, haystack:String)->Array[int]:
 	var res:Array[int] = [];
 	var pos:int = 0;
 	var lc:LoopCounter = LoopCounter.new(10000);
@@ -157,13 +165,19 @@ func str_find_all_instances(needle:String, haystack:String)->Array:
 		else: break;
 	return res;
 
+class RowCol:
+	var row:int;
+	var col:int;
+	func _init(_row:int,_col:int):
+		row=_row;col=_col;
+		
 ## converts a string index to a row/column pair.
-func str_to_row_col(pos:int, text:String)->Array:
+func str_to_row_col(pos:int, text:String)->RowCol:
 	return str_to_row_col_arr([pos], text)[0];
 
 ## returns an array of [row, column] entries for each entry in the [positions] array
-func str_to_row_col_arr(positions:Array, text:String)->Array:
-	var res:Array[int] = [];
+func str_to_row_col_arr(positions:Array, text:String)->Array[RowCol]:
+	var res:Array[RowCol] = [];
 	var newlines:Array[int] = str_find_all_instances("\n", text);
 	for pos in positions:
 		var line_idx:int = 0;
@@ -176,7 +190,7 @@ func str_to_row_col_arr(positions:Array, text:String)->Array:
 			else:
 				last_pos = line_pos;
 				line_idx += 1;
-		res.append([line_idx, pos]);
+		res.append(RowCol.new(line_idx, pos));
 	assert(len(res) == len(positions));
 	return res;
 
