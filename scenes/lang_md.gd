@@ -65,6 +65,8 @@ const rules = [
 	["/func", "expr_call",				"/->", "SHIFT"],
 	#-- func_def_stmt
 	["expr_call",						"/{", "SHIFT"],
+	["type_expr",						"/{", "SHIFT"],
+	["/func", "expr_call", "/->", "type_expr", "block", 	"*", "func_def_stmt"],
 	["/func", "expr_call", "block", 	"*", "func_def_stmt"],
 	#-- while_stmt
 	["/while", "/(", "expr", "/)", 		"*", "while_start"],
@@ -88,15 +90,17 @@ const rules = [
 	#-- preproc_stmt
 	["/#include", "STRING", 			"*", "preproc_stmt"],
 	
+	
 	# expressions
-	["expr_immediate", 					"*", "expr"],
+	["expr_immediate", 					"*", "const_expr"],
 	["expr_ident", 						"*", "expr"],
 	["expr_typed_ident",				"*", "expr"],
 	["expr_postfix", 					"*", "expr"],
 	["expr_infix", 						"*", "expr"],
 	["expr_call",						"*", "expr"],
 	["expr_parenthesis",				"*", "expr"],
-	["expr_array_literal",				"*", "expr"],
+	
+	
 	
 	# sub-expressions
 	# -- expr_immediate
@@ -133,12 +137,17 @@ const rules = [
 	["/[", "expr_list", "/]",			"*", "expr_array_literal"],
 	["/[", "/]",						"*", "expr_array_literal"],
 	# Types
-	["TYPE",							"/[", "SHIFT"],
-	["TYPE",							"*", "type_expr"],
-	["TYPE", "/[", "type_expr", "/]",	"*", "type_expr"],
-	["TYPE", "type_expr_list", "/]",	"*", "type_expr"],
-	["/[", "type_expr",					"/,", "type_expr_list"],
+	["TYPE",								"/[", "SHIFT"],
+	["TYPE",								"*", "type_expr"],
+	["TYPE", "expr_array_literal",			"*", "type_expr"],
+	["type_expr",							"/,", "type_expr_list"],
 	["type_expr_list", "/,", "type_expr",	"*", "type_expr_list"],
+	["expr_array_literal",				"*", "expr"],
+	# expr classes
+	["const_expr_list",					"*", "expr_list"],
+	["type_expr_list",					"*", "const_expr_list"],
+	["const_expr",						"*", "expr"],
+	["type_expr",						"*", "const_expr"],
 ];
 
 func get_syntax()->CodeHighlighter:

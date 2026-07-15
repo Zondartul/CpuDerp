@@ -4,11 +4,8 @@ class_name IR_Cmd;
 var words:Array[String];
 var loc:LocationRange;
 
-func _init(dict=null):
-	if dict:
-		for key in dict:
-			assert(key in self);
-			set(key, dict[key]);
+func _init(_words:Array[String],_loc:LocationRange):
+	words=_words;loc=_loc;
 
 #func _get(index):
 	#if index is int:

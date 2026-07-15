@@ -31,8 +31,28 @@ func get_progress_tree(indent:int)->String:
 	for ch in sub_tasks:
 		text += ch.get_progress_tree(indent+1);
 	return text;
+
+func get_full_name()->String:
+	var S:String = "";
+	if parent: S += parent.get_full_name() + ".";
+	S += user_name;
+	return S;
 	
-func fail()->void: happy_path = false;
+func fail()->void: 
+	happy_path = false;
+	var stack:Array[Dictionary] = get_stack();
+	call_deferred("defer_print_stack", stack);
+
+func defer_print_stack(arg):
+	var S:String = "Task %s failed at:\n" % get_full_name();
+	var indent:String = " ";
+	arg.reverse();
+	for item in arg:
+		S += "%s%s.%s: line %d\n" % [indent, item.source,item.function,item.line];
+		indent += " ";
+	S += "\n"
+	print(S);
+
 func mark_done()->void: done = true;
 
 func add_subtask(task_name)->Task:
@@ -48,7 +68,7 @@ func get_done_ratio()->Array:
 	for task in sub_tasks:
 		n_total += 1;
 		n_complete += task.get_done_ratio()[2];
-	var ratio:int = 0;
+	var ratio:float = 0;
 	if n_total > 0: ratio = n_complete / n_total;
 	return [n_total, n_complete, ratio];
 

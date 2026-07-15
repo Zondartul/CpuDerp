@@ -27,12 +27,13 @@ const class_LoopCounter = preload("res://class_LoopCounter.gd");
 const class_Task = preload("res://class_Task.gd");
 const class_EditorFile = preload("res://editor/editor_file.gd");
 const class_Build = preload("res://scenes/comp_build.gd");
+const class_CompilerMD = preload("res://scenes/comp_compile_md.gd");
 const class_WordBoundaryTokenizer = preload("res://scenes/word_boundary_tokenizer.gd");
 const class_AssemblerZD = preload("res://scenes/comp_asm_zd.gd");
 const class_Language = preload("res://class_language.gd");
 const class_ISA_ZVM = preload("res://lang_zvm.gd");
 const class_TileText = preload("res://scenes/tile_text.gd");
-static var isa_zvm:ISA_ZVM = ISA_ZVM.new();
+#static var isa_zvm:ISA_ZVM = ISA_ZVM.new();
 
 ## Creates an independent copy of the value
 func duplicate_val(obj)->Variant:
@@ -75,15 +76,19 @@ func duplicate_shallow(src, dest)->void:
 		dest.set(key.name, src.get(key.name));
 
 func is_type_compatible(type_A:int, type_B:int)->bool:
+	if (type_A == typeof(null)) or (type_B == typeof(null)): return true;
 	return type_A == type_B;
 
 func dictionary_init(obj:Object, dict:Dictionary)->void:
 	var prop_list:Array[Dictionary] = obj.get_property_list();
+	var missing_props = dict.keys().duplicate()
 	for key in prop_list:
 		if key.name in dict:
+			missing_props.erase(key.name);
 			var val:Variant = dict[key.name];
 			assert(is_type_compatible(key.type, typeof(val)), "Can't assign property because of type mismatch");
 			obj.set(key.name, val);
+	assert(missing_props.is_empty(), "dict_init: non-existant property %s" % str(missing_props));
 		
 #-------- Comparison logic ---------------
 func has(obj)->bool:

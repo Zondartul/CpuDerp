@@ -6,33 +6,30 @@ const uYaml = preload("res://scenes/uYaml.gd");
 var IR:IRKind;
 var cur_scope:Scope;
 var cur_code_block:CodeBlock;
-var val_idx:int = 0;
+#var val_idx:int = 0;
 
 func reset()->void:
 	IR = IRKind.new();
 	cur_scope = null;
 	cur_code_block = null;
-	val_idx = 0;
+	#val_idx = 0;
 
-func clear_IR()->void:
+func clear_IR()->IRKind:
 	reset();
 	#IR = {
 	#	"code_blocks":{},
 	#	"scopes":{},
 	#};
-	var global_scope:Scope = new_scope("global", "none");
+	var global_scope:Scope = new_scope("global");
 	cur_scope = global_scope;
 	var global_code_block:CodeBlock = new_code_block();
 	cur_code_block = global_code_block;#IR.code_blocks[0];
+	return IR;
 
 func is_cur_scope_global()->bool:
 	return cur_scope.user_name == "global";
 
-func make_unique_IR_name(type:String, text:Variant=null)->String:
-	var val_name:String = type+"_"+str(val_idx);
-	if text != null: val_name += "__"+text;
-	val_idx+=1;
-	return val_name;
+
 	
 # returns a handle to a new IR value
 #
@@ -97,39 +94,8 @@ func make_unique_IR_name(type:String, text:Variant=null)->String:
 	#val.user_name = lbl_name;
 	#return val;
 
-func emit_IR(cmd:Array, loc:LocationRange)->void:
-	#IR.commands.append(cmd);
-	var cmd_translated:Array[String] = [];
-	assert(cmd[0] is String);
-	for i in range(len(cmd)):
-		cmd_translated.append_array(serialize_ir_arg(cmd[i]));
-	cmd_translated.append_array(serialize_ir_arg(loc));
-	cur_code_block.code.append(cmd_translated);
-
-func serialize_ir_arg(arg)->Array[String]:
-	if arg is String: return [arg];
-	elif arg is Dictionary:
-		assert(("ir_name" in arg) and (arg.ir_name is String));
-		return [arg.ir_name];
-	elif arg is Array:
-		var res:Array[String] = [];
-		res.append("[");
-		for sub_arg in arg:
-			res.append_array(serialize_ir_arg(sub_arg));
-		res.append("]");
-		return res;
-	elif arg is LocationRange:
-		return [G.escape_string(arg.to_string_full())];
-	else:
-		push_error("can't serialize IR argument ["+str(arg)+"]");
-		return [];
 
 
-func save_variable(var_handle)->void:
-	cur_scope.vars.append(var_handle);
-
-func save_function(fun_handle)->void:
-	cur_scope.funcs.append(fun_handle);
 
 func push_code_block(new_block:CodeBlock=null)->CodeBlock:
 	var old_cb:CodeBlock = cur_code_block;
@@ -146,17 +112,17 @@ func pop_code_block(old_block:CodeBlock)->CodeBlock:
 
 func new_code_block()->CodeBlock:
 	var cb:CodeBlock = CodeBlock.new(
-		{"ir_name":make_unique_IR_name("cb"), 
+		{"ir_name":IR.make_unique_IR_name("cb"), 
 		"code":[], 
-		"lbl_from":make_unique_IR_name("lbl_from"), 
-		"lbl_to":make_unique_IR_name("lbl_to")});
+		"lbl_from":IR.make_unique_IR_name("lbl_from"), 
+		"lbl_to":IR.make_unique_IR_name("lbl_to")});
 	IR.code_blocks[cb.ir_name] = cb;
 	return cb;
 
 func push_scope(scope=null)->Scope:
 	var old_sc:Scope = cur_scope;
 	if not scope:
-		scope = new_scope("",cur_scope.ir_name);
+		scope = new_scope("",cur_scope);
 	cur_scope = scope;
 	return old_sc;
 
@@ -165,10 +131,10 @@ func pop_scope(old_scope:Scope)->Scope:
 	cur_scope = old_scope;
 	return popped_scope;
 	
-func new_scope(scp_name:String="", scp_parent:String="")->Scope:
+func new_scope(scp_name:String="", scp_parent:Scope=null)->Scope:
 	if scp_name == "": scp_name = "NULL";
 	var scp:Scope = Scope.new({
-				"ir_name":make_unique_IR_name("scp",scp_name),
+				"ir_name":IR.make_unique_IR_name("scp",scp_name),
 				"user_name":scp_name,
 				"parent":scp_parent,
 				#"vars":[],

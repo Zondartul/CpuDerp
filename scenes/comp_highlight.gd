@@ -2,7 +2,7 @@ extends Node
 
 # ------- syntax highlighting logic ------------
 
-var ddm_language:OptionButton;
+var ddm_language:PopupMenu;
 var is_setup:bool = false;
 var languages:Dictionary[int,Language] = {};
 var cur_language:Language;

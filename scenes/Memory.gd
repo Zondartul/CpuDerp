@@ -1,8 +1,8 @@
 extends Control
 
 @onready var map:ItemList = $BoxContainer/mem_map;
-@onready var memview:TextEdit = $BoxContainer/TextEdit;
-static var ISA:ISA_ZVM = G.isa_zvm #preload("res://lang_zvm.gd");
+@onready var memview:RichTextLabel = $BoxContainer/TextEdit;
+static var ISA:ISA_ZVM = preload("res://lang_zvm.gd").new();
 
 class MemHandle:
 	var pos:int;

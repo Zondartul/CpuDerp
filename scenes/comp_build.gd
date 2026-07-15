@@ -35,7 +35,7 @@ func setup(dict:Dictionary)->void:
 #	pass
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta)->void:
+func _process(_delta)->void:
 	update_task_progress();
 #	pass
 
@@ -52,7 +52,7 @@ class BuildInput:
 		if cfg is Dictionary:
 			G.dictionary_init(self,cfg);
 
-func assemble_zderp(task:Task)->Variant:
+func assemble_zderp(task:Task)->BuildResult:
 	n_assembler.cur_path = cur_efile.path;
 	var asm_input:BuildInput = BuildInput.new(
 		{"text":cur_efile.get_text(), "filename":cur_efile.file_name});
@@ -63,7 +63,7 @@ func assemble_zderp(task:Task)->Variant:
 		#if "shadow" in chunk: res["shadow"] = chunk.shadow;
 		#return res;
 		BuildResult.new(chunk.code, chunk.shadow);
-	else: return null;
+	return null;
 	
 func compile_miniderp(task:Task)->Variant:
 	n_compiler.reset();
@@ -73,8 +73,7 @@ func compile_miniderp(task:Task)->Variant:
 	var success:bool = n_compiler.compile(compiler_input, task);
 	if success:
 		return BuildResult.new([],[]); #{"code":[], "shadow":[]};
-	else:
-		return null;
+	return null;
 
 func compile(task:Task)->BuildResult:
 	if cur_efile:

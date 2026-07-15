@@ -75,7 +75,7 @@ func clear()->void:
 	#cur_line_idx = 0;
 	#error_code = "";
 
-func assemble(input:BuildInput, task:Task)->Chunk:
+func assemble(input:Build.BuildInput, task:Task)->Chunk:
 	erep.proxy = self;
 	erep.task = task;
 	clear();

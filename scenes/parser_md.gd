@@ -9,10 +9,13 @@ func user_error(msg)->void: sig_user_error.emit(msg);
 func cprint(msg)->void: sig_cprint.emit(msg);
 # constants
 static var lang:Language = preload("res://scenes/lang_md.gd").new();
-const list_types:Dictionary[String,String] = {
-	"stmt_list":"stmt",
-	"expr_list":"expr",
+const list_types:Dictionary[String,Array] = {
+	"stmt_list":["stmt"],
+	"expr_list":["expr", "const_expr", "const_expr_list","type_expr", "type_expr_list"],
+	"const_expr_list":["const_expr", "type_expr", "type_expr_list"],
+	"type_expr_list":["type_expr"],
 	};
+
 const dbg_to_console:bool = false;
 const dbg_to_file:bool = true;
 const dbg_filename:String = "log.txt";
@@ -37,7 +40,7 @@ func reset()->void:
 	dbg_fp = FileAccess.open(dbg_filename, FileAccess.WRITE);
 
 # LR(1) shift-reduce parser, always applies the first valid rule
-func parse(input:Dictionary, task:Task)->Variant:
+func parse(input:CompilerMD.Context, task:Task)->AST:
 	reset();
 	var in_tokens:Array[Token] = input.tokens;
 	task.work_units_total = in_tokens.size();
@@ -80,14 +83,14 @@ func parse(input:Dictionary, task:Task)->Variant:
 		return stack[0];
 	elif len(stack) == 0:
 		push_error("no input");
-		return false;
+		return null;
 	else:
 		call_deferred("defer_user_error", "syntax error");
 		var ctx:Token = stack[1];#find_best_error_token(stack);
 		#var erep:ErrorReporter = ErrorReporter.new(self, ctx as Token);
 		erep.context = ctx as Token;
 		erep.error("syntax error");
-		return false;
+		return null;
 #
 #func find_best_error_token(stack:Array[AST])->AST:
 	#for i in range(1, len(stack)):
@@ -141,25 +144,25 @@ func linearize_ast(ast:AST)->void:
 	for ch:AST in ast.children:
 		linearize_ast(ch);
 	if ast.tok_class in list_types:
-		#print("linearize: visit "+ast.tok_class);
-		var base_type:String = list_types[ast.tok_class];
-		#print("before gather: ch = %s" % print_child_types(ast));
-		var ch_list:Array[AST] = gather_instances(ast, base_type);
-		#print("gathered %d children" % len(ch_list));
+		print("linearize: visit "+ast.tok_class);
+		var base_types:Array = list_types[ast.tok_class];
+		print("before gather: ch = %s" % print_child_types(ast));
+		var ch_list:Array[AST] = gather_instances(ast, base_types);
+		print("gathered %d children" % len(ch_list));
 		ast.children.assign(ch_list);
-		#print("after gather: ch = %s" % print_child_types(ast));
+		print("after gather: ch = %s" % print_child_types(ast));
 	#else:
 	#	print("not a list");
 
-func gather_instances(ast:AST, type:String)->Array[AST]:
+func gather_instances(ast:AST, types:Array)->Array[AST]:
 	var res:Array[AST] = [];
 	for ch in ast.children:
-		if ch.tok_class == type:
+		if ch.tok_class in types:
 			#print("gather: append base child");
 			res.append(ch);
 		elif ch.tok_class == ast.tok_class:
 			#print("gather: recurse");
-			res.append_array(gather_instances(ch, type));
+			res.append_array(gather_instances(ch, types));
 		# other types are discarded
 	return res;
 

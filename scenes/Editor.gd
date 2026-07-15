@@ -27,6 +27,10 @@ func setup(dict:Dictionary)->void:
 	$comp_highlight.setup(dict2);
 	$comp_build.setup(dict2);
 	$window_debug/debug_panel.setup(dict2);
+	
+	$comp_file.cur_efile_changed.connect($comp_highlight._on_comp_file_cur_efile_changed);
+	$comp_file.cur_efile_changed.connect($comp_build._on_comp_file_cur_efile_changed);
+	
 
 func switch_to_file(filename)->void:
 	$comp_file.switch_to_file(filename);

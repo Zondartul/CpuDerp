@@ -10,7 +10,7 @@ var errcode:int = 0;
 signal cpu_step_done(cpu);
 signal mem_accessed(addr, val, is_write);
 # for instruction set, preload the language
-static var ISA:ISA_ZVM = G.isa_zvm;
+static var ISA:ISA_ZVM = preload("res://lang_zvm.gd").new();
 
 # error codes
 const ERR_NONE:int = 0;

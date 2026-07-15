@@ -1,5 +1,6 @@
 extends Node
 
+@warning_ignore("unused_signal")
 signal locations_ready(loc_map:LocationMap);
 
 const uYaml = preload("res://scenes/uYaml.gd")
@@ -91,7 +92,7 @@ func reset()->void:
 
 #---------- IR ingestion -------------------
 
-func parse_file(input:Dictionary, task:Task)->String:
+func parse_file(input:CompilerMD.Context, task:Task)->String:
 	reset();
 	var filename:String = input.filename;
 	var fp:FileAccess = FileAccess.open(filename, FileAccess.READ);
@@ -124,8 +125,8 @@ func deserialize(text:String)->void:
 				loc_str = G.unescape_string(loc_str);
 				var loc:LocationRange = LocationRange.from_string(loc_str);
 				assert(len(cmd));
-				var out_cmd:IR_Cmd = IR_Cmd.new({"loc":loc});
-				out_cmd.words.assign(cmd.words);
+				var out_cmd:IR_Cmd = IR_Cmd.new(cmd.words,loc);
+				#out_cmd.words.assign(cmd.words);
 				assert(len(out_cmd.words));
 				out_cb.code.push_back(out_cmd);
 		IR.code_blocks[key] = out_cb;
@@ -211,7 +212,7 @@ func generate(task:Task)->String:
 	call_deferred("defer_locations_ready", cur_assy_block.loc_map); #locations_ready.emit(cur_assy_block.loc_map);
 	return cur_assy_block.code;
 	
-func defer_locations_ready(arg)->void:
+func defer_locations_ready(_arg)->void:
 	#locations_ready.emit(arg);
 	push_warning("can't emit locations_ready");
 	pass;
@@ -1024,7 +1025,7 @@ func generate_cmd_alloc(cmd:IR_Cmd)->void:
 func generate_cmd_mov_arr(cmd:IR_Cmd)->void:
 	var dest:String = cmd.words[1];
 	var src:Array[String] = cmd.words.slice(3,-1);
-	var dest_handle:IR_Value = IR.all_syms[dest];
+	#var dest_handle:IR_Value = IR.all_syms[dest];
 	#assert(int(dest_handle.is_array)==1)
 	assert(cmd.words[2] == "[");
 	assert(cmd.words[-1] == "]");
@@ -1111,6 +1112,7 @@ func text_emit_mark_shadow_positions(markers, positions, counters:EmitCounter)->
 
 func verify_and_text_emit_padding(counters:EmitCounter)->String:
 	var text:String = "";
+	@warning_ignore("integer_division")
 	var n_remaining:int = (shadow_update_size/cmd_size - counters.n_emitted);
 	#7. assert false if out of space in the update block
 	assert(n_remaining >= 0, "INTERNAL ERROR: shadow update size insufficient for this stack frame. Need %d bytes for %d commands" % [counters.n_emitted*cmd_size, counters.n_emitted]);

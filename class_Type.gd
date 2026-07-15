@@ -7,16 +7,23 @@ var of:Array; ## if it's a meta-type or a container
 var size:int:get=get_size; ## how many bytes of memory does an instance occupy?
 
 # special types
-static var _error = Type.new({"name":"ERROR"}); # poison value - something broke
-static var _none = Type.new({"name":"NONE"}); # no type specified
-static var _param = Type.new({"name":"PARAM"}); # template parameter (usually a number)
+@warning_ignore("unused_private_class_variable")
+static var _error = Type.new("ERROR"); # poison value - something broke
+@warning_ignore("unused_private_class_variable")
+static var _none = Type.new("NONE"); # no type specified
+@warning_ignore("unused_private_class_variable")
+static var _param = Type.new("PARAM"); # template parameter (usually a number)
 # normal types
-static var _null = Type.new({"name":"null"}); # nulled value (expected something, got null)
-static var _void = Type.new({"name":"void"}); # explicitly does not have a value
+@warning_ignore("unused_private_class_variable")
+static var _null = Type.new("null"); # nulled value (expected something, got null)
+@warning_ignore("unused_private_class_variable")
+static var _void = Type.new("void"); # explicitly does not have a value
 
-func _init(dict=null):
-	if dict:
-		G.dictionary_init(self, dict);
+func _init(cfg=null):
+	if cfg is Dictionary:
+		G.dictionary_init(self, cfg);
+	elif cfg is String:
+		name=cfg;
 
 func get_full_name()->String:
 	var S:String = name;

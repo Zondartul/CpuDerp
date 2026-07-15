@@ -84,6 +84,7 @@ func _init_tiles()->void:
 	n_tiles_x = width/char_w; #note: // is not available in GDScript
 	@warning_ignore("integer_division")
 	n_tiles_y = height/char_h;
+	@warning_ignore("integer_division")
 	var offset:Vector2i = Vector2i(width % char_w, height % char_h) / 2;
 	#print("num tiles: ("+str(n_tiles_x)+", "+str(n_tiles_y)+")");
 	for ix in range(n_tiles_x):

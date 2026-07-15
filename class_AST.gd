@@ -36,6 +36,7 @@ func precompute_location()->void:
 			if ch_loc.begin.less_than(res.begin): res.begin = ch_loc.begin;
 			if res.end.less_than(ch_loc.end): res.end = ch_loc.end;
 	else:
+		assert(loc != null);
 		res = loc.duplicate();
 
 	res.begin.line = tok_class + ":" + compute_text();

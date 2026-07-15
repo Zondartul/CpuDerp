@@ -52,7 +52,7 @@ func user_error(msg)->void: sig_user_error.emit(msg);
 func _ready()->void:
 	reset();
 
-func tokenize(input:Dictionary, task:Task)->Array[Token]:
+func tokenize(input:Build.BuildInput, task:Task)->Array[Token]:
 	task.work_units_total = 7;
 	task.work_units_complete = 0;
 	#reset();
@@ -244,7 +244,7 @@ func resolve_char_tokens(tokens:Array[Token])->void:
 			else: 
 				erep.error(E.ERR_33 % tok.text); # bad char literal
 				break;
-			var old_text:String = tok.text;
+			#var old_text:String = tok.text;
 			tok.text = str(num);
 			#print("md_tokenizer: char token resolved [%s]->[%s]" % [old_text, tok.text]);
 

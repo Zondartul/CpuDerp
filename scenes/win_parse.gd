@@ -1,7 +1,7 @@
 extends Window
 
 #@onready var container = $SC/BC;
-@onready var tree:Tre = $SC/Tree
+@onready var tree:Tree = $SC/Tree
 var root:TreeItem;
 
 func set_stack(stack)->void:

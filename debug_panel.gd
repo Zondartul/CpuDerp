@@ -193,6 +193,7 @@ func get_loc_hl()->LocationRange:
 	var ELM:Array[ELM_entry] = ExpandedLocationMap;
 	if ELM:
 		var ip:int = cpu.regs[cpu.ISA.REG_IP];
+		@warning_ignore("integer_division")
 		var cmd_idx:int = ip/cmd_size
 		if cmd_idx < len(ELM):
 			#if cmd_idx in ELM:
@@ -478,6 +479,7 @@ func update_top()->void:
 	var offs_real:int = -(slider_base_addr % view_size) + top_offs;
 	#var first_is_blank = 0;
 	
+	@warning_ignore("integer_division")
 	var n_views:int = ((16-offs_real)/view_size)+1;
 
 	for i in range(n_views):
@@ -500,6 +502,7 @@ func update_top()->void:
 		var view_box:ColorRect = ColorRect.new();
 		view_box.color = col_odd;
 		var pos:int = int(slider_base_addr+i*view_size+offs_real-8);
+		@warning_ignore("integer_division")
 		var is_even:bool = (pos/view_size)%2 == 0;
 		if is_even: view_box.color = col_even;
 		view_box.set_position(vec_from);
@@ -528,7 +531,7 @@ func get_slider_text(pos, view_type)->String:
 	for i in range(view_size):
 		arr.append(bus.readCell(pos+i));
 	var data:PackedByteArray = PackedByteArray(arr);
-	var num:int = 0;
+	var num:Variant = 0;
 	var S:String = ""
 	match view_type:
 		"char": S = data.get_string_from_ascii();
@@ -699,7 +702,7 @@ func find_locals()->Array[DbgLocal]:
 		var access_type:String = "error";
 		var local_type:String = "error";
 		var is_valid:bool = false;
-		var decoded:Dictionary = cpu.decode_pure(cmd);
+		var decoded:ISA_ZVM.Cmd = cpu.decode_pure(cmd);
 		if decoded.is_empty: break;
 		const access_types = {
 			0x09: ["w", "r"],
@@ -1116,6 +1119,7 @@ func expand_location_map()->void:
 	var ELM:Array[ELM_entry] = ExpandedLocationMap;
 	ELM.clear();
 	var max_ip:int = get_max_loc_map_key();
+	@warning_ignore("integer_division")
 	var n_cmd_idxes:int = (max_ip / cmd_size) + 1;
 	ELM.resize(n_cmd_idxes);
 	var open_locs:Dictionary[LocationRange, IP_range] = {}; ## <loc, ip_range>
@@ -1154,6 +1158,7 @@ func expand_location_map()->void:
 func ELM_open_loc(ip:int, sub_entry_key:String, loc:LocationRange)->IP_range:
 	#print("open loc [%s] at ip %d" % [loc.begin.line, ip]);
 	var ELM:Array[ELM_entry] = ExpandedLocationMap;
+	@warning_ignore("integer_division")
 	var cmd_idx:int = ip / cmd_size;
 	var entry:ELM_entry = ELM[cmd_idx];
 	assert(entry);
@@ -1171,6 +1176,7 @@ func ELM_close_loc(ip:int, ip_range:IP_range)->void:
 
 func ELM_continue_loc(ip:int, sub_entry_key:String, ip_range:IP_range)->void:
 	var ELM:Array[ELM_entry] = ExpandedLocationMap;
+	@warning_ignore("integer_division")
 	var cmd_idx:int = ip / cmd_size;
 	var entry:ELM_entry = ELM[cmd_idx];
 	assert(entry);

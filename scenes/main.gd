@@ -36,7 +36,7 @@ func _ready()->void:
 
 func debug_automation_script()->void:
 	#automate_compile_asm_zd();
-	#automate_compile_miniderp();
+	automate_compile_miniderp();
 	pass;
 
 func automate_compile_asm_zd()->void:
@@ -54,9 +54,9 @@ func automate_compile_miniderp()->void:
 	# Go to editor and open the file
 	autotab($Panel/TabContainer, "Editor");
 	automenu($Panel/TabContainer/Editor/V/MenuBar, ["File", "Load"]);
-	autofile($Panel/TabContainer/Editor/comp_file/fd_load, "res://res/data/printf_test.md");#"res://res/data/hello.md");#"res://res/data/miniderp.txt");#"C:/Stride/godot/CpuDerp/res/data/main.txt");
+	autofile($Panel/TabContainer/Editor/comp_file/fd_load, "res://res/data/testOS/main.md");#"res://res/data/printf_test.md");#"res://res/data/hello.md");#"res://res/data/miniderp.txt");#"C:/Stride/godot/CpuDerp/res/data/main.txt");
 	# Compile it
-	automenu($Panel/TabContainer/Editor/V/MenuBar, ["Language", "miniderp"]);
+	#automenu($Panel/TabContainer/Editor/V/MenuBar, ["Language", "miniderp"]);
 	automenu($Panel/TabContainer/Editor/V/MenuBar, ["Build", "compile"]);
 	# Go to memory map and open the first region
 	#autotab($Panel/TabContainer, "Memory");

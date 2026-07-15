@@ -1,4 +1,5 @@
 extends Node
+class_name CompilerMD
 
 @onready var tokenizer = $tokenizer_md;
 @onready var parser = $parser_md;
@@ -16,37 +17,49 @@ var cur_filename:String: set=set_cur_filename;
 var cur_path:String: set=set_cur_path;
 var has_error:bool = false;
 
+func _ready():
+	analyzer.n_IR = $IR_md;
+	analyzer.sig_user_error.connect(sig_user_error.emit);
+
 func reset()->void:
 	cur_filename = "";
 	cur_path = "";
 	has_error = false;
 	tokenizer.reset();
 
-func compile(input, task:Task)->bool:
+class Context:
+	var tokens:Array[Token];
+	var ast:AST;
+	var IR:IRKind;
+	var filename:String;
+	var assy:String;
+
+func compile(input:Build.BuildInput, task:Task)->bool:
 	var t_tok:Task = task.add_subtask("tokenize");
 	var t_parse:Task = task.add_subtask("parse");
 	var t_anz:Task = task.add_subtask("analyze");
 	var t_cg:Task = task.add_subtask("codegen");
 	var t_lnk:Task = task.add_subtask("link");
 	tokenizer.cur_path = cur_path;
-	input["tokens"] = tokenizer.tokenize(input, t_tok);	#if has_error: return false;
-	if not input.tokens or not task.happy_path: task.fail(); return false;
+	var ctx:Context = Context.new();
+	ctx.tokens = tokenizer.tokenize(input, t_tok);	#if has_error: return false;
+	if not ctx.tokens or not t_tok.happy_path: task.fail(); return false;
 	
-	input["ast"] = parser.parse(input, t_parse);	#if has_error: return false;
-	if not input.ast or not task.happy_path: return false;
+	ctx.ast = parser.parse(ctx, t_parse);	#if has_error: return false;
+	if not ctx.ast or not t_parse.happy_path: return false;
 	
-	input["IR"] = analyzer.analyze(input, t_anz); #if has_error: return false;
-	if not task.happy_path: return false;
+	ctx.IR = analyzer.analyze(ctx, t_anz); #if has_error: return false;
+	if not t_anz.happy_path: return false;
 	
-	input.filename = "IR.txt";
-	input["assy"] = codegen.parse_file(input, t_cg); #if has_error: return false;
-	if not task.happy_path: return false;
+	ctx.filename = "IR.txt";
+	ctx.assy = codegen.parse_file(ctx, t_cg); #if has_error: return false;
+	if not t_cg.happy_path: return false;
 	codegen.fixup_symtable(analyzer.sym_table, t_lnk); #if has_error: return false;
-	if not task.happy_path: return false;
+	if not t_lnk.happy_path: return false;
 	
 	call_deferred("defer_sym_table_ready", analyzer.sym_table); #sym_table_ready.emit(analyzer.sym_table);
 	#print(_assy);
-	save_file(input.assy, "a.zd");
+	save_file(ctx.assy, "a.zd");
 	call_deferred("defer_open_file_request", "a.zd");#open_file_request.emit("a.zd");
 	t_lnk.mark_done();
 	return true;

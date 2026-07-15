@@ -42,5 +42,5 @@ func get_var(var_name:String)->IR_Var:
 			seek_scope = seek_scope.parent; #IR.scopes[seek_scope.parent];
 		else:
 			break;
-	assert(false, "var not found");
+	#assert(false, "var not found"); (null is valid)
 	return null;

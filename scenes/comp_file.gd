@@ -16,7 +16,7 @@ extends Node
 const scene_editorfile:PackedScene = preload("res://editor/editor_file.tscn");
 
 #@onready var n_efiles = $V/EFiles
-var n_efiles:int;
+var n_efiles:Node;
 var is_setup:bool = false;
 @onready var dialog_save:FileDialog = $fd_save
 @onready var dialog_load:FileDialog = $fd_load
