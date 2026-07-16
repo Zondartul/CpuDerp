@@ -92,14 +92,14 @@ func reset()->void:
 
 #---------- IR ingestion -------------------
 
-func parse_file(input:CompilerMD.Context, task:Task)->String:
-	reset();
-	var filename:String = input.filename;
-	var fp:FileAccess = FileAccess.open(filename, FileAccess.READ);
-	var text:String = fp.get_as_text();
-	fp.close();
-	deserialize(text);
-	return generate(task);
+#func parse_file(input:CompilerMD.Context, task:Task)->String:
+	#reset();
+	#var filename:String = input.filename;
+	#var fp:FileAccess = FileAccess.open(filename, FileAccess.READ);
+	#var text:String = fp.get_as_text();
+	#fp.close();
+	#deserialize(text);
+	#return generate(task);
 
 ## @deprecated IR should have its own serdes
 func deserialize(text:String)->void:
@@ -118,7 +118,7 @@ func deserialize(text:String)->void:
 	for key in IR.code_blocks:
 		bump_val_idx(key);
 		var in_cb:CodeBlock = IR.code_blocks[key];
-		var out_cb:CodeBlock = CodeBlock.new({"ir_name":key, "lbl_from":in_cb.lbl_from, "lbl_to":in_cb.lbl_to});
+		var out_cb:CodeBlock = CodeBlock.new(IR, {"ir_name":key, "lbl_from":in_cb.lbl_from, "lbl_to":in_cb.lbl_to});
 		if "code" in in_cb:
 			for cmd in in_cb.code:
 				var loc_str:String = cmd.pop_back();
@@ -245,30 +245,23 @@ func generate_globals()->String:
 	for key in IR.all_syms:
 		var sym:IR_Value = IR.all_syms[key];
 
-		match sym.val_type:
-			"code":
-				pass;
-			"func":
-				pass;
-			"label":
-				pass;
-			"variable":
-				if sym.storage.type == "global":
-					if ("is_array" in sym) and (int(sym.is_array) == 1):
-						text += ":%s: alloc %s;\n" % [sym.ir_name, str(4*int(sym.array_size))];
-					else:
-						text += ":%s: db 0;\n" % sym.ir_name;
-			"temporary":
-				if sym.storage.type == "global":
+		if sym is IR_Var:
+			if sym.storage.type == Storage.GLOBAL:
+				if ("is_array" in sym) and (int(sym.is_array) == 1):
+					text += ":%s: alloc %s;\n" % [sym.ir_name, str(4*int(sym.array_size))];
+				else:
 					text += ":%s: db 0;\n" % sym.ir_name;
-			"immediate":
-				if sym.data_type == "String":
+		if sym is IR_Tmp:
+				if sym.storage.type == Storage.GLOBAL:
+					text += ":%s: db 0;\n" % sym.ir_name;
+		if sym is IR_Imm:
+				if sym.data_type.name == "String":
 					var S:String = sym.value;
 					S = format_db_string(S);
 					text += ":%s: db %s;\n" % [sym.ir_name, S];
-			"array":
+		if sym is IR_array:
 				text += ":%s: alloc %s;\n" % [sym.ir_name, str(4*int(sym.array_size))];	
-			_: assert(false, "codegen.generate_globals: unspecified value storage type");
+			#_: assert(false, "codegen.generate_globals: unspecified value storage type");
 	return text;
 
 func format_db_string(S:String)->String:
@@ -543,7 +536,7 @@ func generate_cmd_call(cmd:IR_Cmd)->void:
 	emit("mov ^%s, eax;\n" % res, cmd_size, "generate_cmd_call.result");
 	mark_loc_end(loc);
 	
-	if fun_handle.storage.type != "extern":
+	if fun_handle.storage.type != Storage.EXTERN:
 		#var cb_name = fun_handle.code;
 		#assert(cb_name in all_syms);
 		#var cb = all_syms[cb_name];
@@ -801,20 +794,20 @@ func load_value(val:String)->String:
 	else:
 		#size_bytes = handle.data_size;
 		match handle.storage.type:
-			"global": 
+			Storage.GLOBAL: 
 				if int(handle.is_array) == 1:
 					res = "%s" % handle.ir_name;
 				else:
 					res = "*%s" % handle.ir_name; #handle.storage.pos; #emit("mov %s, *%d;\n" % [res, handle.storage.pos]);
-			"stack":
+			Storage.STACK:
 				if int(handle.is_array) == 1:
 					res = "EBP+%d" % handle.storage.pos;
 					res = res.replace("+-","-");
 				else:
 					res = "EBP[%d]" % handle.storage.pos; #emit("mov %s, EBP[%d];\n" % [res, handle.storage.pos]);
-			"extern":
+			Storage.EXTERN:
 				res = "*%s" % handle.ir_name;
-			_: push_error("codegen: load_value: unknown storage type ["+handle.storage.type+"]");
+			_: push_error("codegen: load_value: unknown storage type [%d]" % handle.storage.type);
 		#print("load val [%s] is %s: res [%s]" % [val, handle.storage.type, res]);
 	#if size_bytes < word_size_bytes:
 		#var reg = alloc_register("load_val.truncate");
@@ -840,16 +833,16 @@ func address_value(val:String)->String:
 	var handle:IR_Value = IR.all_syms[val];
 	var res:String = "";
 	match handle.storage.type:
-		"global":
+		Storage.GLOBAL:
 			res = "%s" % handle.ir_name;
-		"stack":
+		Storage.STACK:
 			res = "EBP+%d" % handle.storage.pos; 
 			res = res.replace("+-", "-");
-		"code":
+		Storage.CODE:
 			res = "%s" % handle.ir_name;
-		"extern":
+		Storage.EXTERN:
 			res = "%s" % handle.ir_name;
-		_: push_error("codegen: address_value: unkown storage type ["+handle.storage.type+"]");
+		_: push_error("codegen: address_value: unkown storage type [%d]" % handle.storage.type);
 	return res;
 
 func alloc_temporary()->String:
@@ -883,12 +876,12 @@ func store_val(val:String)->String:
 	var handle:IR_Value = IR.all_syms[val];
 	var res:String;
 	match handle.storage.type:
-		"global":
+		Storage.GLOBAL:
 			res = "*%s" % handle.ir_name; #handle.storage.pos;
-		"stack":
+		Storage.STACK:
 			res = "EBP[%d]" % handle.storage.pos;
 			assert(handle.storage.pos != 0);
-		_: push_error("codegen: store_value: unkown storage type ["+handle.storage.type+"]");
+		_: push_error("codegen: store_value: unkown storage type [%d]" % handle.storage.type);
 	#print("store val [%s] is %s: res [%s]" % [val, handle.storage.type, res]);
 	#emit("mov %s, %s;\n" % [res, reg]);
 	#return reg;
@@ -924,10 +917,10 @@ func allocate_vars()->void:
 			#scope["local_var_stack_size"] = stack_pos;
 		if "funcs" in scope:
 			for handle in scope.funcs:
-				if handle.storage == "NULL":
-					handle.storage = {"type":"code", "pos":0};
-				elif handle.storage == "extern":
-					handle.storage = {"type":"extern", "pos":0};
+				if handle.storage == null:#"NULL":
+					handle.storage = Storage.new({"type":Storage.CODE, "pos":0});
+				#elif handle.storage.type == "extern":
+				#	handle.storage = {"type":"extern", "pos":0};
 				else:
 					push_error("codegen: allocate_vars: unknown storage type");
 	#for key in IR.code_blocks:
@@ -936,42 +929,41 @@ func allocate_vars()->void:
 
 func allocate_value(handle:IR_Value, scope:Scope)->void:
 	var data_size:int = 4;
-	if "is_array" in handle and int(handle.is_array):
+	if handle is IR_array: #if "is_array" in handle and int(handle.is_array):
 		data_size *= int(handle.array_size);
 	
-	if handle.storage is String:
-		if handle.storage == "NULL":
-			var storage_type:String;
-			var pos:int;
-			if (handle.val_type == "immediate"):
-				storage_type = "none";
-				pos = 0;
-			elif(scope.user_name == "global"): 
-				storage_type = "global";
-				pos = 0;
-			else:
-				storage_type = "stack";
-				var wp:int = scope.local_vars_write_pos;
-				#pos = to_local_pos(wp);
-				pos = wp;
-				if "is_array" in handle and int(handle.is_array):
-					pos = pos-data_size;
-				scope.local_vars_write_pos -= data_size;
-				scope.local_vars_count += 1;
-				assert(pos != 0);
-			handle.storage = {"type":storage_type, "pos":pos};
-		elif handle.storage == "extern":
-			handle.storage = {"type":"extern", "pos":0};
-		elif handle.storage == "arg":
+	if not handle.storage:
+		if handle is IR_Imm:
+			handle.storage = Storage.new(
+				{"type":Storage.NONE,"pos":0});
+		elif(scope.user_name == "global"): 
+			handle.storage = Storage.new(
+				{"type":Storage.GLOBAL,"pos":0}); 
+		else:
+			var wp:int = scope.local_vars_write_pos;
+			var pos = wp;
+			if handle is IR_array:
+				pos = pos-data_size;
+			
+			handle.storage = Storage.new(
+				{"type":Storage.STACK,"pos":wp});
+			scope.local_vars_write_pos -= data_size;
+			scope.local_vars_count += 1;
+			assert(pos != 0);
+			
+	match handle.storage.type:
+		Storage.EXTERN: pass
+		#	handle.storage = {"type":"extern", "pos":0};
+		Storage.STACK_ARG:
 			var wp:int = scope.args_write_pos;
-			var pos:int = wp;
-			handle.storage = {"type":"stack", "pos":pos};
+			#var pos:int = wp;
+			handle.storage.pos = wp;# = {"type":"stack", "pos":pos};
 			assert(handle.storage.pos != 0);
 			scope.args_write_pos += data_size;
 			scope.args_count += 1;
-		else:
+		_:
 			push_error("codegen: allocate_vars: unknown storage type");
-		handle["needs_deref"] = false;
+	handle.needs_deref = false;
 	if handle not in scope.vars:
 		scope.vars.append(handle);
 	#print("alloc %s to %s: result %s" % [handle.ir_name, scope.ir_name, handle.storage]);
@@ -1212,8 +1204,8 @@ func mark_loc_end(loc:LocationRange)->void:
 #	return handle.assy_block.write_pos;
 
 func emit_cb(cb_name:String, msg:String)->void:
-	var handle:IR_Value = IR.all_syms[cb_name];
-	assert(handle.val_type == "code");
+	var handle:CodeBlock = IR.all_syms[cb_name];
+	#assert(handle.val_type == "code");
 	var assy_block:AssyBlock = generate_code_block(handle);
 	translate_ab_locations(assy_block.loc_map, cur_assy_block.write_pos);
 	add_ab_locations(assy_block.loc_map);

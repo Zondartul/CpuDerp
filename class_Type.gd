@@ -33,7 +33,10 @@ func get_full_name()->String:
 		for ch in of:
 			if first: first = false; 
 			else: S += ", ";
-			S += ch.get_full_name();
+			if ch is Type:
+				S += ch.get_full_name();
+			else:
+				S += str(ch);
 		S += "]";
 	return S;
 
@@ -115,8 +118,15 @@ static func labs_reduce_list(
 
 func get_deref_type()->Variant:
 	if name in ["Ref", "Array"]:
-		assert(len(of) > 0);
-		return of[0];
+		if len(of) > 0:
+			assert(len(of) > 0);
+			var base:Variant = of[0];
+			if base is Type:
+				return base;
+			else:
+				return _none;
+		else:
+			return _none;
 	if name == "String":
 		return Type.new({"name":"char"});
 	return null;
@@ -138,7 +148,7 @@ const primitive_sizes = {
 	"double":8,
 };
 const integer_types = [
-	"int", "char", "u8", "s8", "u16", "s16", "u32", "s32", "u64", "s64",
+	"NONE", "int", "char", "u8", "s8", "u16", "s16", "u32", "s32", "u64", "s64",
 ];
 const pointer_types = ["Ref", "Array", "String"]
 

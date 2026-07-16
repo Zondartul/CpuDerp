@@ -7,7 +7,12 @@ var if_block_lbl_end:String = "";
 var lbl_from:String = "";
 var lbl_to:String = "";
 
-func _init(dict=null):
+func _init(IR:IRKind, dict=null):
+	ir_name = IR.make_unique_IR_name("cb");
+	IR.all_syms[ir_name] = self;
+	IR.code_blocks[ir_name] = self;
+	lbl_from = IR.make_unique_IR_name("lbl_from");
+	lbl_to = IR.make_unique_IR_name("lbl_to");
 	#val_type = "code";
 	if dict:
 		for key in dict:

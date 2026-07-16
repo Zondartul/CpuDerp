@@ -5,6 +5,7 @@ var array_size:int;
 
 func _init(IR:IRKind, _size:int=0):
 	ir_name = IR.make_unique_IR_name("arr");
+	IR.all_syms[ir_name] = self;
 	array_size=_size;
 #func new_arr(size)->Dictionary:
 	#var ir_name = "arr_"+str(len(all_syms)+1)+"__"+str(size);

@@ -2,11 +2,14 @@ extends Node
 class_name Storage
 
 const NONE = 0; # no value
-const GLOBAL = 1; # global location
-const STACK = 2; # generic stack location
-const STACK_ARG = 3; # stored in the stack-positive direction (above EBP)
-const STACK_VAR = 4; # stored in the stack-negative direction (below EBP)
-const STACK_DYNAMIC = 5; # pushed and popped without a recorded spot
+const GLOBAL = 1; # global variable location
+const EXTERN = 2; # externally stored
+const CODE = 3; # stored in code/ROM section
+const STACK = 4; # generic stack location
+const STACK_ARG = 5; # stored in the stack-positive direction (above EBP)
+const STACK_VAR = 6; # stored in the stack-negative direction (below EBP)
+const STACK_DYNAMIC = 7; # pushed and popped without a recorded spot
+
 
 var type:int = NONE; # storage type
 var assigned:bool = false; # is location valid?

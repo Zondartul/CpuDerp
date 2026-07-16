@@ -20,9 +20,9 @@ func clear_IR()->IRKind:
 	#	"code_blocks":{},
 	#	"scopes":{},
 	#};
-	var global_scope:Scope = new_scope("global");
+	var global_scope:Scope = Scope.new(IR, {"user_name":"global"}); #new_scope("global");
 	cur_scope = global_scope;
-	var global_code_block:CodeBlock = new_code_block();
+	var global_code_block:CodeBlock = CodeBlock.new(IR); #new_code_block();
 	cur_code_block = global_code_block;#IR.code_blocks[0];
 	return IR;
 
@@ -100,7 +100,7 @@ func is_cur_scope_global()->bool:
 func push_code_block(new_block:CodeBlock=null)->CodeBlock:
 	var old_cb:CodeBlock = cur_code_block;
 	if not new_block: 
-		new_block = new_code_block();
+		new_block = CodeBlock.new(IR); #new_code_block();
 		#IR.code_blocks.append(new_block);
 	cur_code_block = new_block;
 	return old_cb;
@@ -110,19 +110,18 @@ func pop_code_block(old_block:CodeBlock)->CodeBlock:
 	cur_code_block = old_block;
 	return popped_block;
 
-func new_code_block()->CodeBlock:
-	var cb:CodeBlock = CodeBlock.new(
-		{"ir_name":IR.make_unique_IR_name("cb"), 
-		"code":[], 
-		"lbl_from":IR.make_unique_IR_name("lbl_from"), 
-		"lbl_to":IR.make_unique_IR_name("lbl_to")});
-	IR.code_blocks[cb.ir_name] = cb;
-	return cb;
+#func new_code_block()->CodeBlock:
+	#var cb:CodeBlock = CodeBlock.new(IR,
+		#{"code":[], 
+		#"lbl_from":IR.make_unique_IR_name("lbl_from"), 
+		#"lbl_to":IR.make_unique_IR_name("lbl_to")});
+	#IR.code_blocks[cb.ir_name] = cb;
+	#return cb;
 
 func push_scope(scope=null)->Scope:
 	var old_sc:Scope = cur_scope;
 	if not scope:
-		scope = new_scope("",cur_scope);
+		scope = Scope.new(IR,{"parent":cur_scope}); #new_scope("",cur_scope);
 	cur_scope = scope;
 	return old_sc;
 
@@ -131,17 +130,17 @@ func pop_scope(old_scope:Scope)->Scope:
 	cur_scope = old_scope;
 	return popped_scope;
 	
-func new_scope(scp_name:String="", scp_parent:Scope=null)->Scope:
-	if scp_name == "": scp_name = "NULL";
-	var scp:Scope = Scope.new({
-				"ir_name":IR.make_unique_IR_name("scp",scp_name),
-				"user_name":scp_name,
-				"parent":scp_parent,
-				#"vars":[],
-				#"funcs":[],
-			});
-	IR.scopes[scp.ir_name] = scp;
-	return scp;
+#func new_scope(scp_name:String="", scp_parent:Scope=null)->Scope:
+	#if scp_name == "": scp_name = "NULL";
+	#var scp:Scope = Scope.new(IR, {
+				#"ir_name":IR.make_unique_IR_name("scp",scp_name),
+				#"user_name":scp_name,
+				#"parent":scp_parent,
+				##"vars":[],
+				##"funcs":[],
+			#});
+	#IR.scopes[scp.ir_name] = scp;
+	#return scp;
 
 
 func serialize_full()->String:

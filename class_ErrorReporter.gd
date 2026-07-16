@@ -22,11 +22,10 @@ func error(msg)->void:
 	push_error(msg);
 	if task:
 		task.fail();
-		task.errors.append(msg);
-	else:
-		if proxy.error_code != "": return; ## suppress cascading errors
-		proxy.user_error(msg);
-		proxy.error_code = msg;
+		task.errors.append(msg);	
+	if proxy.error_code != "": return; ## suppress cascading errors
+	proxy.user_error(msg);
+	proxy.error_code = msg;
 	if context != null:
 		if context is Token:
 			call_deferred("point_out_error_tok", "", context);

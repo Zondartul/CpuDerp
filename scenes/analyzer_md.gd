@@ -95,7 +95,7 @@ func analyze(input:CompilerMD.Context, task:Task)->Node:
 	task.work_units_complete += 1;
 	call_deferred("defer_IR_ready"); #IR_ready.emit(IR);
 	#print(IR);
-	IR.to_file("IR.txt");
+	#n_IR.to_file("IR.txt");
 	task.work_units_complete += 1;
 	prepare_sym_table();
 	task.work_units_complete += 1;
@@ -154,19 +154,26 @@ func prepare_sym_table()->void:
 		var fun_handle:IR_func = sym_table_append_scope(fun.user_name, fun.ir_name, scp, cb);
 		sym_table.funcs[fun.ir_name] = fun_handle;
 
+## I genuinely dunno what this func is for
 func sym_table_append_scope(user_name, ir_name, scp, cb)->IR_func:
-	var fun_handle:IR_func = IR_func.new(IR, {"user_name":user_name, "ir_name":ir_name, "lbl":null, "args":[], "vars":[], "constants":[]});
-	fun_handle.lbl = {"from":cb.lbl_from, "to":cb.lbl_to};
-	for ir_var in scp.vars:
+	var fun_handle:IR_func = IR_func.new(IR, {
+		"user_name":user_name, 
+		"ir_name":ir_name,
+		});#, "lbl":null, "args":[], "vars":[], "constants":[]});
+	
+	#fun_handle.lbl = {"from":cb.lbl_from, "to":cb.lbl_to};
+	## for lbl, just read fun.cb
+	
+	#for ir_var in scp.vars:
 		#if not "is_array" in ir_var: ir_var["is_array"] = "0";
 		#if not "array_size" in ir_var: ir_var["array_size"] = "0";
 		#var handle = {"user_name":ir_var.user_name, "ir_name":ir_var.ir_name, "pos":"query", "is_array":ir_var.is_array, "array_size":ir_var.array_size};
-		match ir_var.val_type:
-			"arg": fun_handle.args.append(ir_var)#(handle);
-			"variable": fun_handle.vars.append(ir_var)#(handle);
-			"immediate": fun_handle.constants.append(ir_var)#(handle);
-			"temporary": pass;
-			_: assert(false, "unknown val type [%s]" % str(ir_var.val_type));
+		#match ir_var.val_type:
+			#"arg": fun_handle.args.append(ir_var)#(handle);
+			#"variable": fun_handle.vars.append(ir_var)#(handle);
+			#"immediate": fun_handle.constants.append(ir_var)#(handle);
+			#"temporary": pass;
+			#_: assert(false, "unknown val type [%s]" % str(ir_var.val_type));
 	return fun_handle;
 
 func analyze_expr(ast:AST)->void:
@@ -276,19 +283,20 @@ func analyze_expr_infix_op(expr1:AST, expr2:AST, op, loc:LocationRange)->void:
 				#op_permitted = true;
 	#var Tres:Type = Type.from_string(sTres);
 	var t_res:Type = calc_output_type(arg1, arg2, op, loc);
+	if error_code != "": return;
 	assert(t_res);
 	res.data_type = t_res;#t_res.type;
-	IR.save_variable(res);
+	save_variable(res);
 	if (op in prefix_ops) or (op in postfix_ops):
 		erep.error(E.ERR_36 % op); return;
-	IR.emit_IR(["OP", op, arg1, arg2, res], loc);
+	emit_IR(["OP", op, arg1, arg2, res], loc);
 	expr_stack.push_back(res);
 
 func calc_output_type(arg1:IR_Value, arg2:IR_Value, op:String, loc:LocationRange)->Type:
 	var sT1:String = "null";
 	var T1:Type;
 	var T2:Type;
-	if arg2 and arg1.data_type:
+	if arg1 and arg1.data_type:
 		sT1 = arg1.data_type.full_name;
 		T1 = arg1.data_type;
 	var sT2:String = "null";
@@ -296,23 +304,25 @@ func calc_output_type(arg1:IR_Value, arg2:IR_Value, op:String, loc:LocationRange
 		sT2 = arg2.data_type.full_name;
 		T2 = arg2.data_type;
 	var res:Type = get_op_result_type(T1, T2, op);
-	if not G.has(res):
+	if not res: #G.has(res):
 		erep.context = loc;
-		erep.error(E.ERR_35 % [op, sT1, sT2]);
-		return Type._error;#null;
+		erep.error(E.ERR_55 % [op, sT1, sT2]);
+		return null;#return Type._error;#null;
 	return res;
 	
 func get_op_result_type(T1:Type, T2:Type, op:String)->Type:
 	var Tres:Type = T1;
 	if op == "INDEX":
-		if T2 and (not T2.is_integer()): erep.error(E.ERR_38); return null;
+		if T2 and (not T2.is_integer()): erep.error(E.ERR_58 % T2.get_full_name()); return null;
 		if T1:
 			var T:Type = T1.get_deref_type();
 			if not T:
 				erep.error(E.ERR_39 % T1.full_name); return null;
 			Tres = T;
 		else:
-			Tres = Type._error; #null;
+			Tres = null;#Type._error; #null;
+	else:
+		if Tres == null: Tres = Type._none;
 	return Tres; #{"type":Tres};
 
 func analyze_expr_postfix_op(expr1:AST, op:String, loc:LocationRange)->void:
@@ -321,12 +331,13 @@ func analyze_expr_postfix_op(expr1:AST, op:String, loc:LocationRange)->void:
 	var arg:IR_Value = expr_stack.pop_back();
 	var res:IR_Tmp = IR_Tmp.new(IR); #IR.new_val_temp();
 	var t_res:Type = calc_output_type(arg, null, op, loc);
-	assert(G.has(t_res));
-	res.data_type = t_res.type;
-	IR.save_variable(res);
+	if not t_res: return;
+	#assert(G.has(t_res));
+	res.data_type = t_res;
+	save_variable(res);
 	if op not in postfix_ops:
 		erep.error(E.ERR_37 % op); return;
-	IR.emit_IR(["OP", op, arg, IR_Value.none, res], loc);#IR.new_val_none(), res], loc);
+	emit_IR(["OP", op, arg, IR_Value.none, res], loc);#IR.new_val_none(), res], loc);
 	expr_stack.push_back(res);
 
 func analyze_expr_call(ast:AST)->void:
@@ -351,8 +362,8 @@ func analyze_expr_call(ast:AST)->void:
 		else:
 			internal_error(E.ERR_26); return;
 	
-	if (fun is IR_func) and (fun.argc() > 0):#(fun.val_type == "func") and (fun.argc >= 0) and (args.size() != fun.argc):
-		user_error(E.ERR_46 % [fun.user_name, fun.argc, args.size()]);
+	if (fun is IR_func) and (fun.argc() != args.size()):#(fun.val_type == "func") and (fun.argc >= 0) and (args.size() != fun.argc):
+		user_error(E.ERR_46 % [fun.user_name, fun.argc(), args.size()]);
 	var res:IR_Tmp = IR_Tmp.new(IR);#IR.new_val_temp();
 	res.data_type = Type._void; #Type.new({"name":"void"});
 	save_variable(res);
@@ -406,17 +417,27 @@ func analyze_var_decl_stmt(ast)->void:
 		var tok_index:AST = ast.children[1];
 		tok_ident = tok_index.children[0].children[0].children[0];
 		is_arr = 1;
-		var tok_size:AST = tok_index.children[2].children[0].children[0];
+		var tok_size:AST = tok_index.children[2].children[0].children[0].children[0];
 		assert(tok_size.tok_class == "NUMBER");
 		arr_size = int(tok_size.text);
-	assert(tok_ident.tok_class == "IDENT");
-	var var_name:String = tok_ident.text;
-	var var_handle:IR_Var = IR_Var.new(IR, var_name); #IR.new_val_var(var_name);
+	var var_name:String = "";
+	var type:Type = null;
+	match tok_ident.tok_class:
+		"IDENT": 
+			var_name = tok_ident.text;
+		"expr_typed_ident":
+			var_name = tok_ident.children[0].text;
+			var type_name:String = tok_ident.children[2].text;
+			type = Type.new(type_name);
+	var var_handle:IR_Var = IR_Var.new(IR, var_name, type); #IR.new_val_var(var_name);
 	#var_handle["is_array"] = is_arr;
 	#var_handle["array_size"] = arr_size;
 	if is_arr:
-		var_handle.type = Type.new({"name":"Array", "of":[arr_size]});
-	IR.save_variable(var_handle);
+		var base_type:Type = var_handle.data_type;
+		var of:Array = [arr_size];
+		if base_type != null: of.push_front(base_type);
+		var_handle.data_type = Type.new({"name":"Array", "of":of});
+	save_variable(var_handle);
 
 func analyze_func_decl_stmt(ast:AST)->void:
 	if error_code != "": return;
@@ -431,12 +452,18 @@ func analyze_func_decl_stmt(ast:AST)->void:
 	assert(tok_ident.tok_class == "IDENT");
 	
 	var args:Array[ArgSpec] = analyze_arg_names(expr_call);
+	var arg_vars:Array[IR_Var] = []
+	for arg in args:
+		arg_vars.append(IR_Var.new(IR, arg.name, arg.type));
+		
 	#var arg_names = args[0];
 	var fun_name:String = tok_ident.text;
 	var fun_scp:Scope = null; #IR_Value.none; #IR.new_val_none();
 	var fun_cb:CodeBlock = null; #IR_Value.none; #IR.new_val_none();
 	var return_type:Type = Type._void;
-	var fun_handle:IR_func = IR_func.new(IR, {"user_name":fun_name, "scope":fun_scp, "code":fun_cb, "args":args, "type_return":return_type}); #IR.new_val_func(fun_name,fun_scp,fun_cb);
+	var func_data:Dictionary = {"user_name":fun_name, "scope":fun_scp, "code":fun_cb, "args":arg_vars, "type_return":return_type};
+	var fun_handle:IR_func = IR_func.new(IR, func_data); #IR.new_val_func(fun_name,fun_scp,fun_cb);
+	print("Got func decl: %s, %d args in, %d args out" % [fun_handle.user_name, args.size(), fun_handle.argc()]);
 	#fun_handle.argc = arg_names.size()
 	save_function(fun_handle);
 
@@ -462,6 +489,8 @@ func analyze_decl_extern_stmt(ast:AST)->void:
 
 func analyze_decl_assignment(ast:AST)->void:
 	if error_code != "": return;
+	var dbg_ast_str:String = ast.compute_text();
+	assert(not "++" in dbg_ast_str);
 	# decl part
 	assert(ast.tok_class == "decl_assignment_stmt");
 	var stmt_ass:AST = ast.children[1];
@@ -559,16 +588,16 @@ func analyze_while_stmt(ast:AST)->void:
 	var label_next:IR_lbl = IR_lbl.new(IR,"while_next"); #IR.new_val_lbl("while_next");
 	var label_end:IR_lbl = IR_lbl.new(IR, "while_end"); #IR.new_val_lbl("while_end");
 	control_flow_stack.push_back(CtrlFlowItem.new("while", label_next, label_end));
-	var ocb:CodeBlock = IR.push_code_block();
+	var ocb:CodeBlock = n_IR.push_code_block();
 	analyze_expr(expr_cond); if error_code != "": return;
 	var arg:IR_Value = expr_stack.pop_back();
-	var code_condition:CodeBlock = IR.pop_code_block(ocb);
+	var code_condition:CodeBlock = n_IR.pop_code_block(ocb);
 	
-	ocb = IR.push_code_block();
+	ocb = n_IR.push_code_block();
 	analyze_one(stmt_block); if error_code != "": return;
-	var code_block:CodeBlock = IR.pop_code_block(ocb);
+	var code_block:CodeBlock = n_IR.pop_code_block(ocb);
 	control_flow_stack.pop_back();
-	IR.emit_IR(["WHILE", code_condition, arg, code_block, label_next, label_end], ast.get_location());
+	emit_IR(["WHILE", code_condition, arg, code_block, label_next, label_end], ast.get_location());
 
 
 func analyze_assignment_stmt(ast:AST)->void:
@@ -622,10 +651,10 @@ func analyze_comp_assignment_stmt(ast:AST)->void:
 	var arg2:IR_Value = expr_stack.pop_back();
 	var arg1:IR_Value = expr_stack.pop_back();
 	var res:IR_Tmp = IR_Tmp.new(IR); #IR.new_val_temp();
-	IR.save_variable(res);
-	IR.emit_IR(["OP", op, arg1, arg2, res], ast.get_location());
+	save_variable(res);
+	emit_IR(["OP", op, arg1, arg2, res], ast.get_location());
 	#expr_stack.push_back(res);
-	IR.emit_IR(["MOV", LHS, res], ast.get_location());
+	emit_IR(["MOV", LHS, res], ast.get_location());
 	expr_stack.push_back(res);
 
 func analyze_lhs(ast:AST)->IR_Value:
@@ -755,18 +784,18 @@ func analyze_if_block(ast:AST)->void:
 	assert(cond.tok_class == "expr");
 	assert(block.tok_class == "block");
 	
-	var ocb:CodeBlock = IR.push_code_block();
+	var ocb:CodeBlock = n_IR.push_code_block();
 	analyze_expr(cond); if error_code != "": return;
 	var arg:IR_Value = expr_stack.pop_back();
-	var code_cond:CodeBlock = IR.pop_code_block(ocb);
+	var code_cond:CodeBlock = n_IR.pop_code_block(ocb);
 	
-	ocb = IR.push_code_block();
+	ocb = n_IR.push_code_block();
 	analyze_block(block); if error_code != "": return;
-	var code_block:CodeBlock = IR.pop_code_block(ocb);
+	var code_block:CodeBlock = n_IR.pop_code_block(ocb);
 	
 	var cmd:String = "IF"; if is_elif: cmd = "ELSE_IF";
 	
-	IR.emit_IR([cmd, code_cond, arg, code_block], ast.get_location());
+	emit_IR([cmd, code_cond, arg, code_block], ast.get_location());
 
 func analyze_if_else_block(ast:AST)->void:
 	if error_code != "": return;
@@ -777,10 +806,10 @@ func analyze_if_else_block(ast:AST)->void:
 	assert(block.tok_class == "block");
 	analyze_if_block(if_block);
 	
-	var ocb:CodeBlock = IR.push_code_block();
+	var ocb:CodeBlock = n_IR.push_code_block();
 	analyze_block(block); if error_code != "": return;
-	var code_block:CodeBlock = IR.pop_code_block(ocb);
-	IR.emit_IR(["ELSE", code_block], ast.get_location());
+	var code_block:CodeBlock = n_IR.pop_code_block(ocb);
+	emit_IR(["ELSE", code_block], ast.get_location());
 
 func analyze_func_def_stmt(ast:AST)->void:
 	if error_code != "": return;
@@ -789,7 +818,16 @@ func analyze_func_def_stmt(ast:AST)->void:
 	assert(tok_func.text == "func");
 	var expr_call:AST = ast.children[1];
 	assert(expr_call.tok_class == "expr_call");
-	var block:AST = ast.children[2];
+	var block:AST;
+	var ret_type:Type = null;
+	match ast.children[2].tok_class:
+		"block": 
+			block = ast.children[2];
+		"PUNCT": 
+			var type_expr:AST = ast.children[3];
+			block = ast.children[4];
+			analyze_type_expr(type_expr); if error_code != "": return;
+			ret_type = type_stack.pop_back();
 	assert(block.tok_class == "block");
 	
 	var tok_ident:AST = expr_call.children[0].children[0].children[0];
@@ -822,6 +860,7 @@ func analyze_func_def_stmt(ast:AST)->void:
 				#break;
 			#else:
 				#internal_error(E.ERR_28); return;
+	print("got func def, args = %s" % str(args));
 	var ocb:CodeBlock = n_IR.push_code_block();
 	var osc:Scope = n_IR.push_scope();
 	emit_IR(["ENTER", n_IR.cur_scope.ir_name], ast.get_location());
@@ -847,10 +886,13 @@ func analyze_func_def_stmt(ast:AST)->void:
 		if fun_handle.argc() != argc:
 			user_error(E.ERR_47 % [fun_handle.user_name, fun_handle.argc(), argc])
 	else:
-		fun_handle = IR_func.new(IR, {"user_name":fun_name, "scope":fun_scope, "code":fun_code});#IR.new_val_func(fun_name, fun_scope, fun_code);
-		fun_handle.args = arg_vars;
-		#fun_handle.argc = argc;
-		IR.save_function(fun_handle);
+		fun_handle = IR_func.new(IR, 
+			{"user_name":fun_name, 
+			"scope":fun_scope, 
+			"code":fun_code,
+			"args":arg_vars,
+			"return_type":ret_type});#IR.new_val_func(fun_name, fun_scope, fun_code);
+		save_function(fun_handle);
 
 class ArgSpec:
 	var name:String;
@@ -916,9 +958,9 @@ func analyze_flow_stmt(ast:AST)->void:
 				assert(expr.tok_class == "expr");
 				analyze_expr(expr); if error_code != "": return;
 				var res:IR_Value = expr_stack.pop_back();
-				IR.emit_IR(["RETURN", res], ast.get_location());
+				emit_IR(["RETURN", res], ast.get_location());
 			else:
-				IR.emit_IR(["RETURN"], ast.get_location());
+				emit_IR(["RETURN"], ast.get_location());
 
 
 func save_variable(var_handle)->void:

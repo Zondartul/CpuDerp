@@ -7,6 +7,7 @@ var is_assy_constant:bool=false; ## is this constant known by name to the assemb
 
 func _init(IR:IRKind, _value:Variant=null, _type:Type=null):
 	ir_name = IR.make_unique_IR_name("imm");
+	IR.all_syms[ir_name] = self;
 	value = _value;
 	type = _type;
 #

@@ -11,8 +11,11 @@ var local_vars_write_pos:int=0; #= to_local_pos(0);
 var args_count:int = 0;
 var args_write_pos:int=0;
 
-func _init(cfg:Dictionary):
-	G.dictionary_init(self,cfg);
+func _init(IR:IRKind, cfg=null):
+	if cfg is Dictionary:
+		G.dictionary_init(self,cfg);
+	ir_name = IR.make_unique_IR_name("scp",user_name);
+	IR.scopes[ir_name] = self;
 
 func get_func(fun_name:String)->IR_func:
 	var seek_scope:Scope = self; #cur_scope;

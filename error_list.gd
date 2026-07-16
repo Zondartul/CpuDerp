@@ -40,5 +40,5 @@ const ERR_54 = "Error 34: analyze_type_expr: unimplemented ast type: [%s]";
 const ERR_55 = "Error 35: Can't do operator %s between %s and %s";
 const ERR_56 = "Error 36: Operator %s is not an infix op";
 const ERR_57 = "Error 37: Operator %s is not a postfix op";
-const ERR_58 = "Error 38: Array index must be one of integer types";
+const ERR_58 = "Error 38: Array index must be one of integer types (got %s)";
 const ERR_59 = "Error 39: Type %s cannot be dereferenced";

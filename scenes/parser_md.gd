@@ -144,13 +144,13 @@ func linearize_ast(ast:AST)->void:
 	for ch:AST in ast.children:
 		linearize_ast(ch);
 	if ast.tok_class in list_types:
-		print("linearize: visit "+ast.tok_class);
+		#print("linearize: visit "+ast.tok_class);
 		var base_types:Array = list_types[ast.tok_class];
-		print("before gather: ch = %s" % print_child_types(ast));
+		#print("before gather: ch = %s" % print_child_types(ast));
 		var ch_list:Array[AST] = gather_instances(ast, base_types);
-		print("gathered %d children" % len(ch_list));
+		#print("gathered %d children" % len(ch_list));
 		ast.children.assign(ch_list);
-		print("after gather: ch = %s" % print_child_types(ast));
+		#print("after gather: ch = %s" % print_child_types(ast));
 	#else:
 	#	print("not a list");
 

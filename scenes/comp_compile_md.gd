@@ -52,7 +52,8 @@ func compile(input:Build.BuildInput, task:Task)->bool:
 	if not t_anz.happy_path: return false;
 	
 	ctx.filename = "IR.txt";
-	ctx.assy = codegen.parse_file(ctx, t_cg); #if has_error: return false;
+	codegen.IR = ctx.IR;
+	ctx.assy = codegen.generate(t_cg);#codegen.parse_file(ctx, t_cg); #if has_error: return false;
 	if not t_cg.happy_path: return false;
 	codegen.fixup_symtable(analyzer.sym_table, t_lnk); #if has_error: return false;
 	if not t_lnk.happy_path: return false;
