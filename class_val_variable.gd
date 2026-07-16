@@ -9,3 +9,4 @@ func _init(IR:IRKind, _user_name:String="", _data_type:Type=null):
 	IR.all_syms[ir_name] = self;
 	user_name=_user_name;
 	data_type = _data_type;
+#	assert(ir_name != "var_4", "debug_trap");

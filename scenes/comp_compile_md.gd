@@ -55,8 +55,8 @@ func compile(input:Build.BuildInput, task:Task)->bool:
 	codegen.IR = ctx.IR;
 	ctx.assy = codegen.generate(t_cg);#codegen.parse_file(ctx, t_cg); #if has_error: return false;
 	if not t_cg.happy_path: return false;
-	codegen.fixup_symtable(analyzer.sym_table, t_lnk); #if has_error: return false;
-	if not t_lnk.happy_path: return false;
+	#codegen.fixup_symtable(analyzer.sym_table, t_lnk); #if has_error: return false;
+	#if not t_lnk.happy_path: return false;
 	
 	call_deferred("defer_sym_table_ready", analyzer.sym_table); #sym_table_ready.emit(analyzer.sym_table);
 	#print(_assy);

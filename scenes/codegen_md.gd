@@ -59,6 +59,7 @@ const imm_map = {
 	"CMP_Z":"CMP_Z",
 	"CMP_NZ":"CMP_NZ",
 };
+
 const word_size_bytes = 4; ## how many bytes does a plain "mov" grab?
 # state
 var IR:IRKind = IRKind.new();# = {};
@@ -66,7 +67,7 @@ var IR:IRKind = IRKind.new();# = {};
 var assy_block_stack:Array[AssyBlock] = [];
 var cur_assy_block:AssyBlock;
 var cur_stack_size:int = 0; # number of bytes in the current frame used for local variables
-var regs_in_use:Dictionary[String,bool] = {};
+var regs_in_use:Dictionary[String,String] = {};
 var referenced_cbs:Array[CodeBlock] = [];
 var cur_block:CodeBlock;
 var cb_stack:Array[CodeBlock] = [];
@@ -244,18 +245,21 @@ func generate_globals()->String:
 	var text:String = "";
 	for key in IR.all_syms:
 		var sym:IR_Value = IR.all_syms[key];
-
+	
+		assert(sym.storage, "unallocated value");
 		if sym is IR_Var:
 			if sym.storage.type == Storage.GLOBAL:
 				if ("is_array" in sym) and (int(sym.is_array) == 1):
 					text += ":%s: alloc %s;\n" % [sym.ir_name, str(4*int(sym.array_size))];
 				else:
 					text += ":%s: db 0;\n" % sym.ir_name;
+			elif sym.storage.type == Storage.NONE:
+				pass;
 		if sym is IR_Tmp:
 				if sym.storage.type == Storage.GLOBAL:
 					text += ":%s: db 0;\n" % sym.ir_name;
 		if sym is IR_Imm:
-				if sym.data_type.name == "String":
+				if sym.type and sym.type.name == "String":
 					var S:String = sym.value;
 					S = format_db_string(S);
 					text += ":%s: db %s;\n" % [sym.ir_name, S];
@@ -295,8 +299,8 @@ func maybe_emit_func_ret(ir_name:String)->void:
 func is_referenced_by_func(ir_name:String)->String:
 	for key in IR.all_syms:
 		var sym:IR_Value = IR.all_syms[key];
-		if sym.val_type == "func":
-			if sym.code == ir_name:
+		if sym is IR_func:
+			if sym.code and (sym.code.ir_name == ir_name):
 				return sym.ir_name;
 	return ""
 
@@ -366,7 +370,7 @@ func generate_cmd_op_helper(op:String, arg1:String, arg2:String, res:String, op_
 	if arg1 in IR.all_syms:
 		var arg1_handle:IR_Value = IR.all_syms[arg1];
 		#print("arg1 (%s): %s" % [arg1, arg1_handle]);
-		if int(arg1_handle.is_array) == 1:
+		if arg1_handle is IR_array:
 			arg1_is_array = true;
 	#else:
 		#print("arg1 (%s) NOT IN ALL_SYMS" % arg1);
@@ -585,7 +589,7 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 	while true:
 		lc.step();
 		var ref_load:StringRef = find_reference(text, "$");
-		if ref_load == StringRef.none: break;
+		if not ref_load: break;
 		var res:String = load_value(ref_load.val);
 		emit_comment("# load_value(%s)->%s\n" % [ref_load.val, res]);
 		var handle:IR_Value = IR.all_syms[ref_load.val];
@@ -638,7 +642,7 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 	while true:
 		lc.step();
 		var ref_addr:StringRef = find_reference(text, "@");
-		if ref_addr.is_empty(): break;
+		if not ref_addr: break;
 		var res:String = address_value(ref_addr.val);
 		emit_comment("# address_value(%s)->%s\n" % [ref_addr.val, res]);
 		if imm_flag: 
@@ -653,7 +657,7 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 	while true:
 		lc.step();
 		var ref_loadstore:StringRef = find_reference(text, "!");
-		if ref_loadstore.is_empty(): break;
+		if not ref_loadstore: break;
 		var res:String = load_value(ref_loadstore.val);
 		var handle:IR_Value = IR.all_syms[ref_loadstore.val];
 		if ("needs_deref" in handle) and handle.needs_deref:
@@ -704,7 +708,7 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 	while true:
 		lc.step();
 		var ref_store:StringRef = find_reference(text, "^");
-		if ref_store.is_empty(): break;
+		if not ref_store: break;
 		var handle:IR_Value = IR.all_syms[ref_store.val];
 		var res_load:String = load_value(ref_store.val); allocs.append(res_load);
 		emit_comment("# load_value(%s)->%s\n" % [ref_store.val, res_load]);
@@ -713,6 +717,7 @@ func emit(text:String, wp_diff:int, dbg_trace:String)->void:
 		var res:String = res_store;
 		if imm_flag or (("needs_deref" in handle) and handle.needs_deref): 
 			var reg:String = alloc_register("emit.store1_needs_deref");
+			allocs.append(reg);
 			vars_to_store.append([reg, handle.needs_deref, res_load, res_store]);			
 			res = reg;
 		imm_flag = false;
@@ -765,7 +770,7 @@ class StringRef:
 
 func find_reference(text:String, marker:String)->StringRef:
 	var marker_pos:int = text.find(marker);
-	if(marker_pos == -1): return StringRef.none;
+	if(marker_pos == -1): return null;
 	var end_pos:int = G.find_first_of(text, " ,:;\n", marker_pos);
 	var val:String = text.substr(marker_pos+1, end_pos-(marker_pos+1));
 	#var res = {"from":marker_pos, "to":end_pos, "val":val};
@@ -777,30 +782,37 @@ func load_value(val:String)->String:
 	var handle:IR_Value = IR.all_syms[val];
 	var size_bytes:int = 4;
 	var res:String = "";
-	if handle.val_type == "code":
+	if handle is CodeBlock:
 		assert(false, "Deprecated, need to generate before emitting");
 		res = generate_code_block(handle).code;
-	elif handle.val_type == "immediate":
+	elif handle is IR_Imm:
 		#size_bytes = handle.data_size;
-		if handle.data_type == "String":
+		if handle.data_type and handle.data_type.name == "String":
 			res = handle.ir_name;
 		else:
-			if ("is_assy_constant" in handle) and handle.is_assy_constant:
+			if handle.is_assy_constant:
 				res = handle.value;
 			else:
-				assert(handle.value.is_valid_int());
-				res = handle.value;
-				res = str(truncate_number((res as String).to_int(), size_bytes));
+				if handle.type and handle.type.name == "String":
+					res = handle.ir_name;
+				else:
+					if handle.value is int:
+						res = str(handle.value);
+					elif handle.value is String:
+						assert(handle.value.is_valid_int());
+						res = handle.value;
+					res = str(truncate_number(res.to_int(), size_bytes));
 	else:
+		assert(handle.storage, "unallocated value");
 		#size_bytes = handle.data_size;
 		match handle.storage.type:
 			Storage.GLOBAL: 
-				if int(handle.is_array) == 1:
+				if handle is IR_array:
 					res = "%s" % handle.ir_name;
 				else:
 					res = "*%s" % handle.ir_name; #handle.storage.pos; #emit("mov %s, *%d;\n" % [res, handle.storage.pos]);
 			Storage.STACK:
-				if int(handle.is_array) == 1:
+				if handle is IR_array:
 					res = "EBP+%d" % handle.storage.pos;
 					res = res.replace("+-","-");
 				else:
@@ -846,21 +858,24 @@ func address_value(val:String)->String:
 	return res;
 
 func alloc_temporary()->String:
-	var res:String = ""; #alloc_register();
-	#if not res:
-	#res = "EBP[%d]" % cur_stack_size;
-	#cur_stack_size += 1;
-	var ir_name:String = "tmp_%d" % val_idx; val_idx += 1;
-	assert(ir_name not in IR.all_syms, "ir sym uid count broken");
-	var handle:IR_Tmp = IR_Tmp.new(IR); #{"ir_name":ir_name, "val_type":"temporary", "data_type":"error", "data_size":4,"storage":"NULL", "is_array":0, "array_size":0};
-	allocate_value(handle, cur_scope);
-	cur_scope.vars.append(handle);
-	#var N = len(all_syms);
-	IR.all_syms[ir_name] = handle;
-	#var M = len(all_syms);
-	#assert(M > N, "watafak");
-	res = ir_name;
-	return res;
+	var tmp:IR_Tmp = IR_Tmp.new(IR);
+	allocate_value(tmp, cur_scope);
+	return tmp.ir_name;
+	#var res:String = ""; #alloc_register();
+	##if not res:
+	##res = "EBP[%d]" % cur_stack_size;
+	##cur_stack_size += 1;
+	#var ir_name:String = "tmp_%d" % val_idx; val_idx += 1;
+	#assert(ir_name not in IR.all_syms, "ir sym uid count broken");
+	#var handle:IR_Tmp = IR_Tmp.new(IR); #{"ir_name":ir_name, "val_type":"temporary", "data_type":"error", "data_size":4,"storage":"NULL", "is_array":0, "array_size":0};
+	#allocate_value(handle, cur_scope);
+	#cur_scope.vars.append(handle);
+	##var N = len(all_syms);
+	#IR.all_syms[ir_name] = handle;
+	##var M = len(all_syms);
+	##assert(M > N, "watafak");
+	#res = ir_name;
+	#return res;
 
 func emit_raw(text:String, wp_diff:int, dbg_trace:String)->void:
 	if ADD_DEBUG_TRACE: cur_assy_block.code += "#%s\n" % dbg_trace.remove_chars("\n");
@@ -889,15 +904,15 @@ func store_val(val:String)->String:
 
 func free_val(val:String)->void:
 	if val in regs:
-		regs_in_use[val] = false;
+		regs_in_use[val] = "";
 	else:
 		pass;
 
-func alloc_register(_where:String)->String:
+func alloc_register(where:String)->String:
 	for reg in regs:
-		if not reg in regs_in_use: regs_in_use[reg] = false;
-		if not regs_in_use[reg]:
-			regs_in_use[reg] = true; #where;
+		if not reg in regs_in_use: regs_in_use[reg] = "";
+		if regs_in_use[reg] == "":
+			regs_in_use[reg] = where;
 			return reg;
 	assert(false, "Codegen: out of registers!");
 	return "";
@@ -952,6 +967,8 @@ func allocate_value(handle:IR_Value, scope:Scope)->void:
 			assert(pos != 0);
 			
 	match handle.storage.type:
+		Storage.NONE: pass
+		Storage.GLOBAL: pass
 		Storage.EXTERN: pass
 		#	handle.storage = {"type":"extern", "pos":0};
 		Storage.STACK_ARG:
@@ -961,8 +978,14 @@ func allocate_value(handle:IR_Value, scope:Scope)->void:
 			assert(handle.storage.pos != 0);
 			scope.args_write_pos += data_size;
 			scope.args_count += 1;
+		Storage.STACK:
+			var wp:int = scope.local_vars_write_pos;
+			handle.storage.pos = wp;
+			assert(handle.storage.pos != 0);
+			scope.local_vars_write_pos += data_size;
+			scope.local_vars_count += 1;
 		_:
-			push_error("codegen: allocate_vars: unknown storage type");
+			assert(false, "codegen: allocate_vars: unknown storage type");
 	handle.needs_deref = false;
 	if handle not in scope.vars:
 		scope.vars.append(handle);
@@ -1155,30 +1178,33 @@ func fixup_enter_leave(assy_block:AssyBlock)->void:
 			S = S.replace("__SHADOW_LEAVE_%s" % scp_name, shadow_leave_update);
 		assy_block.code = S;
 
-func fixup_symtable(sym_table:Dictionary, task:Task)->void:
-	fixup_symtable_scope(sym_table.global);
-	task.work_units_total = sym_table.funcs.size()
-	for key in sym_table.funcs:
-		var fun:IR_func = sym_table.funcs[key];
-		fixup_symtable_scope(fun);
-		task.work_units_complete += 1;
-	#print(sym_table);
-	pass;
 
-func fixup_symtable_scope(fun:IR_func)->void:
-	for cat in [fun.args, fun.vars, fun.constants]:
-		for h2 in cat: fixup_symtable_val(h2);
+## No idea what these do
+#
+#func fixup_symtable(sym_table:SymTable, task:Task)->void:
+	#fixup_symtable_scope(sym_table.global);
+	#task.work_units_total = sym_table.funcs.size()
+	#for key in sym_table.funcs:
+		#var fun:IR_func = sym_table.funcs[key];
+		#fixup_symtable_scope(fun);
+		#task.work_units_complete += 1;
+	##print(sym_table);
+	#pass;
 
-func fixup_symtable_val(val:IR_Value)->void:
-	var sym:IR_Value = IR.all_syms[val.ir_name];
-	match sym.storage.type:
-		"global": val.pos = {"type":"global", "lbl":val.ir_name};
-		"stack": val.pos = {"type":"stack", "pos":sym.storage.pos};
-		"immediate": val.pos = {"type":"immediate", "val":sym.value};
-		"none": val.pos = {"type":"immediate", "val":sym.value};
-		_: assert(false, "unexpected sym storage type [%s]" % str(sym.storage.type));
-	if val.user_name == null:
-		val.pos["val"] = sym.value;
+#func fixup_symtable_scope(fun:IR_func)->void:
+	#for cat in [fun.args, fun.vars, fun.constants]:
+		#for h2 in cat: fixup_symtable_val(h2);
+#
+#func fixup_symtable_val(val:IR_Value)->void:
+	#var sym:IR_Value = IR.all_syms[val.ir_name];
+	#match sym.storage.type:
+		#"global": val.pos = {"type":"global", "lbl":val.ir_name};
+		#"stack": val.pos = {"type":"stack", "pos":sym.storage.pos};
+		#"immediate": val.pos = {"type":"immediate", "val":sym.value};
+		#"none": val.pos = {"type":"immediate", "val":sym.value};
+		#_: assert(false, "unexpected sym storage type [%s]" % str(sym.storage.type));
+	#if val.user_name == null:
+		#val.pos["val"] = sym.value;
 
 func mark_loc(loc:LocationRange, lmap:Dictionary, wp:int)->void:
 	if wp not in lmap: lmap[wp] = [];
@@ -1231,12 +1257,14 @@ func translate_ab_loc(src_lmap:Dictionary, src_ip:int, dest_lmap:Dictionary, des
 	if not src_ip in src_lmap: 
 		var new_arr:Array[LocationRange] = [];
 		src_lmap[src_ip] = new_arr;
-	var src_arr:Array[LocationRange] = src_lmap[src_ip];
+	var src_arr:Array[LocationRange] = [];
+	src_arr.assign(src_lmap[src_ip]);
 	var len_src:int = len(src_arr);
 	if not dest_ip in dest_lmap: 
 		var new_arr:Array[LocationRange] = [];
 		dest_lmap[dest_ip] = new_arr;
-	var dest_arr:Array[LocationRange] = dest_lmap[dest_ip];
+	var dest_arr:Array[LocationRange] = [];
+	dest_arr.assign(dest_lmap[dest_ip]);
 	var len_dst:int = len(dest_arr);
 	dest_arr.append_array(src_arr);
 	var len_out:int = len(dest_arr);

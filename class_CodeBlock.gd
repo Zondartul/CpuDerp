@@ -13,11 +13,13 @@ func _init(IR:IRKind, dict=null):
 	IR.code_blocks[ir_name] = self;
 	lbl_from = IR.make_unique_IR_name("lbl_from");
 	lbl_to = IR.make_unique_IR_name("lbl_to");
+	storage = Storage.new({"type":Storage.CODE});
 	#val_type = "code";
 	if dict:
 		for key in dict:
 			assert(key in self);
 			set(key, dict[key]);
+#	assert(ir_name != "cb_29", "debug trap");
 
 func emit_IR(cmd:Array, loc:LocationRange)->void:
 	#IR.commands.append(cmd);
@@ -41,8 +43,10 @@ func serialize_ir_arg(arg)->Array[String]:
 			res.append_array(serialize_ir_arg(sub_arg));
 		res.append("]");
 		return res;
+	elif arg is IR_Value:
+		return [arg.ir_name];
 	elif arg is LocationRange:
 		return [G.escape_string(arg.to_string_full())];
 	else:
-		push_error("can't serialize IR argument ["+str(arg)+"]");
+		assert(false, "can't serialize IR argument ["+str(arg)+"]");
 		return [];

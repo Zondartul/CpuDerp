@@ -86,3 +86,9 @@ extends Node
 # [feature]				"CHAR INIT"
 #	initialize char by 'c'
 #
+
+# 2026.07.16 ---
+# [TODO] MD Parser - automatic DFA converter
+# [TODO] MD Analyzer - tree pattern matcher
+# [TODO] MD Codegen - assy template engine
+# [TODO] CPU_IR_md - interprets IR code directly

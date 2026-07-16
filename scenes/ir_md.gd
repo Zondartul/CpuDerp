@@ -23,6 +23,7 @@ func clear_IR()->IRKind:
 	var global_scope:Scope = Scope.new(IR, {"user_name":"global"}); #new_scope("global");
 	cur_scope = global_scope;
 	var global_code_block:CodeBlock = CodeBlock.new(IR); #new_code_block();
+	global_code_block.storage = Storage.new({"type":Storage.CODE});
 	cur_code_block = global_code_block;#IR.code_blocks[0];
 	return IR;
 

@@ -15,6 +15,7 @@ var lbl_to:String;
 func _init(IR:IRKind, cfg):
 	ir_name = IR.make_unique_IR_name("func");
 	IR.all_syms[ir_name] = self;
+	storage = Storage.new({"type":Storage.NONE});
 	if cfg is Dictionary:
 		G.dictionary_init(self,cfg);
 

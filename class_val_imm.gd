@@ -10,6 +10,7 @@ func _init(IR:IRKind, _value:Variant=null, _type:Type=null):
 	IR.all_syms[ir_name] = self;
 	value = _value;
 	type = _type;
+	#assert(ir_name != "imm_18", "debug trap");
 #
 #func new_imm(val)->Dictionary:
 	#var ir_name = "imm_"+str(val_idx)+"__"+str(val); val_idx += 1;

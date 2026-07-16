@@ -454,7 +454,9 @@ func analyze_func_decl_stmt(ast:AST)->void:
 	var args:Array[ArgSpec] = analyze_arg_names(expr_call);
 	var arg_vars:Array[IR_Var] = []
 	for arg in args:
-		arg_vars.append(IR_Var.new(IR, arg.name, arg.type));
+		var handle:IR_Var = IR_Var.new(IR, arg.name, arg.type);
+		handle.storage = Storage.new({"type":Storage.STACK_ARG}); 
+		arg_vars.append(handle);
 		
 	#var arg_names = args[0];
 	var fun_name:String = tok_ident.text;
@@ -680,19 +682,27 @@ func analyze_expr_immediate(ast:AST)->void:
 	var tok:AST = ast.children[0];
 	var value:Variant = null;
 	var typestr:String = "";
+	#var storage_type:int = 0;
 	if tok.tok_class == "NUMBER": 
 		value = read_number(tok.text);
 		if value is int: typestr = "int";
 		if value is float: typestr = "float";
 		value = str(value);
+		#storage_type = Storage.NONE;
 	if tok.tok_class == "STRING":
 		value = tok.text;
 		typestr = "String";
+		#storage_type = Storage.GLOBAL;
 	if tok.tok_class == "CHAR":
 		value = str(read_number(tok.text));
 		typestr = "int"
+		#storage_type = Storage.NONE;
+	assert(typestr != null);
 	var t_res:Type = Type.new({"name":typestr});
+	assert(value != null);
+	assert(t_res != null);
 	var res:IR_Imm = IR_Imm.new(IR, value, t_res);#IR.new_val_immediate(value, Type.new({"name":type}));	
+	#res.storage = Storage.new({"type":storage_type});
 	#res.data_type = Type.new({"name":type});
 	save_variable(res);
 	expr_stack.push_back(res);
